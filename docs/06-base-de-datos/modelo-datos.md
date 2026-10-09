@@ -4,7 +4,7 @@
 
 ### Project
 
-Representa un proyecto de análisis y agrupa una o más configuraciones de target y sus scans.
+Representa un proyecto de análisis con cero o una configuración de target en el MVP y sus scans.
 
 Modelo aprobado e implementado por `project-management`, limitado a la tabla `projects`:
 
@@ -18,29 +18,33 @@ Modelo aprobado e implementado por `project-management`, limitado a la tabla `pr
 
 El dominio retira los espacios en blanco iniciales y finales de ambos textos y cuenta los límites en puntos de código Unicode, sin alterar espacios interiores. Al crear, ambas fechas reciben el mismo instante UTC con precisión de microsegundos; las consultas no las modifican. La creación se confirma tras el commit de la transacción.
 
-El proyecto puede crearse sin targets ni scans. `target_url` y `app_type` se retiran de `projects`; la futura capability `TargetConfiguration` definirá su almacenamiento. Se conservan la FK existente `scans.project_id → projects.id` y `idx_scans_project_id`, sin rediseñar `scans`.
+El proyecto puede crearse sin targets ni scans. `target_url` y `app_type` se retiran de `projects`; `TargetConfiguration` se almacena por separado en `target_configurations`. Se conservan la FK existente `scans.project_id → projects.id` y `idx_scans_project_id`, sin rediseñar `scans`.
 
 Por la excepción inicial aprobada en `openspec/changes/project-management/design.md`, se ajusta directamente V1, sin V2 correctiva. Desde su uso como baseline real, V1 será inmutable y cualquier evolución requerirá una nueva migración Flyway. No se han ejecutado migraciones durante esta implementación.
 
 ### TargetConfiguration
 
-Representa la configuración necesaria para construir una petición contra una aplicación LLM autorizada.
+Recurso único opcional por Project, aprobado en `target-configuration`. V2 crea la tabla sin modificar V1, projects ni scans. Múltiples targets quedan como evolución futura.
 
-Datos conceptuales previstos:
+| Columna | Tipo PostgreSQL | Restricciones |
+| --- | --- | --- |
+| id | UUID | PK generada por aplicación |
+| project_id | UUID | NOT NULL, FK projects(id), UNIQUE uq_target_configurations_project_id |
+| name | VARCHAR(120) | Opcional |
+| url | VARCHAR(2048) | NOT NULL |
+| request_template | TEXT | NOT NULL; hasta 32768 bytes UTF-8 en aplicación |
+| response_path | VARCHAR(1024) | NOT NULL |
+| headers | JSONB | NOT NULL, objeto no sensible, default {} |
+| auth_type | VARCHAR(20) | NONE, BEARER_TOKEN o API_KEY_HEADER |
+| auth_header_name | VARCHAR(128) | Solo para API_KEY_HEADER |
+| credential_ciphertext | BYTEA | Envelope AES-256-GCM v1; null para NONE |
+| timeout_ms | INTEGER | NOT NULL, 1000..60000 |
+| created_at | TIMESTAMPTZ(6) | NOT NULL |
+| updated_at | TIMESTAMPTZ(6) | NOT NULL, >= created_at |
 
-- Nombre.
-- URL.
-- Método, fijado en `POST` para el MVP.
-- Content-Type, fijado en `application/json` para el MVP.
-- Plantilla de request JSON.
-- Placeholder de prompt, fijado en `{{PROMPT}}`.
-- `responsePath` para extraer el texto de la respuesta.
-- Headers opcionales.
-- `authType`, limitado en el MVP a `NONE`, `BEARER_TOKEN` o `API_KEY_HEADER`.
-- `authConfig`.
-- Timeout.
+Checks: headers objeto; NONE sin header/blob, Bearer con blob y sin header, API key con ambos. UNIQUE garantiza cardinalidad incluso en creación concurrente. Sin cascada de borrado anticipada. method/contentType/promptPlaceholder son constantes derivadas y no se persisten, tampoco authConfig, secretValue ni hasCredentials.
 
-La configuración debe asociarse al proyecto. Los secretos nunca deben almacenarse en texto plano; la estrategia concreta de cifrado y gestión de claves queda como **Pendiente de decisión**.
+El material cifrado separa la credencial de la configuración pública. Formato y provisión de clave externa (nunca en PostgreSQL) en ADR-002. Creación/actualización son atómicas, con commit antes del éxito; PUT preserva identidad/createdAt y no retrocede updatedAt. No hay versionado optimista ni detección de cambios perdidos.
 
 ### Scan
 
@@ -131,7 +135,7 @@ Representa el informe generado para un Scan. El formato, almacenamiento y ciclo 
 
 ```text
 Project 1 ---- N Scan
-Project 1 ---- N TargetConfiguration
+Project 1 ---- 0..1 TargetConfiguration (MVP; N como evolución futura)
 TargetConfiguration 1 ---- N Scan
 Scan 1 ------- N TestExecution
 SecurityTest 1 ---- N TestExecution
@@ -146,7 +150,7 @@ Scan 1 ------- N Report
 - Las credenciales o referencias de autenticación deben gestionarse de forma segura y solo durante la ejecución autorizada.
 - Las peticiones, respuestas y evidencias pueden contener información sensible.
 - Deben aplicarse minimización, redacción, control de acceso y retención limitada.
-- Los campos concretos, tipos, índices y restricciones quedan como **Pendiente de decisión**.
+- Project y TargetConfiguration tienen esquema aprobado; los campos e índices de las demás entidades siguen pendientes.
 
 ## Persistencia
 

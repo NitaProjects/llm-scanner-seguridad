@@ -187,9 +187,9 @@ Ejemplo conceptual de request:
 }
 ```
 
-La autenticación del target podrá ser `NONE`, `BEARER_TOKEN` o `API_KEY_HEADER`. La configuración de headers, autenticación y timeout deberá someterse a validación y límites de seguridad. Esta documentación no define todavía su implementación ni los endpoints internos de la plataforma.
+La autenticación del target es `NONE`, `BEARER_TOKEN` o `API_KEY_HEADER`. El change `target-configuration` define un recurso único POST/GET/PUT en `/api/projects/{projectId}/target`, casos de uso explícitos, puertos de validación/cifrado/persistencia y adaptadores separados. Cada Project admite cero o un target en el MVP; no se ejecutan requests ni extracción de respuestas.
 
-La estrategia concreta de cifrado queda como **Pendiente de decisión**. En producción, AWS Secrets Manager podrá almacenar y gestionar los secretos, mientras que AWS KMS podrá gestionar las claves de cifrado; ambos servicios pueden utilizarse conjuntamente.
+D-CRYPTO queda cerrado para el MVP local: AES-256-GCM con clave externa de 256 bits y envelope versionado (ADR-002). GET y conservación en PUT no descifran. La provisión AWS Secrets Manager/KMS y los controles SSRF completos de ejecución quedan fuera de este change.
 
 ## Decisiones todavía abiertas
 

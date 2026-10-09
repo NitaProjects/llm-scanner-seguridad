@@ -116,13 +116,13 @@ Frontend envía token/API key
     -> no se devuelve ni se registra
 ```
 
-Para fases posteriores y AWS se considerará la utilización conjunta de AWS Secrets Manager y AWS KMS: Secrets Manager para almacenar y gestionar secretos, y KMS para gestionar las claves de cifrado. La tecnología concreta de cifrado, almacenamiento y gestión de claves queda como **Pendiente de decisión**.
+Para el MVP local D-CRYPTO queda cerrado por `target-configuration`: AES-256-GCM, clave externa de 256 bits, nonce aleatorio nuevo por cifrado y envelope versionado en PostgreSQL. La provisión se realiza mediante `TARGET_CREDENTIAL_ENCRYPTION_KEY`, sin leer claves para consultar o conservar credenciales. ADR-002 documenta el layout y el fallo seguro. AWS Secrets Manager/KMS, provisión operativa y rotación avanzada siguen como evolución futura.
 
 ### Impacto en el MVP
 
 El alcance cubre la aplicación vulnerable sin autenticación y dos patrones habituales de APIs protegidas, sin incorporar flujos interactivos. Añade requisitos de protección de secretos, sanitización de evidencias y control estricto de errores.
 
-**Estado: Decisión funcional cerrada para el MVP. La implementación criptográfica y de secret manager permanece pendiente.**
+**Estado: Decisión funcional y D-CRYPTO cerrados para el MVP local. La provisión AWS y el ciclo de vida avanzado siguen pendientes fuera del change.**
 
 ## 4. Proveedor y modelo LLM evaluador
 

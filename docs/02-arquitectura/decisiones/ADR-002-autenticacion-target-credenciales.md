@@ -59,7 +59,7 @@ X-API-Key: <SECRET>
 - No deben exponerse al frontend después de ser configuradas.
 - Los errores no deben devolver secretos.
 - Los payloads persistidos deben sanitizar headers sensibles.
-- El secreto solo debe estar disponible en memoria durante la ejecución autorizada del scan.
+- El secreto solo está en memoria durante recepción/cifrado y, en una futura ejecución autorizada, durante su uso. GET y conservación en PUT no lo descifran.
 
 Flujo conceptual:
 
@@ -82,11 +82,20 @@ En fases posteriores podrán incorporarse rotación avanzada, gestión multi-ent
 
 Para fases posteriores y AWS se considerará la utilización conjunta de AWS Secrets Manager y AWS KMS: Secrets Manager para almacenar y gestionar secretos, y KMS para gestionar las claves de cifrado. Esto no fija todavía una tecnología concreta ni forma parte de la implementación del MVP.
 
-## Decisiones pendientes
+## D-CRYPTO: decisión aprobada para el MVP local
 
-- Algoritmo y mecanismo concreto de cifrado.
-- Ubicación definitiva de la clave maestra.
-- Uso de un gestor de secretos en local, preproducción y producción.
+El change `target-configuration` concreta AES-256-GCM mediante JCA de Java 21, sin dependencias adicionales. La clave externa tiene exactamente 256 bits, codificada en Base64 estándar y suministrada por `TARGET_CREDENTIAL_ENCRYPTION_KEY`. No hay valor por defecto ni generación automática. Debe conservarse de forma segura fuera de PostgreSQL y del repositorio para recuperar credenciales tras reinicio.
+
+El envelope binario v1 se almacena en BYTEA: un byte de versión (1), 12 bytes de nonce aleatorio generado con SecureRandom y el ciphertext seguido de 16 bytes de tag GCM. Se utiliza AES/GCM/NoPadding y la versión como AAD. Cada cifrado genera un nonce nuevo. La clave no forma parte del envelope. El parser rechaza versiones desconocidas y material truncado; la verificación GCM con clave incorrecta o material alterado falla sin producir plaintext utilizable.
+
+La clave se consulta únicamente al cifrar. Su ausencia, formato inválido o tamaño distinto de 32 bytes provoca un error interno sanitizado y ninguna escritura, sin degradar a NONE. GET y PUT que conservan credencial funcionan sin consultar la clave. Las pruebas de recuperación usan exclusivamente datos y claves sintéticos y descifran en memoria, sin ampliar el puerto de configuración con una operación de descifrado.
+
+La actualización conserva el blob únicamente con el mismo origen URL, tipo de autenticación y headerName exacto, con authConfig presente y secretValue omitido. Un nuevo secreto reemplaza el anterior; NONE elimina el blob en la misma transacción.
+
+## Decisiones pendientes fuera de este change
+
+- Provisión operativa y custodia de la clave en PRE/PRO y AWS.
+- Uso de un gestor de secretos en PRE/PRO y AWS.
 - Rotación, revocación y ciclo de vida de credenciales.
 - Política de redacción y retención de payloads persistidos.
 

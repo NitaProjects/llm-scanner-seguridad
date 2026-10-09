@@ -37,11 +37,11 @@ Controles previstos:
 - Mantener un mecanismo para demostrar la autorización del target.
 - Validar la plantilla JSON, el `responsePath` y los headers configurables sin permitir transformaciones arbitrarias.
 
-La estrategia concreta de allowlist, validación DNS y autorización queda como **Pendiente de decisión**.
+La estrategia de ejecución (allowlist efectiva, DNS, redirecciones y autorización) queda pendiente para el change de ejecución. `target-configuration` solo valida localmente, sin DNS/HTTP. Por defecto bloquea localhost y literales loopback/privados. La excepción demo exige perfil `local`, `TARGET_LOCAL_DEMO_ENABLED=true` y orígenes explícitos en `TARGET_LOCAL_DEMO_ORIGINS`; nunca se activa desde la API ni admite metadatos/link-local. No equivale a protección SSRF completa ni certifica autorización del destino.
 
 ## Configuración del target
 
-La configuración admitirá headers y autenticación opcional mediante `NONE`, `BEARER_TOKEN` o `API_KEY_HEADER`. Estos valores pueden contener secretos y no deben aparecer en logs, findings ni informes sin redacción.
+La configuración admite headers ordinarios no sensibles y autenticación separada mediante `NONE`, `BEARER_TOKEN` o `API_KEY_HEADER`. Los secretos entran exclusivamente por authConfig.secretValue y no se devuelven, ni siquiera cifrados o enmascarados. Se bloquean headers sensibles/reservados y colisiones; no se promete detectar cualquier secreto arbitrario pegado en texto libre.
 
 Reglas de protección:
 
@@ -53,7 +53,7 @@ Reglas de protección:
 - Los payloads persistidos deben sanitizar headers sensibles.
 - Los secretos deben descifrarse únicamente en memoria durante la ejecución autorizada.
 
-La estrategia concreta de cifrado y gestión de claves queda como **Pendiente de decisión**. En producción, AWS Secrets Manager podrá almacenar y gestionar los secretos, mientras que AWS KMS podrá gestionar las claves de cifrado; ambos servicios pueden utilizarse conjuntamente.
+D-CRYPTO local está aprobado: AES-256-GCM, clave externa de 256 bits, nonce aleatorio nuevo y envelope versionado (ADR-002). La clave no se persiste ni se genera automáticamente; ausencia/formato inválido impiden cifrar con error sanitizado y sin escritura parcial. GET y conservación en PUT no necesitan clave ni descifrado. AWS Secrets Manager/KMS y rotación avanzada siguen fuera del change.
 
 El MVP no aceptará configuraciones basadas en GET, streaming, multipart, WebSocket, SSE, SOAP o gRPC.
 
@@ -84,7 +84,7 @@ Los fallos individuales deben persistirse sin reintentos automáticos no definid
 ## Alcance pendiente
 
 - Modelo de autenticación y autorización de usuarios.
-- Gestión de credenciales del target.
+- Provisión operativa y ciclo de vida avanzado de credenciales del target fuera del MVP local.
 - Política de retención y borrado de evidencias.
 - Nivel de aislamiento de los scans.
 - Controles concretos para producción y AWS.

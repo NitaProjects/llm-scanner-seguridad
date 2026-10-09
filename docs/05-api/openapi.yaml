@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
-  title: LLM Scanner Seguridad - Projects
+  title: LLM Scanner Seguridad - Projects y TargetConfiguration
   version: 0.0.1
-  description: Contrato de project-management (PM-01 a PM-07).
+  description: Contratos de project-management (PM-01 a PM-07) y target-configuration (TC-01 a TC-12).
 paths:
   /api/projects:
     post:
@@ -128,8 +128,238 @@ paths:
               example: {code: PROJECT_NOT_FOUND, message: El proyecto no existe., fieldErrors: []}
         '500':
           $ref: '#/components/responses/InternalError'
+  /api/projects/{projectId}/target:
+    parameters:
+      - in: path
+        name: projectId
+        required: true
+        schema: {type: string, format: uuid}
+    post:
+      operationId: configureTarget
+      summary: Crear el único target del Project
+      description: >-
+        TC-01/TC-02. Valida sin DNS/HTTP y confirma commit antes de 201.
+        Project no se modifica. La UNIQUE garantiza una sola creación concurrente.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateTargetRequest'}
+      responses:
+        '201':
+          description: Configuración persistida con fechas UTC iguales y sin secretos.
+          headers:
+            Location:
+              required: true
+              description: Ruta relativa /api/projects/{projectId}/target.
+              schema: {type: string, format: uri-reference}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TargetConfiguration'}
+        '400':
+          $ref: '#/components/responses/TargetBadRequest'
+        '404':
+          $ref: '#/components/responses/TargetNotFound'
+        '409':
+          description: TARGET_ALREADY_CONFIGURED; no sobrescribe, también en concurrencia.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ApiError'}
+        '500':
+          $ref: '#/components/responses/InternalError'
+    get:
+      operationId: getTargetConfiguration
+      summary: Consultar configuración sin descifrar ni consultar la clave
+      responses:
+        '200':
+          description: Datos públicos; nunca secreto, máscara, ciphertext, nonce o metadatos criptográficos.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TargetConfiguration'}
+        '400':
+          $ref: '#/components/responses/TargetBadRequest'
+        '404':
+          $ref: '#/components/responses/TargetNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    put:
+      operationId: updateTargetConfiguration
+      summary: Reemplazar target existente, sin upsert
+      description: >-
+        TC-03/TC-10. Conserva id/projectId/createdAt y no retrocede updatedAt.
+        Omitir name/headers/timeoutMs toma null/{}/10000. secretValue omitido conserva
+        la credencial solo con authConfig presente, mismo authType/headerName exacto
+        y origen URL normalizado (esquema/host/puerto efectivo). Cambiar esos elementos
+        exige secreto nuevo; null/vacío no conserva. NONE elimina el blob. Cambio atómico.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/TargetConfigurationInput'}
+      responses:
+        '200':
+          description: Configuración actualizada tras commit, sin secretos.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TargetConfiguration'}
+        '400':
+          $ref: '#/components/responses/TargetBadRequest'
+        '404':
+          $ref: '#/components/responses/TargetNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 components:
   schemas:
+    TargetConfigurationInput:
+      type: object
+      additionalProperties: false
+      required: [url, requestTemplate, responsePath, authType]
+      description: >-
+        TC-04 a TC-12. JSON estricto sin coerción ni claves duplicadas/desconocidas,
+        también dentro de authConfig. U+0000 se rechaza antes de normalizar, incluyendo
+        claves y cadenas decodificadas, sin eliminar ni sustituir.
+        Campos generados no admitidos. Constantes del MVP no persistidas.
+      properties:
+        name:
+          type: [string, 'null']
+          description: Opcional; trim exterior, máximo 120 puntos de código; blanco/null/omisión → null.
+        url:
+          type: string
+          description: >-
+            Trim, máximo 2048 puntos de código; absoluta HTTP/HTTPS, host y puerto válido,
+            sin userinfo, fragmento, espacios interiores ni controles. Bloquea por defecto
+            localhost/loopback/literales privados sin DNS. Excepción local/demo solo
+            externa, acotada a orígenes declarados, nunca desde API ni para metadatos.
+            Guardar no acredita autorización ni protección SSRF completa en ejecución.
+        method: {type: string, const: POST, default: POST}
+        contentType: {type: string, const: application/json, default: application/json}
+        promptPlaceholder: {type: string, const: '{{PROMPT}}', default: '{{PROMPT}}'}
+        requestTemplate:
+          type: string
+          description: >-
+            Hasta 32768 bytes UTF-8, JSON objeto sin claves duplicadas y exactamente
+            un {{PROMPT}} decodificado como valor completo de cadena, nunca clave/fragmento.
+            No se aplica trim, sustitución ni ejecución.
+        responsePath:
+          type: string
+          description: >-
+            Trim, máximo 1024 puntos de código y 32 segmentos. Raíz $, .identifier
+            ASCII [A-Za-z_][A-Za-z0-9_]*, propiedades ["cadena JSON no vacía"] e índices
+            [0]..[2147483647] sin signo/ceros iniciales. Sin filtros, scripts, comodines,
+            uniones, slices ni descenso recursivo. No se ejecuta extracción.
+        headers:
+          type: object
+          maxProperties: 20
+          default: {}
+          propertyNames:
+            maxLength: 128
+            pattern: "^[!#$%&'*+.^_`|~0-9A-Za-z-]+$"
+          additionalProperties: {type: string}
+          description: >-
+            No sensibles; valores hasta 4096 bytes UTF-8, total nombres/valores 16384 bytes.
+            Sin controles U+0000..U+001F/U+007F, duplicados por caso ni colisiones authConfig.
+            Prohibidos Authorization, Proxy-Authorization, Cookie, Set-Cookie, X-API-Key,
+            API-Key, Host, Content-Length, Content-Type, Connection, Transfer-Encoding,
+            TE, Trailer, Upgrade, Keep-Alive, Proxy-Connection, Forwarded y X-Forwarded-*.
+        authType: {type: string, enum: [NONE, BEARER_TOKEN, API_KEY_HEADER]}
+        authConfig:
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/TargetAuthInput'
+        timeoutMs:
+          type: integer
+          minimum: 1000
+          maximum: 60000
+          default: 10000
+          description: Token JSON entero; omitido → 10000 en POST/PUT; null, texto o fracción inválidos.
+      allOf:
+        - if:
+            properties: {authType: {const: NONE}}
+          then:
+            properties: {authConfig: {type: 'null'}}
+        - if:
+            properties: {authType: {const: BEARER_TOKEN}}
+          then:
+            required: [authConfig]
+            properties:
+              authConfig:
+                type: object
+                not: {required: [headerName]}
+        - if:
+            properties: {authType: {const: API_KEY_HEADER}}
+          then:
+            required: [authConfig]
+            properties:
+              authConfig:
+                type: object
+                required: [headerName]
+    CreateTargetRequest:
+      allOf:
+        - $ref: '#/components/schemas/TargetConfigurationInput'
+        - if:
+            properties: {authType: {enum: [BEARER_TOKEN, API_KEY_HEADER]}}
+          then:
+            properties:
+              authConfig:
+                type: object
+                required: [secretValue]
+    TargetAuthInput:
+      type: object
+      additionalProperties: false
+      properties:
+        headerName:
+          type: string
+          minLength: 1
+          maxLength: 128
+          description: >-
+            HTTP token ASCII, solo API_KEY_HEADER; X-API-Key/API-Key válidos aquí.
+            Prohibidos transporte/proxy, Authorization, Proxy-Authorization, Cookie,
+            Set-Cookie y colisiones con headers ordinarios.
+        secretValue:
+          type: string
+          writeOnly: true
+          minLength: 1
+          description: >-
+            Máximo 8192 bytes UTF-8, no blanco ni controles, sin trim/alteración.
+            Surrogates UTF-16 aislados producen 400 VALIDATION_ERROR con INVALID_CHARACTER
+            para authConfig.secretValue antes de cifrar o escribir, sin reflejar el valor.
+            Pares surrogate válidos se aceptan sin alterar el carácter suplementario.
+            Un PUT inválido conserva configuración y credencial anteriores.
+            Bearer sin espacios. Obligatorio al crear autenticado; en PUT omisión
+            solo conserva bajo TC-10, null/vacío inválido. Nunca devuelto.
+    TargetConfiguration:
+      type: object
+      additionalProperties: false
+      required: [id, projectId, name, url, method, contentType, requestTemplate,
+        promptPlaceholder, responsePath, headers, authType, authConfig, hasCredentials,
+        timeoutMs, createdAt, updatedAt]
+      properties:
+        id: {type: string, format: uuid, readOnly: true}
+        projectId: {type: string, format: uuid, readOnly: true}
+        name: {type: [string, 'null'], maxLength: 120}
+        url: {type: string, maxLength: 2048}
+        method: {type: string, const: POST}
+        contentType: {type: string, const: application/json}
+        requestTemplate: {type: string}
+        promptPlaceholder: {type: string, const: '{{PROMPT}}'}
+        responsePath: {type: string, maxLength: 1024}
+        headers:
+          type: object
+          additionalProperties: {type: string}
+        authType: {type: string, enum: [NONE, BEARER_TOKEN, API_KEY_HEADER]}
+        authConfig:
+          description: Solo headerName para API_KEY_HEADER; null para otros tipos.
+          oneOf:
+            - type: 'null'
+            - type: object
+              additionalProperties: false
+              required: [headerName]
+              properties:
+                headerName: {type: string}
+        hasCredentials: {type: boolean, readOnly: true}
+        timeoutMs: {type: integer, minimum: 1000, maximum: 60000}
+        createdAt: {type: string, format: date-time, pattern: 'Z$', readOnly: true, description: Instante UTC ISO 8601 con precisión de microsegundos.}
+        updatedAt: {type: string, format: date-time, pattern: 'Z$', readOnly: true, description: Igual al crear y no anterior al instante previo ni a createdAt.}
     CreateProjectRequest:
       type: object
       additionalProperties: false
@@ -197,7 +427,7 @@ components:
       properties:
         code:
           type: string
-          enum: [INVALID_REQUEST, VALIDATION_ERROR, INVALID_PROJECT_ID, PROJECT_NOT_FOUND, INTERNAL_ERROR]
+          enum: [INVALID_REQUEST, VALIDATION_ERROR, INVALID_PROJECT_ID, PROJECT_NOT_FOUND, TARGET_NOT_CONFIGURED, TARGET_ALREADY_CONFIGURED, INTERNAL_ERROR]
         message:
           type: string
           description: Explicación comprensible en español.
@@ -213,13 +443,26 @@ components:
       properties:
         field:
           type: string
-          enum: [name, description]
+          enum: [name, description, url, method, contentType, promptPlaceholder, requestTemplate, responsePath, headers, authType, authConfig, authConfig.headerName, authConfig.secretValue, timeoutMs]
         code:
           type: string
-          enum: [REQUIRED, INVALID_TYPE, TOO_LONG, INVALID_CHARACTER]
+          enum: [REQUIRED, INVALID_TYPE, TOO_LONG, INVALID_FORMAT, INVALID_CHARACTER, OUT_OF_RANGE, NOT_ALLOWED, CONFLICT]
         message:
           type: string
   responses:
+    TargetBadRequest:
+      description: >-
+        INVALID_PROJECT_ID (UUID mal formado antes de persistencia), INVALID_REQUEST
+        (estructura/claves duplicadas/desconocidas) o VALIDATION_ERROR (campos).
+        Validación antes de cifrar o escribir; mensajes en español sin entrada.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ApiError'}
+    TargetNotFound:
+      description: PROJECT_NOT_FOUND o TARGET_NOT_CONFIGURED; fallos técnicos nunca simulan ausencia.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ApiError'}
     InternalError:
       description: INTERNAL_ERROR; un fallo de almacenamiento nunca equivale a éxito, ausencia o listado vacío.
       content:
