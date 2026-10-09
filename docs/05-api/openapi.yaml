@@ -1,0 +1,229 @@
+openapi: 3.1.0
+info:
+  title: LLM Scanner Seguridad - Projects
+  version: 0.0.1
+  description: Contrato de project-management (PM-01 a PM-07).
+paths:
+  /api/projects:
+    post:
+      operationId: createProject
+      summary: Crear un proyecto
+      description: >-
+        Cada petición válida crea un UUID nuevo; los nombres pueden repetirse.
+        El éxito se devuelve únicamente después del commit. No se garantiza idempotencia.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProjectRequest'
+      responses:
+        '201':
+          description: Proyecto persistido; updatedAt es igual a createdAt.
+          headers:
+            Location:
+              required: true
+              description: Ruta relativa /api/projects/{id} del proyecto creado.
+              schema:
+                type: string
+                format: uri-reference
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '400':
+          description: >-
+            INVALID_REQUEST para cuerpo ausente, JSON mal formado, raíz distinta
+            de objeto o propiedades desconocidas/generadas. VALIDATION_ERROR
+            para campos ausentes, nulos, en blanco, tipos incorrectos, límites incumplidos
+            o U+0000 en name o description. U+0000 produce INVALID_CHARACTER por cada
+            campo afectado antes de acceder a persistencia, sin eliminarlo ni sustituirlo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                invalidRequest:
+                  value: {code: INVALID_REQUEST, message: 'La petición debe ser un objeto JSON con name y description opcional.', fieldErrors: []}
+                requiredName:
+                  value:
+                    code: VALIDATION_ERROR
+                    message: Los datos del proyecto no son válidos.
+                    fieldErrors:
+                      - {field: name, code: REQUIRED, message: El nombre es obligatorio.}
+                invalidType:
+                  value:
+                    code: VALIDATION_ERROR
+                    message: Los datos del proyecto no son válidos.
+                    fieldErrors:
+                      - {field: description, code: INVALID_TYPE, message: La descripción debe ser texto o null.}
+                tooLong:
+                  value:
+                    code: VALIDATION_ERROR
+                    message: Los datos del proyecto no son válidos.
+                    fieldErrors:
+                      - {field: name, code: TOO_LONG, message: El nombre admite hasta 120 caracteres.}
+                invalidCharacter:
+                  value:
+                    code: VALIDATION_ERROR
+                    message: Los datos del proyecto no son válidos.
+                    fieldErrors:
+                      - {field: name, code: INVALID_CHARACTER, message: El nombre no admite el carácter U+0000.}
+                      - {field: description, code: INVALID_CHARACTER, message: La descripción no admite el carácter U+0000.}
+        '500':
+          $ref: '#/components/responses/InternalError'
+    get:
+      operationId: listProjects
+      summary: Listar todos los proyectos
+      description: >-
+        Listado completo sin paginación, búsqueda ni filtros. Orden por createdAt
+        descendente y, en empate, UUID canónico ascendente. No modifica fechas.
+      responses:
+        '200':
+          description: Todos los proyectos; array vacío si no existen.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Project'
+              examples:
+                empty:
+                  value: []
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/projects/{id}:
+    get:
+      operationId: getProject
+      summary: Consultar un proyecto por UUID
+      description: Recupera los valores persistidos sin modificar las fechas.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+            pattern: '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+      responses:
+        '200':
+          description: Proyecto encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '400':
+          description: INVALID_PROJECT_ID; se rechaza antes de consultar persistencia.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example: {code: INVALID_PROJECT_ID, message: El identificador del proyecto debe ser un UUID válido., fieldErrors: []}
+        '404':
+          description: PROJECT_NOT_FOUND; UUID válido inexistente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example: {code: PROJECT_NOT_FOUND, message: El proyecto no existe., fieldErrors: []}
+        '500':
+          $ref: '#/components/responses/InternalError'
+components:
+  schemas:
+    CreateProjectRequest:
+      type: object
+      additionalProperties: false
+      required: [name]
+      description: >-
+        Solo name y description. Trim de espacios en blanco exteriores en ambos
+        textos, sin modificar espacios interiores. Los límites se aplican después
+        del trim y cuentan puntos de código Unicode, también fuera del plano básico.
+        No se incluyen maxLength sobre el texto bruto porque los espacios exteriores
+        no computan. name debe tener de 1 a 120 puntos de código tras trim;
+        description admite hasta 2000. Descripción omitida, null, vacía o solo espacios
+        se almacena como null. El nombre ausente, null o en blanco produce REQUIRED;
+        un tipo incorrecto produce INVALID_TYPE y exceder el límite produce TOO_LONG.
+        U+0000 en cualquiera de los dos campos produce INVALID_CHARACTER por cada
+        campo afectado antes de acceder a persistencia; no se elimina ni sustituye.
+        Esta exclusión no modifica el tratamiento del resto de Unicode.
+      properties:
+        name:
+          type: string
+          description: Obligatorio; de 1 a 120 puntos de código Unicode después de trim.
+          examples: ['  Análisis inicial  ']
+        description:
+          type: [string, 'null']
+          description: Opcional; hasta 2000 puntos de código Unicode después de trim.
+    Project:
+      type: object
+      additionalProperties: false
+      required: [id, name, description, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+          description: UUID generado por el sistema, inmutable.
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        description:
+          type: [string, 'null']
+          maxLength: 2000
+        createdAt:
+          type: string
+          format: date-time
+          pattern: 'Z$'
+          readOnly: true
+          description: Instante UTC ISO 8601, con precisión de microsegundos.
+        updatedAt:
+          type: string
+          format: date-time
+          pattern: 'Z$'
+          readOnly: true
+          description: Igual a createdAt en creación; las lecturas no lo modifican.
+      example:
+        id: b33bfe85-a166-4bef-bb36-184a1c27e322
+        name: Análisis inicial
+        description: null
+        createdAt: '2026-10-09T10:00:00Z'
+        updatedAt: '2026-10-09T10:00:00Z'
+    ApiError:
+      type: object
+      additionalProperties: false
+      required: [code, message, fieldErrors]
+      description: Sin valores rechazados, excepciones, SQL ni información de conexión.
+      properties:
+        code:
+          type: string
+          enum: [INVALID_REQUEST, VALIDATION_ERROR, INVALID_PROJECT_ID, PROJECT_NOT_FOUND, INTERNAL_ERROR]
+        message:
+          type: string
+          description: Explicación comprensible en español.
+        fieldErrors:
+          type: array
+          description: Vacío salvo para VALIDATION_ERROR.
+          items:
+            $ref: '#/components/schemas/FieldError'
+    FieldError:
+      type: object
+      additionalProperties: false
+      required: [field, code, message]
+      properties:
+        field:
+          type: string
+          enum: [name, description]
+        code:
+          type: string
+          enum: [REQUIRED, INVALID_TYPE, TOO_LONG, INVALID_CHARACTER]
+        message:
+          type: string
+  responses:
+    InternalError:
+      description: INTERNAL_ERROR; un fallo de almacenamiento nunca equivale a éxito, ausencia o listado vacío.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example: {code: INTERNAL_ERROR, message: No se ha podido completar la operación., fieldErrors: []}

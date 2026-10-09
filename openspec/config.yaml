@@ -1,0 +1,47 @@
+schema: spec-driven
+
+context: |
+  Project: LLM Scanner Seguridad.
+  Language: Spanish.
+  All artifacts must be written in Spanish.
+  Keep OpenSpec structural headings and SHALL/MUST keywords in English.
+
+  This is a defensive security project developed as a Master's Final Project (TFM).
+
+  Prefer small, incremental changes.
+  Do not introduce functionality outside the approved MVP.
+  Do not close pending architectural decisions without explicit approval.
+  Requirements must be concrete, testable, and traceable to implementation tasks.
+  OpenSpec is the source of truth for implementable product requirements.
+
+rules:
+  proposal:
+    - Define the objective and motivation of the change clearly.
+    - Include explicit non-goals to prevent scope creep.
+    - Do not resolve unrelated pending decisions.
+
+  design:
+    - Respect Clean Architecture and Hexagonal Architecture.
+    - Keep Domain independent from Spring, PostgreSQL, HTTP, and LLM providers.
+    - Document relevant alternatives and trade-offs.
+    - Clearly identify decisions that remain pending.
+
+  tasks:
+    - Break implementation into small, independently verifiable tasks.
+    - Keep tasks ordered by dependency.
+    - Do not include work outside the approved change.
+    - Include documentation updates when the implementation changes existing documentation.
+
+operations:
+  apply:
+    guidance:
+      - Implement only tasks belonging to the approved change.
+      - Do not change requirements to accommodate the implementation.
+      - Stop and report contradictions between code, specs, and documented architectural decisions.
+
+  archive:
+    guidance:
+      - Confirm that implementation matches the approved requirements before archiving.
+      - Check whether affected documentation must be updated.
+      - Check docs/08-entrega-tfm/checklist-entrega.md when the change affects a TFM delivery requirement.
+      - Summarize the final outcome before archiving.

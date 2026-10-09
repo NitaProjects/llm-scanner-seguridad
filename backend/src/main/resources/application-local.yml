@@ -1,0 +1,5 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/llm_scanner_seguridad}
+    username: ${DB_USERNAME:llm_scanner}
+    password: ${DB_PASSWORD:llm_scanner_local}
