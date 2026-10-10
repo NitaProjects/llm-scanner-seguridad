@@ -91,6 +91,12 @@ T1 fija scoring-v1 junto a evaluation-engine-v1 antes del dispatch, sin modifica
 
 La PK (scan_id,scoring_version) y el lock persistente evitan duplicados concurrentes; terminales no se reabren, fechas/resultados no se sobrescriben. Un commit ambiguo conserva el par ya confirmado o permite la compensación condicional sin relanzar target/evaluador. Recovery interrumpe activos sin score y conserva Findings; tras commit conserva score+COMPLETED. COMPLETED marcado sin score o score durable con estado incompatible es error de integridad, no reparación automática. Históricos sin marcador mantienen su semántica sin scoring retroactivo; global_score permanece sin uso. La consulta /score distingue resultado cero de ausencia mediante availability, según ADR-005/OpenAPI.
 
+## Extensión reporting
+
+T1 fija report-v1 después de los marcadores previos. Solo los scans marcados exigen SecurityReport además de score/finales para COMPLETED. T3 inserta score, construye/valida e inserta el snapshot y transiciona Scan en el mismo commit, con lock persistente de Scan primero. No se llama al guard público ScanScoreSnapshot después de insertar score mientras sigue RUNNING. `generatedAt >= calculatedAt` y `finishedAt >= generatedAt`; siete campos, estados, motivos y presupuesto de 300 s permanecen.
+
+Fallo local de construcción, serialización, validación, insert, transición o commit revierte todo T3; la compensación independiente intenta FAILED/SCAN_PROCESSING_FAILED sin alterar Findings/finales ni fabricar I. Commit ambiguo preserva el conjunto confirmado o permite compensación condicional; fallo también de compensación bloquea admisión. UNIQUE Scan+reportVersion y el lock evitan sobrescritura/doble cierre. Recovery valida report/score/cierre antes de interrumpir activos, no genera ni reanuda; corrupción durable impide admisión sin reparación. Históricos sin report_version conservan su significado aunque tengan score. Contrato completo: [ADR-008](ADR-008-reporting-snapshot-inmutable.md).
+
 ## Fuera del MVP / Evolución futura
 
 Se podrán valorar posteriormente:

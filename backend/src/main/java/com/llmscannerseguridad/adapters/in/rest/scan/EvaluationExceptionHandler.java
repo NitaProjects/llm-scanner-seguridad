@@ -5,7 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-@RestControllerAdvice(assignableTypes={EvaluationController.class, ScoreController.class})
+@RestControllerAdvice(assignableTypes={EvaluationController.class, ScoreController.class, ReportController.class})
 public class EvaluationExceptionHandler {
     private final ScanExceptionHandler messages=new ScanExceptionHandler();
     @ExceptionHandler(InvalidScanRequestException.class)

@@ -218,7 +218,7 @@ class SecurityTestExecutionPostgresIntegrationTest {
             assertThat(context.getBean(GetScanUseCase.class).execute(project, scan).status()).isEqualTo(ScanStatus.RUNNING);
             database.jdbc().execute("DROP TRIGGER reject_scan_terminal ON scans");
             // Simula un hijo activo heredado de Scan terminal, sin reescribir después ese Scan.
-            database.jdbc().update("UPDATE scans SET status='COMPLETED', finished_at=started_at, scoring_version=null WHERE id=?", scan);
+            database.jdbc().update("UPDATE scans SET status='COMPLETED', finished_at=started_at, scoring_version=null, report_version=null WHERE id=?", scan);
             assertThat(lifecycle.fail(scan, ScanStatus.RUNNING, ScanFailureReason.SCAN_PROCESSING_FAILED)).isFalse();
             assertThat(repository.findByScanId(scan)).allSatisfy(row -> assertThat(row.status()).isEqualTo(ExecutionStatus.PENDING));
             lifecycle.recoverInterrupted();

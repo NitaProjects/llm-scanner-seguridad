@@ -151,9 +151,25 @@ Fórmula reproducible congelada: bases LOW=10/MEDIUM=40/HIGH=70/CRITICAL=90; w=b
 
 GET scoped /score lee marcador/estado/resultado en una instantánea conjunta: AVAILABLE con objeto incluso cero, PENDING/null para activos nuevos, UNAVAILABLE/null para FAILED nuevo y NOT_APPLICABLE/null para cualquier histórico sin marcador. Un COMPLETED marcado sin score, versión/vínculo incorrectos o score en Scan no COMPLETED son integridad inválida/500; error de lectura nunca se transforma en ausencia. No fallback a global_score, backfill ni recálculo al consultar. Fuentes inmutables, relaciones, scoringVersion y calculatedAt permiten reproducir sin hash nuevo; cambiar política exige otra versión/change. Contrato exacto en OpenAPI y fundamentos en ADR-005.
 
-### Report
+### SecurityReport (V7 / report-v1)
 
-Representa el informe generado para un Scan. El formato, almacenamiento y ciclo de vida del informe quedan como **Pendiente de decisión**.
+`V7__incorporar_informes_seguridad.sql` añade `scans.report_version VARCHAR(64) NULL`: null histórico o report-v1 con scoring_version y evaluation_profile_version explícitamente no null y correctos. T1 fija el marcador antes de dispatch; no hay default/backfill ni cambio V1–V6/global_score.
+
+| Columna security_reports | Tipo / restricciones |
+| --- | --- |
+| report_id | UUID PK, generado por aplicación e inmutable. |
+| scan_id | UUID NOT NULL FK scans(id), sin cascada. |
+| report_version | VARCHAR(64) NOT NULL report-v1; UNIQUE(scan_id,report_version). |
+| scoring_version | VARCHAR(64) NOT NULL scoring-v1; FK compuesta a scan_scores. |
+| generated_at | TIMESTAMPTZ(6) NOT NULL, instante original UTC, no de consulta. |
+| locale | VARCHAR(8) NOT NULL es. |
+| payload | JSONB NOT NULL, snapshot completo cerrado <=262144 bytes de su texto UTF-8. |
+
+Payload contiene doce propiedades obligatorias: reportId, scanId, projectId, generatedAt, reportVersion, locale, scope, summary, evaluations, findings, interpretation, limitations. Metadata duplicada coincide con columnas; aplicación coteja projectId y scope con Scan, y summary por igualdad con score confirmado. No project_id relacional redundante ni tablas hijas. `report_v1_payload_valid` valida descriptor cerrado, tipos/nulls/enums, UUID lowercase, UTC seis decimales, longitudes, arrays, orden, vínculos y contadores; no implementa fórmulas de scoring. CHECKs usan IS TRUE para impedir escapes por SQL UNKNOWN. JSONB conserva orden de arrays, sin promesa de bytes/canonicalización/hash.
+
+Summary copia los once campos de ScanScore y cuatro categorías sin cálculo. Evaluations contiene exactamente diecinueve campos y siete identificadores de versions (D-03/OpenAPI), nunca entidades/assessment/evidencia/señales internas. Findings copia quince campos públicos y sus cuatro textos literalmente en el idioma original. Máximo cuatro deriva del plan MVP, no es límite universal futuro. Locale es localiza solo cuatro interpretaciones, nueve limitaciones y labels propios versionados; códigos técnicos conservan inglés. Textos title<=150 y description/evidenceSummary/recommendation<=1000 puntos de código, no blancos/Unicode inválido/NUL/markup prohibido. Guard adicional de objeto API<=256KiB y wrapper<=512 bytes, sin recortes.
+
+T3 confirma score+report+COMPLETED juntos, con lock Scan primero y fechas no regresivas. Insert inmutable sin UPDATE/upsert; candidato semánticamente igual conserva reportId/generatedAt originales y divergencia falla. Rollback/compensación técnica no altera finales/Findings. Recovery valida el conjunto, preserva confirmados e interrumpe activos sin generar; corrupción impide admisión, sin reparación. GET /report usa una instantánea coherente y no enriquece desde fuentes actuales: AVAILABLE con objeto incluso cero; PENDING/UNAVAILABLE/NOT_APPLICABLE con null. Históricos V6 con score siguen NOT_APPLICABLE sin backfill. ADR-008 y OpenAPI detallan interpretación, privacidad y nueve limitaciones.
 
 ## Relaciones conceptuales
 
@@ -167,7 +183,9 @@ Scan 1 ------- N Finding
 TestExecution 1 - 0..1 EvaluationResult (MVP)
 EvaluationResult 1 - 0..1 Finding (solo VULNERABLE)
 TestExecution 1 - 0..1 Finding (MVP)
-Scan 1 ------- N Report
+Scan 1 ------- 0..1 ScanScore por scoringVersion
+Scan 1 ------- 0..1 SecurityReport por reportVersion
+ScanScore 1 --- 0..1 SecurityReport por reportVersion
 ```
 
 ## Consideraciones de seguridad
@@ -176,8 +194,8 @@ Scan 1 ------- N Report
 - Las credenciales o referencias de autenticación deben gestionarse de forma segura y solo durante la ejecución autorizada.
 - Las peticiones, respuestas y evidencias pueden contener información sensible.
 - Deben aplicarse minimización, redacción, control de acceso y retención limitada.
-- Project, TargetConfiguration, Scan, SecurityTest y TestExecution tienen esquema aprobado. EvaluationResult/Finding se incorporan mediante V5; Report sigue fuera de este incremento. Retención temporal, borrado y autorización de usuarios requieren decisiones posteriores; los límites por Scan no acotan el crecimiento histórico.
+- Project, TargetConfiguration, Scan, SecurityTest, TestExecution, EvaluationResult/Finding, ScanScore y SecurityReport tienen esquema aprobado hasta V7. Retención temporal, borrado y autorización de usuarios requieren decisiones posteriores; los límites por Scan no acotan el crecimiento histórico.
 
 ## Persistencia
 
-PostgreSQL y Flyway gestionan los esquemas aprobados de Project, TargetConfiguration, Scan, SecurityTest y TestExecution descritos arriba. EvaluationResult/Finding se incorporan mediante V5; Report permanece conceptual.
+PostgreSQL y Flyway gestionan los esquemas aprobados descritos arriba hasta V7. Solo migraciones nuevas; sin reinterpretación ni generación retrospectiva automática.

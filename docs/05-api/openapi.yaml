@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: LLM Scanner Seguridad - Projects, TargetConfiguration y Scans
   version: 0.0.1
-  description: Contratos de project-management, target-configuration, scan-execution y security-test-execution (STE-01 a STE-14).
+  description: Contratos de project-management, target-configuration, scan-execution, security-test-execution, evaluation-engine, scoring-engine y reporting.
 paths:
   /api/projects:
     post:
@@ -551,6 +551,61 @@ paths:
           content:
             application/json:
               schema: {$ref: '#/components/schemas/ScanApiError'}
+  /api/projects/{projectId}/scans/{scanId}/report:
+    parameters:
+      - $ref: '#/components/parameters/ScanProjectId'
+      - in: path
+        name: scanId
+        required: true
+        schema: {type: string, format: uuid}
+    get:
+      operationId: getSecurityReport
+      summary: Consultar el informe estructurado persistido
+      description: >-
+        RP-01..RP-14, report-v1/es. Solo lectura scoped; no genera, reevalúa, recalcula ni consulta target/proveedor.
+        T3 confirma score+report+COMPLETED conjuntamente. AVAILABLE incluye score0; PENDING activo nuevo;
+        UNAVAILABLE FAILED nuevo; NOT_APPLICABLE histórico sin report_version, incluso con score V6.
+        Las tres ausencias devuelven report=null. Corrupción o fallo de lectura produce 500, nunca falsa ausencia.
+        Score cero significa ningún Finding detectado en las pruebas completadas; no certifica seguridad.
+        INCONCLUSIVE conserva contadores y motivos. Textos Finding se copian literalmente, sin traducción.
+        Máximo 262144 bytes por snapshot y 512 adicionales por wrapper. Sin exportación ni generación lazy.
+      responses:
+        '200':
+          description: Disponibilidad propia y snapshot confirmado, incluso con score cero.
+          headers:
+            Cache-Control:
+              required: true
+              schema: {type: string, const: no-store}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ReportResponse'}
+        '400':
+          description: INVALID_PROJECT_ID precede INVALID_SCAN_ID; ambos antes de persistencia.
+          headers:
+            Cache-Control:
+              required: true
+              schema: {type: string, const: no-store}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ScanApiError'}
+        '404':
+          description: PROJECT_NOT_FOUND o SCAN_NOT_FOUND, incluido Scan ajeno.
+          headers:
+            Cache-Control:
+              required: true
+              schema: {type: string, const: no-store}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ScanApiError'}
+        '500':
+          description: INTERNAL_ERROR sanitizado por lectura, versión, snapshot o lifecycle incoherente.
+          headers:
+            Cache-Control:
+              required: true
+              schema: {type: string, const: no-store}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ScanApiError'}
 components:
   parameters:
     ScanProjectId:
@@ -562,6 +617,300 @@ components:
         format: uuid
         pattern: '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
   schemas:
+    ReportResponse:
+      type: "object"
+      additionalProperties: false
+      required: ["availability","report"]
+      properties:
+        availability:
+          type: "string"
+          enum: ["AVAILABLE","PENDING","UNAVAILABLE","NOT_APPLICABLE"]
+        report:
+          oneOf:
+            - {"$ref":"#/components/schemas/SecurityReport"}
+            - {"type":"null"}
+      oneOf:
+        - {"properties":{"availability":{"const":"AVAILABLE"},"report":{"$ref":"#/components/schemas/SecurityReport"}}}
+        - {"properties":{"availability":{"enum":["PENDING","UNAVAILABLE","NOT_APPLICABLE"]},"report":{"type":"null"}}}
+    SecurityReport:
+      type: "object"
+      additionalProperties: false
+      required: ["reportId","scanId","projectId","generatedAt","reportVersion","locale","scope","summary","evaluations","findings","interpretation","limitations"]
+      properties:
+        reportId:
+          type: "string"
+          format: "uuid"
+          pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        scanId:
+          type: "string"
+          format: "uuid"
+          pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        projectId:
+          type: "string"
+          format: "uuid"
+          pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        generatedAt:
+          type: "string"
+          format: "date-time"
+          pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z$"
+        reportVersion:
+          type: "string"
+          const: "report-v1"
+        locale:
+          type: "string"
+          const: "es"
+        scope:
+          $ref: "#/components/schemas/ReportScope"
+        summary:
+          $ref: "#/components/schemas/ScanScore"
+        evaluations:
+          type: "array"
+          minItems: 4
+          maxItems: 4
+          items:
+            $ref: "#/components/schemas/ReportEvaluation"
+        findings:
+          type: "array"
+          minItems: 0
+          maxItems: 4
+          description: "Límite de report-v1 derivado de cuatro SecurityTests, una evaluación por categoría y máximo un Finding por evaluación. Evolución requiere otra versión."
+          items:
+            $ref: "#/components/schemas/ReportFinding"
+        interpretation:
+          $ref: "#/components/schemas/ReportInterpretation"
+        limitations:
+          type: "array"
+          minItems: 9
+          maxItems: 9
+          items:
+            $ref: "#/components/schemas/ReportLimitation"
+          const:
+            - {"code":"IMPLEMENTED_CATEGORIES_ONLY","text":"El análisis se limita a las pruebas implementadas para LLM01, LLM02, LLM08 y LLM10; no cubre por completo esas categorías ni el conjunto de OWASP."}
+            - {"code":"TARGET_REFERENCE_ONLY","text":"Se identifica la configuración analizada mediante su id y fecha persistidos en las ejecuciones. No se conserva aquí la URL ni una copia histórica recuperable de su configuración; la configuración actual puede haber cambiado."}
+            - {"code":"POINT_IN_TIME_TESTS","text":"Los resultados corresponden a pruebas puntuales sobre la configuración referenciada; no constituyen una auditoría exhaustiva ni garantizan resultados futuros."}
+            - {"code":"LLM10_OUTPUT_ONLY","text":"LLM10 observa únicamente la salida del modelo. No comprueba el tratamiento posterior de esa salida ni la explotación o protección de un consumidor."}
+            - {"code":"POSSIBLE_FALSE_RESULTS","text":"Los criterios y la evaluación pueden producir falsos positivos y falsos negativos; los hallazgos requieren revisión en su contexto."}
+            - {"code":"INCONCLUSIVE_RESULTS","text":"Una evaluación inconclusa no confirma ni descarta vulnerabilidades. Debe interpretarse junto con su motivo y los contadores de resultados."}
+            - {"code":"HEURISTIC_METRICS","text":"Score y confidence son métricas heurísticas, no probabilidades calibradas, porcentajes de seguridad o medidas de cobertura."}
+            - {"code":"EXCLUDED_CAPABILITIES","text":"Este MVP no evalúa RAG avanzado, agentes, herramientas ni streaming, ni capacidades fuera de las pruebas implementadas."}
+            - {"code":"SYNTHETIC_SCENARIO_SCOPE","text":"La evaluación del MVP depende de criterios y escenarios sintéticos autorizados. La falta de contexto o permiso de envío puede impedir conclusiones; no se acredita validación sobre datos reales ni un benchmark académico completo."}
+      description: "Snapshot inmutable report-v1/es de doce campos, <=262144 bytes UTF-8; wrapper <=512 bytes. Summary copiado sin recalcular. Textos Finding literales en su idioma original. Scope conserva referencias del plan, nunca URL actual. Interpretation y nueve limitations son constantes versionadas. No evidencia raw, prompts, assessment ni secretos."
+    ReportScope:
+      type: "object"
+      additionalProperties: false
+      required: ["scanCreatedAt","scanStartedAt","targetConfigurationId","targetUpdatedAt"]
+      properties:
+        scanCreatedAt:
+          type: "string"
+          format: "date-time"
+          pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z$"
+        scanStartedAt:
+          type: "string"
+          format: "date-time"
+          pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z$"
+        targetConfigurationId:
+          type: "string"
+          format: "uuid"
+          pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        targetUpdatedAt:
+          type: "string"
+          format: "date-time"
+          pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z$"
+    ReportEvaluation:
+      type: "object"
+      additionalProperties: false
+      required: ["id","testExecutionId","securityTestCode","securityTestRevision","category","status","finalVerdict","confidence","severity","outcomeReason","llmStatus","llmErrorReason","degraded","evidenceComplete","criteriaId","criteriaVersion","versions","finishedAt","findingId"]
+      properties:
+        id:
+          type: "string"
+          format: "uuid"
+          pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        testExecutionId:
+          type: "string"
+          format: "uuid"
+          pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        securityTestCode:
+          type: "string"
+          enum: ["LLM01-INSTRUCTION-001","LLM02-CANARY-001","LLM08-CONTEXT-001","LLM10-MARKUP-001"]
+        securityTestRevision:
+          type: "integer"
+          const: 1
+        category:
+          type: "string"
+          enum: ["LLM01","LLM02","LLM08","LLM10"]
+        status:
+          type: "string"
+          const: "COMPLETED"
+        finalVerdict:
+          type: "string"
+          enum: ["VULNERABLE","NOT_VULNERABLE","INCONCLUSIVE"]
+        confidence:
+          type: "number"
+          minimum: 0
+          maximum: 1
+        severity:
+          oneOf:
+            - {"type":"string","enum":["LOW","MEDIUM","HIGH","CRITICAL"]}
+            - {"type":"null"}
+        outcomeReason:
+          oneOf:
+            - {"type":"string","enum":["CONTEXT_UNAVAILABLE","CRITERION_NOT_APPLICABLE","EXPORT_NOT_AUTHORIZED","EVIDENCE_NOT_EXPORTABLE","EVIDENCE_TOO_LARGE","EVIDENCE_INCOMPLETE","INSUFFICIENT_EVIDENCE","SIGNAL_CONFLICT","LLM_COMPONENT_UNAVAILABLE"]}
+            - {"type":"null"}
+        llmStatus:
+          type: "string"
+          enum: ["SUCCEEDED","FAILED","SKIPPED"]
+        llmErrorReason:
+          oneOf:
+            - {"type":"string","enum":["EVALUATOR_TIMEOUT","EVALUATOR_UNAVAILABLE","EVALUATOR_INVALID_OUTPUT","EVALUATOR_RATE_LIMITED","EVALUATOR_CONFIGURATION_INVALID","EVALUATOR_BUDGET_EXCEEDED","EVALUATOR_SUPPRESSED"]}
+            - {"type":"null"}
+        degraded:
+          type: "boolean"
+        evidenceComplete:
+          type: "boolean"
+        criteriaId:
+          oneOf:
+            - {"type":"string","minLength":1,"maxLength":64,"description":"Puntos de código Unicode; no blanco, NUL, markup prohibido ni Unicode inválido."}
+            - {"type":"null"}
+        criteriaVersion:
+          oneOf:
+            - {"type":"string","minLength":1,"maxLength":32,"description":"Puntos de código Unicode; no blanco, NUL, markup prohibido ni Unicode inválido."}
+            - {"type":"null"}
+        versions:
+          $ref: "#/components/schemas/ReportVersions"
+        finishedAt:
+          type: "string"
+          format: "date-time"
+          pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z$"
+        findingId:
+          oneOf:
+            - {"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"}
+            - {"type":"null"}
+    ReportVersions:
+      type: "object"
+      additionalProperties: false
+      required: ["engineVersion","policyVersion","confidenceVersion","severityVersion","promptVersion","schemaVersion","llmInputProfile"]
+      properties:
+        engineVersion:
+          oneOf:
+            - {"type":"string","minLength":1,"maxLength":64,"description":"Puntos de código Unicode; no blanco, NUL, markup prohibido ni Unicode inválido."}
+            - {"type":"null"}
+        policyVersion:
+          oneOf:
+            - {"type":"string","minLength":1,"maxLength":64,"description":"Puntos de código Unicode; no blanco, NUL, markup prohibido ni Unicode inválido."}
+            - {"type":"null"}
+        confidenceVersion:
+          oneOf:
+            - {"type":"string","minLength":1,"maxLength":64,"description":"Puntos de código Unicode; no blanco, NUL, markup prohibido ni Unicode inválido."}
+            - {"type":"null"}
+        severityVersion:
+          oneOf:
+            - {"type":"string","minLength":1,"maxLength":64,"description":"Puntos de código Unicode; no blanco, NUL, markup prohibido ni Unicode inválido."}
+            - {"type":"null"}
+        promptVersion:
+          oneOf:
+            - {"type":"string","minLength":1,"maxLength":64,"description":"Puntos de código Unicode; no blanco, NUL, markup prohibido ni Unicode inválido."}
+            - {"type":"null"}
+        schemaVersion:
+          oneOf:
+            - {"type":"string","minLength":1,"maxLength":64,"description":"Puntos de código Unicode; no blanco, NUL, markup prohibido ni Unicode inválido."}
+            - {"type":"null"}
+        llmInputProfile:
+          oneOf:
+            - {"type":"string","minLength":1,"maxLength":64,"description":"Puntos de código Unicode; no blanco, NUL, markup prohibido ni Unicode inválido."}
+            - {"type":"null"}
+    ReportFinding:
+      type: "object"
+      additionalProperties: false
+      required: ["id","evaluationResultId","scanId","testExecutionId","securityTestCode","securityTestRevision","category","verdict","severity","confidence","title","description","evidenceSummary","recommendation","createdAt"]
+      properties:
+        id:
+          type: "string"
+          format: "uuid"
+          pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        evaluationResultId:
+          type: "string"
+          format: "uuid"
+          pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        scanId:
+          type: "string"
+          format: "uuid"
+          pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        testExecutionId:
+          type: "string"
+          format: "uuid"
+          pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        securityTestCode:
+          type: "string"
+          enum: ["LLM01-INSTRUCTION-001","LLM02-CANARY-001","LLM08-CONTEXT-001","LLM10-MARKUP-001"]
+        securityTestRevision:
+          type: "integer"
+          const: 1
+        category:
+          type: "string"
+          enum: ["LLM01","LLM02","LLM08","LLM10"]
+        verdict:
+          type: "string"
+          const: "VULNERABLE"
+        severity:
+          type: "string"
+          enum: ["LOW","MEDIUM","HIGH","CRITICAL"]
+        confidence:
+          type: "number"
+          minimum: 0
+          maximum: 1
+        title:
+          type: "string"
+          minLength: 1
+          maxLength: 150
+          description: "Puntos de código Unicode; no blanco, NUL, markup prohibido ni Unicode inválido."
+        description:
+          type: "string"
+          minLength: 1
+          maxLength: 1000
+          description: "Puntos de código Unicode; no blanco, NUL, markup prohibido ni Unicode inválido."
+        evidenceSummary:
+          type: "string"
+          minLength: 1
+          maxLength: 1000
+          description: "Puntos de código Unicode; no blanco, NUL, markup prohibido ni Unicode inválido."
+        recommendation:
+          type: "string"
+          minLength: 1
+          maxLength: 1000
+          description: "Puntos de código Unicode; no blanco, NUL, markup prohibido ni Unicode inválido."
+        createdAt:
+          type: "string"
+          format: "date-time"
+          pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z$"
+    ReportInterpretation:
+      type: "object"
+      additionalProperties: false
+      required: ["scoreMeaning","confidenceMeaning","verdictMeaning","technicalFailureMeaning"]
+      properties:
+        scoreMeaning:
+          type: "string"
+          const: "La puntuación resume el riesgo detectado mediante una heurística de 0 a 100; no es un porcentaje ni una probabilidad de compromiso. No se detectaron Findings en las pruebas completadas cuando el score es 0. Esto no demuestra que la aplicación sea segura ni que no existan vulnerabilidades."
+        confidenceMeaning:
+          type: "string"
+          const: "Confidence expresa el soporte heurístico de la conclusión y es independiente de la severidad del hallazgo. No es una probabilidad calibrada ni una medida de impacto."
+        verdictMeaning:
+          type: "string"
+          const: "NOT_VULNERABLE indica que esa prueba concreta no detectó vulnerabilidad; no acredita seguridad de la categoría o aplicación. INCONCLUSIVE indica que la evaluación no pudo concluir con soporte suficiente y no equivale a NOT_VULNERABLE."
+        technicalFailureMeaning:
+          type: "string"
+          const: "Una evaluación inconclusa no es un fallo técnico del Scan. Un fallo del componente evaluador puede coexistir con un resultado final consolidado y se identifica por separado. Si un fallo técnico global impide completar el Scan, no se genera este informe completo; los resultados técnicos y hallazgos ya confirmados se consultan en sus recursos."
+    ReportLimitation:
+      type: "object"
+      additionalProperties: false
+      required: ["code","text"]
+      properties:
+        code:
+          type: "string"
+          maxLength: 64
+          enum: ["IMPLEMENTED_CATEGORIES_ONLY","TARGET_REFERENCE_ONLY","POINT_IN_TIME_TESTS","LLM10_OUTPUT_ONLY","POSSIBLE_FALSE_RESULTS","INCONCLUSIVE_RESULTS","HEURISTIC_METRICS","EXCLUDED_CAPABILITIES","SYNTHETIC_SCENARIO_SCOPE"]
+        text:
+          type: "string"
+          maxLength: 1000
     ScoreResponse:
       type: object
       additionalProperties: false
@@ -741,6 +1090,9 @@ components:
         técnicamente COMPLETED y, para nuevos scans evaluation-engine-v1, cuatro
         EvaluationResult COMPLETED. VULNERABLE, INCONCLUSIVE y fallos LLM consolidados
         no implican FAILED; un fallo técnico global sí, conservando éxitos y Findings.
+        Los scans marcados report-v1 exigen además ScanScore y SecurityReport íntegros
+        confirmados junto al cierre en la misma T3; fallo de reporting revierte ese conjunto.
+        Marcadores internos no amplían estos siete campos. /score y /report se consultan por separado.
         Los históricos no-op COMPLETED conservan ejecuciones vacías y no se recalculan.
       properties:
         id: {type: string, format: uuid, readOnly: true}

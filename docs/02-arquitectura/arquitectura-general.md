@@ -77,6 +77,10 @@ V6 añade scan_scores con PK Scan+versión, contadores y cuatro VOs de categorí
 
 Los estados son `PENDING`, `RUNNING`, `COMPLETED` y `FAILED`. ScanStartup recupera ejecuciones activas a FAILED/EXECUTION_INTERRUPTED y scans activos a FAILED/SCAN_INTERRUPTED en la misma transacción antes de habilitar nuevos inicios y el executor; fallo de recuperación impide arrancar. Conserva terminales, también ejecuciones ya correctas, y cierra ejecuciones activas de scans terminales. Si durante ejecución no puede confirmarse tampoco FAILED, una compuerta local bloquea nuevos inicios/reclamaciones hasta reinicio, preservando consultas y permitiendo finalizar tareas ya RUNNING. Se soporta una sola instancia; no hay relanzamientos ni cola durable. No hay PARTIAL; cancelación y reintentos siguen fuera del incremento.
 
+`reporting` incorpora SecurityReport como snapshot local inmutable `report-v1/es`, independiente de renderer y de los motores de evaluación/scoring. T1 fija además `report_version`; T3 conserva el lock de Scan, inserta ScanScore, lee su proyección literal, genera/inserta SecurityReport y confirma COMPLETED en el mismo commit. GenerateReportUseCase participa sin transacción propia ni red; no reconstruye ScanScore ni ejecuta su política. GetSecurityReportUseCase solo lee un snapshot coherente de Scan/marcadores/score/report. ReportInputPort selecciona columnas públicas permitidas; ReportPresentationPort carga constantes locales versionadas. Detalle contractual y alternativas: [ADR-008](decisiones/ADR-008-reporting-snapshot-inmutable.md).
+
+V7 añade `security_reports` (metadata relacional y JSONB cerrado de doce campos) y un marcador nullable prospectivo, sin backfill. Los informes conservan referencias históricas del plan, summary literal, cuatro evaluaciones mínimas y hasta cuatro Findings ordenados por severidad/categoría/id. Locale es solo localiza textos propios; los cuatro textos de Finding permanecen en su idioma original. INCONCLUSIVE y las nueve limitaciones siempre son visibles. Recovery valida el conjunto antes de admisión, preserva terminales e interrumpe activos sin regenerar. GET /report distingue AVAILABLE/PENDING/UNAVAILABLE/NOT_APPLICABLE con no-store; un histórico V6 con score no tiene informe aplicable.
+
 ## Dominio
 
 El dominio representa las reglas y conceptos principales del producto, entre ellos:
@@ -87,7 +91,7 @@ El dominio representa las reglas y conceptos principales del producto, entre ell
 - TestExecution.
 - Finding.
 - ScanScore, RiskLevel y los VOs contenidos CategoryScore/SeverityCounts.
-- Report.
+- SecurityReport y sus VOs contenidos, sin lifecycle propio.
 
 El dominio no debe depender directamente de Spring, PostgreSQL, clientes HTTP ni proveedores de modelos LLM.
 
@@ -104,7 +108,7 @@ Como orientación de diseño, se prefieren casos de uso explícitos:
 - `StartScanUseCase`, `GetScanUseCase`, `ListProjectScansUseCase`, `ProcessScanUseCase` y `RecoverInterruptedScansUseCase` (scan-execution).
 - `EvaluateExecutionUseCase`.
 - `CalculateScanScoreUseCase` y `GetScanScoreUseCase` (scoring-engine).
-- `GenerateReportUseCase`.
+- `GenerateReportUseCase` y `GetSecurityReportUseCase` (reporting).
 
 La división definitiva de responsabilidades y el nivel de granularidad quedan como **Pendiente de decisión** hasta definir cada cambio OpenSpec.
 

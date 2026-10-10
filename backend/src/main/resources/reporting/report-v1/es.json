@@ -1,0 +1,112 @@
+{
+  "reportVersion": "report-v1",
+  "locale": "es",
+  "interpretation": {
+    "scoreMeaning": "La puntuación resume el riesgo detectado mediante una heurística de 0 a 100; no es un porcentaje ni una probabilidad de compromiso. No se detectaron Findings en las pruebas completadas cuando el score es 0. Esto no demuestra que la aplicación sea segura ni que no existan vulnerabilidades.",
+    "confidenceMeaning": "Confidence expresa el soporte heurístico de la conclusión y es independiente de la severidad del hallazgo. No es una probabilidad calibrada ni una medida de impacto.",
+    "verdictMeaning": "NOT_VULNERABLE indica que esa prueba concreta no detectó vulnerabilidad; no acredita seguridad de la categoría o aplicación. INCONCLUSIVE indica que la evaluación no pudo concluir con soporte suficiente y no equivale a NOT_VULNERABLE.",
+    "technicalFailureMeaning": "Una evaluación inconclusa no es un fallo técnico del Scan. Un fallo del componente evaluador puede coexistir con un resultado final consolidado y se identifica por separado. Si un fallo técnico global impide completar el Scan, no se genera este informe completo; los resultados técnicos y hallazgos ya confirmados se consultan en sus recursos."
+  },
+  "limitations": [
+    {
+      "code": "IMPLEMENTED_CATEGORIES_ONLY",
+      "text": "El análisis se limita a las pruebas implementadas para LLM01, LLM02, LLM08 y LLM10; no cubre por completo esas categorías ni el conjunto de OWASP."
+    },
+    {
+      "code": "TARGET_REFERENCE_ONLY",
+      "text": "Se identifica la configuración analizada mediante su id y fecha persistidos en las ejecuciones. No se conserva aquí la URL ni una copia histórica recuperable de su configuración; la configuración actual puede haber cambiado."
+    },
+    {
+      "code": "POINT_IN_TIME_TESTS",
+      "text": "Los resultados corresponden a pruebas puntuales sobre la configuración referenciada; no constituyen una auditoría exhaustiva ni garantizan resultados futuros."
+    },
+    {
+      "code": "LLM10_OUTPUT_ONLY",
+      "text": "LLM10 observa únicamente la salida del modelo. No comprueba el tratamiento posterior de esa salida ni la explotación o protección de un consumidor."
+    },
+    {
+      "code": "POSSIBLE_FALSE_RESULTS",
+      "text": "Los criterios y la evaluación pueden producir falsos positivos y falsos negativos; los hallazgos requieren revisión en su contexto."
+    },
+    {
+      "code": "INCONCLUSIVE_RESULTS",
+      "text": "Una evaluación inconclusa no confirma ni descarta vulnerabilidades. Debe interpretarse junto con su motivo y los contadores de resultados."
+    },
+    {
+      "code": "HEURISTIC_METRICS",
+      "text": "Score y confidence son métricas heurísticas, no probabilidades calibradas, porcentajes de seguridad o medidas de cobertura."
+    },
+    {
+      "code": "EXCLUDED_CAPABILITIES",
+      "text": "Este MVP no evalúa RAG avanzado, agentes, herramientas ni streaming, ni capacidades fuera de las pruebas implementadas."
+    },
+    {
+      "code": "SYNTHETIC_SCENARIO_SCOPE",
+      "text": "La evaluación del MVP depende de criterios y escenarios sintéticos autorizados. La falta de contexto o permiso de envío puede impedir conclusiones; no se acredita validación sobre datos reales ni un benchmark académico completo."
+    }
+  ],
+  "labels": {
+    "severity": {
+      "LOW": "Baja",
+      "MEDIUM": "Media",
+      "HIGH": "Alta",
+      "CRITICAL": "Crítica"
+    },
+    "riskLevel": {
+      "NO_FINDINGS": "Sin hallazgos detectados",
+      "LOW": "Bajo",
+      "MEDIUM": "Medio",
+      "HIGH": "Alto",
+      "CRITICAL": "Crítico"
+    },
+    "verdict": {
+      "VULNERABLE": "Vulnerabilidad detectada",
+      "NOT_VULNERABLE": "No se detectó vulnerabilidad en esta prueba",
+      "INCONCLUSIVE": "Evaluación inconclusa"
+    },
+    "category": {
+      "LLM01": "Inyección de instrucciones",
+      "LLM02": "Divulgación de información sensible",
+      "LLM08": "Exposición de contexto oculto",
+      "LLM10": "Tratamiento inadecuado de la salida"
+    },
+    "status": {
+      "COMPLETED": "Evaluación finalizada"
+    },
+    "llmStatus": {
+      "SUCCEEDED": "Componente evaluador finalizado",
+      "FAILED": "Componente evaluador fallido",
+      "SKIPPED": "Llamada al evaluador omitida",
+      "NOT_REQUESTED": "Llamada al evaluador no solicitada"
+    },
+    "outcomeReason": {
+      "CONTEXT_UNAVAILABLE": "Contexto de evaluación no disponible.",
+      "CRITERION_NOT_APPLICABLE": "Criterio no aplicable.",
+      "EXPORT_NOT_AUTHORIZED": "Envío al evaluador no autorizado.",
+      "EVIDENCE_NOT_EXPORTABLE": "Evidencia no autorizada para envío.",
+      "EVIDENCE_TOO_LARGE": "Evidencia o entrada excede el límite.",
+      "EVIDENCE_INCOMPLETE": "Evidencia incompleta.",
+      "INSUFFICIENT_EVIDENCE": "Evidencia insuficiente para concluir.",
+      "SIGNAL_CONFLICT": "Conflicto entre señales.",
+      "LLM_COMPONENT_UNAVAILABLE": "Componente evaluador no disponible para concluir."
+    },
+    "llmErrorReason": {
+      "EVALUATOR_TIMEOUT": "Tiempo de espera del evaluador agotado.",
+      "EVALUATOR_UNAVAILABLE": "Evaluador no disponible.",
+      "EVALUATOR_INVALID_OUTPUT": "Salida del evaluador inválida.",
+      "EVALUATOR_RATE_LIMITED": "Límite de solicitudes del evaluador.",
+      "EVALUATOR_CONFIGURATION_INVALID": "Configuración operativa del evaluador no válida.",
+      "EVALUATOR_BUDGET_EXCEEDED": "Presupuesto operativo del evaluador agotado.",
+      "EVALUATOR_SUPPRESSED": "Llamada suprimida por un fallo previo del componente."
+    },
+    "sections": {
+      "summary": "Resumen del análisis",
+      "scope": "Alcance",
+      "categories": "Resultados por categoría",
+      "findings": "Hallazgos",
+      "evaluations": "Evaluaciones",
+      "interpretation": "Interpretación",
+      "limitations": "Limitaciones"
+    }
+  }
+}

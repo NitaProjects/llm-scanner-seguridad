@@ -25,6 +25,8 @@ public final class TransactionalScanLifecycle implements ScanLifecyclePort {
     private final com.llmscannerseguridad.application.scoring.ScanScoreRepositoryPort scores;
     private final com.llmscannerseguridad.application.scoring.CalculateScanScoreUseCase calculateScore;
     private final com.llmscannerseguridad.application.scan.ScanRepositoryPort scans;
+    private final com.llmscannerseguridad.application.reporting.SecurityReportRepositoryPort reports;
+    private final com.llmscannerseguridad.application.reporting.GenerateReportUseCase generateReport;
 
     public TransactionalScanLifecycle(ScanLifecyclePort delegate, PlatformTransactionManager manager,
             ScanExecutionGate gate) {
@@ -48,6 +50,17 @@ public final class TransactionalScanLifecycle implements ScanLifecyclePort {
             com.llmscannerseguridad.application.scoring.ScanScoreRepositoryPort scores,
             com.llmscannerseguridad.application.scoring.CalculateScanScoreUseCase calculateScore,
             com.llmscannerseguridad.application.scan.ScanRepositoryPort scans) {
+        this(delegate,manager,gate,executions,evaluations,scores,calculateScore,scans,null,null);
+    }
+
+    public TransactionalScanLifecycle(ScanLifecyclePort delegate, PlatformTransactionManager manager,
+            ScanExecutionGate gate, TestExecutionRepositoryPort executions,
+            com.llmscannerseguridad.application.evaluation.EvaluationRepositoryPort evaluations,
+            com.llmscannerseguridad.application.scoring.ScanScoreRepositoryPort scores,
+            com.llmscannerseguridad.application.scoring.CalculateScanScoreUseCase calculateScore,
+            com.llmscannerseguridad.application.scan.ScanRepositoryPort scans,
+            com.llmscannerseguridad.application.reporting.SecurityReportRepositoryPort reports,
+            com.llmscannerseguridad.application.reporting.GenerateReportUseCase generateReport) {
         this.delegate = delegate;
         this.gate = gate;
         this.executions = executions;
@@ -55,6 +68,8 @@ public final class TransactionalScanLifecycle implements ScanLifecyclePort {
         this.scores = scores;
         this.calculateScore = calculateScore;
         this.scans = scans;
+        this.reports = reports;
+        this.generateReport = generateReport;
         transaction = new TransactionTemplate(manager);
         transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
@@ -74,6 +89,7 @@ public final class TransactionalScanLifecycle implements ScanLifecyclePort {
             var scan = delegate.create(projectId);
             if (evaluations != null) evaluations.setProfile(scan.id());
             if (scores != null) scores.setRequiredVersion(scan.id());
+            if (reports != null) reports.setRequiredVersion(scan.id());
             return scan;
         }));
     }
@@ -86,6 +102,8 @@ public final class TransactionalScanLifecycle implements ScanLifecyclePort {
     @Override
     public boolean complete(UUID scanId) {
         return confirmed(() -> {
+            var reportSnapshot = reports == null ? null : reports.lock(scanId);
+            if (reportSnapshot != null) reportSnapshot.validate();
             if (scores != null) {
                 var snapshot = scores.lock(scanId);
                 snapshot.validate();
@@ -93,8 +111,13 @@ public final class TransactionalScanLifecycle implements ScanLifecyclePort {
                 if (snapshot.requiredVersion() != null) {
                     var score = calculateScore.execute(snapshot);
                     scores.insert(score);
+                    var floor = score.calculatedAt();
+                    if (reportSnapshot != null && reportSnapshot.reportVersion() != null) {
+                        var report = reports.insert(generateReport.execute(scanId));
+                        floor = report.generatedAt();
+                    }
                     var now = Clock.systemUTC().instant();
-                    var finished = now.isBefore(score.calculatedAt()) ? score.calculatedAt() : now;
+                    var finished = now.isBefore(floor) ? floor : now;
                     if (!scans.transition(ScanStatus.RUNNING, snapshot.scan().complete(finished))) throw ScanOperationException.internal();
                     return true;
                 }
@@ -110,6 +133,7 @@ public final class TransactionalScanLifecycle implements ScanLifecyclePort {
     @Override
     public boolean fail(UUID scanId, ScanStatus expected, ScanFailureReason reason) {
         return confirmed(() -> {
+            if (reports != null) reports.lock(scanId).validate();
             if (scores != null) scores.lock(scanId).validate();
             boolean changed = delegate.fail(scanId, expected, reason);
             if (changed && evaluations != null) {
@@ -126,6 +150,7 @@ public final class TransactionalScanLifecycle implements ScanLifecyclePort {
     @Override
     public int recoverInterrupted() {
         return confirmed(() -> {
+            if (reports != null) reports.verifyRecoveryIntegrity();
             if (scores != null) scores.verifyRecoveryIntegrity();
             if (evaluations != null) evaluations.recoverActive(Clock.systemUTC().instant());
             if (executions != null) {
