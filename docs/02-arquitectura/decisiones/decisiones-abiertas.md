@@ -199,6 +199,8 @@ Los estados mínimos serán:
 
 `security-test-execution` cierra fallos técnicos individuales/globales en ADR-003 y STE-09/STE-10. evaluation-engine amplía prospectivamente el perfil nuevo: COMPLETED exige cuatro ejecuciones y cuatro evaluaciones COMPLETED. VULNERABLE, INCONCLUSIVE y fallo LLM consolidado no implican Scan FAILED; EvaluationResult FAILED global sí. Conserva siete campos públicos y semántica histórica sin backfill.
 
+En el backend core actual, scoring-engine y reporting requieren además ScanScore scoring-v1 y SecurityReport report-v1 íntegros para cada Scan nuevo COMPLETED. Score, informe y cierre se confirman conjuntamente; ver [ADR-008](ADR-008-reporting-snapshot-inmutable.md). Los cuatro SecurityTests son fijos, sin selección configurable por usuario. Las extensiones no reinterpretan scans históricos.
+
 ### Impacto en el MVP
 
 Mejora la experiencia y permite registrar histórico sin mantener una petición HTTP abierta. El worker real aprobado usa catálogo/plan persistidos y GET executions para derivar progreso, sin ampliar Scan. Reiniciar interrumpe ejecuciones y scans activos atómicamente, sin relanzar. Si falla persistencia terminal y compensación se bloquean nuevos inicios/reclamos hasta recuperación. Los históricos no-op permanecen identificables por ejecuciones vacías. Timeout/cuota/fallos técnicos del trabajo real quedan cerrados por STE-09/STE-10; cancelación y reintentos siguen fuera del incremento.

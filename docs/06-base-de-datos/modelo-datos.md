@@ -1,5 +1,9 @@
 # Modelo de datos conceptual
 
+El modelo vigente del backend core aprobado e implementado llega hasta V7, con EvaluationResult, ScanScore y SecurityReport separados de las columnas semánticas heredadas sin uso. Los contratos aprobados están actualmente en `openspec/changes/`; `openspec/specs/` aún no contiene specs consolidadas.
+
+Las referencias a V1–V6 describen el alcance histórico de esos incrementos, sin reinterpretar datos previos. Los registros de implementación y validación de cada change conservan la secuencia de comprobaciones; las menciones históricas a migraciones/tests preparados sin ejecución no describen las validaciones técnicas posteriores registradas, por ejemplo en [reporting/tasks.md](../../openspec/changes/reporting/tasks.md#validaciones-ejecutadas).
+
 ## Entidades principales
 
 ### Project
@@ -48,7 +52,7 @@ El material cifrado separa la credencial de la configuración pública. Formato 
 
 ### Scan
 
-Recurso de ejecución asociado a Project, definido por `scan-execution` (SE-01 a SE-10). `security-test-execution` mantiene los siete campos y añade trabajo técnico real. V5/evaluation-engine extiende COMPLETED para nuevos scans: cuatro ejecuciones y cuatro evaluaciones COMPLETED, sin recalcular históricos. Cualquier fallo produce FAILED conservando éxitos. Los históricos no-op no se recalculan y su listado de ejecuciones permanece vacío; COMPLETED no acredita seguridad ni vulnerabilidad.
+Recurso de ejecución asociado a Project, definido por `scan-execution` (SE-01 a SE-10). `security-test-execution` mantiene los siete campos y añade trabajo técnico real. V5/evaluation-engine incorpora cuatro evaluaciones; V6/scoring-engine y V7/reporting añaden sus marcadores internos prospectivos. En el estado actual, cada Scan nuevo COMPLETED requiere cuatro ejecuciones y cuatro evaluaciones COMPLETED, ScanScore scoring-v1 y SecurityReport report-v1 íntegros, confirmándose score, informe y cierre en la misma T3. Un fallo técnico global puede llevar a FAILED conservando éxitos/Findings. Un fallo/degradación del componente LLM puede consolidar INCONCLUSIVE o VULNERABLE según las reglas sin implicar Scan FAILED. Los históricos conservan la semántica de sus marcadores sin recálculo ni backfill; los no-op mantienen ejecuciones vacías. COMPLETED no acredita seguridad ni vulnerabilidad.
 
 | Campo | Columna | Tipo PostgreSQL | Restricciones |
 | --- | --- | --- | --- |
@@ -66,7 +70,7 @@ PENDING exige inicio/fin/error null; RUNNING exige inicio y fin/error null; COMP
 
 Tras reiniciar una única instancia se confirma PENDING/RUNNING → FAILED/SCAN_INTERRUPTED antes de admitir nuevos scans, sin relanzar ni alterar terminales. V3 debe fallar transaccionalmente ante históricos incompatibles o activos duplicados; no inventa fechas/motivos ni borra datos. Recuperación no sustituye esa validación. No se ha ejecutado Flyway durante la implementación.
 
-La admisión mantiene la comprobación de existencia del target mediante proyección sin blob. Scan no añade FK directa ni snapshot. El worker real lee target una sola vez al preparar el plan y conserva id/updatedAt en TestExecution; su configuración completa/cifrado solo permanece en memoria. El progreso se deriva de GET executions sin añadir totalTests/completedTests a Scan. Scoring y cancelación siguen fuera del incremento; evaluación se incorpora prospectivamente mediante V5. No hay PARTIAL.
+La admisión mantiene la comprobación de existencia del target mediante proyección sin blob. Scan no añade FK directa ni snapshot. El worker real lee target una sola vez al preparar el plan y conserva id/updatedAt en TestExecution; su configuración completa/cifrado solo permanece en memoria. El progreso se deriva de GET executions sin añadir totalTests/completedTests a Scan. Históricamente V3/V4 no incorporaban evaluación ni scoring; V5/V6/V7 añaden evaluación, score e informe prospectivos, descritos en las secciones siguientes y en [ADR-008](../02-arquitectura/decisiones/ADR-008-reporting-snapshot-inmutable.md). Cancelación y PARTIAL siguen fuera del MVP actual.
 
 ### SecurityTest
 
@@ -80,7 +84,7 @@ Estados PENDING/RUNNING/COMPLETED/FAILED. PENDING no tiene inicio ni datos técn
 
 request_payload TEXT contiene JSON preparado/redactado; response_payload TEXT contiene una cadena JSON serializada con comillas y escapes, decodificada una sola vez al leer internamente. U+0000 queda como escape recuperable, nunca NUL literal; no se usa JSONB para ese texto. Flags de redacción exacta de credencial conocida con marcador [REDACTED_CREDENTIAL]. No se guarda body bruto de respuesta. Caps DB: request 65536 bytes y evidencia combinada 524288 bytes; la configuración aplica además defaults 131072 por ejecución/524288 por Scan y límite de texto antes de redactar. La cuenta incluye escapes y redacción antes de cada escritura.
 
-evaluator_result/confidence se conservan sin mapeo ni escrituras, null en nuevas filas. global_score permanece intacto. V4 conserva su alcance técnico; V5 incorpora resultados/Findings separados sin reutilizar los campos semánticos heredados. El GET executions usa una proyección sin evidencia ni target; el repositorio permite lectura interna para un evaluador futuro.
+evaluator_result/confidence se conservan sin mapeo ni escrituras, null en nuevas filas. global_score permanece intacto. V4 conserva su alcance técnico; V5 incorpora resultados/Findings separados sin reutilizar los campos semánticos heredados. El GET executions usa una proyección sin evidencia ni target. La lectura interna preparada en V4 para un evaluador posterior ya es utilizada por evaluation-engine; su persistencia independiente se describe en EvaluationResult.
 
 V4 falla transaccionalmente si test_cases o test_executions contienen históricos incompatibles; no inventa identidades/estados ni borra datos. V1/V2/V3 quedan intactas. Preparación completa, inicio y resultado usan transacciones nuevas cortas; HTTP/cuota quedan fuera. Cierre de Scan y ejecuciones activas, y recuperación conjunta, son atómicos. Recuperación marca EXECUTION_INTERRUPTED/SCAN_INTERRUPTED sin reenvíos, preservando éxitos confirmados. Migración y tests preparados, sin ejecución automática.
 

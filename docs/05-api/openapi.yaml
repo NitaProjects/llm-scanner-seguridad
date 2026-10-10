@@ -226,7 +226,10 @@ paths:
         EvaluationResults COMPLETED. Un fallo técnico global produce FAILED conservando
         éxitos/Findings; VULNERABLE, INCONCLUSIVE o fallo LLM consolidado no implican FAILED.
         No acredita cobertura OWASP completa. Históricos conservan su semántica sin backfill.
-        Sin score global ni informes. La instancia backend debe ser única.
+        Los nuevos scans fijan además scoring-v1 y report-v1 antes del dispatch:
+        COMPLETED requiere ScanScore y SecurityReport íntegros, confirmados junto al cierre
+        en la misma T3. /score y /report se consultan por separado; el DTO de Scan conserva
+        sus siete campos. La instancia backend debe ser única.
       responses:
         '202':
           description: PENDING confirmado y lanzamiento local aceptado; no acredita análisis de seguridad.

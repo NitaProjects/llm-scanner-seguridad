@@ -78,6 +78,8 @@ Score 0 significa «ningún Finding detectado en las pruebas completadas», no �
 
 ScanScore fija scoringVersion/calculatedAt UTC y resume contadores globales, por severity y cuatro categorías ordenadas. Score y COMPLETED se confirman en la misma transacción; fallos de scoring son técnicos con rollback y compensación. PK scanId+versión, inmutabilidad y recovery sin recálculo conservan resultados. La reproducibilidad usa fuentes persistidas y versiones, sin hash adicional. GET /score devuelve AVAILABLE con objeto incluso cero, PENDING/null para activos nuevos, UNAVAILABLE/null para FAILED nuevo y NOT_APPLICABLE/null para históricos sin marcador. No usa global_score heredado ni backfill. Calibración empírica continúa pendiente fuera de este incremento.
 
+El backend core actual incorpora también reporting: después de validar cuatro ejecuciones/evaluaciones COMPLETED, T3 confirma ScanScore scoring-v1, SecurityReport report-v1 y Scan COMPLETED conjuntamente. El informe estructurado copia resultados y limitaciones sin reevaluar ni recalcular; ver [ADR-008](../02-arquitectura/decisiones/ADR-008-reporting-snapshot-inmutable.md). Los históricos conservan su semántica. Exportación HTML/Markdown/PDF, operación real de OpenAI y calibración experimental siguen pendientes.
+
 ## Reproducibilidad académica
 
 Las reglas puras y el assessment separado permiten reconstruir la decisión híbrida y preparar una comparación posterior. HYBRID_WITH_SIGNALS influye al modelo: su voto guardado no equivale a una ejecución LLM-only pura. El experimento futuro necesita otra entrada sin señales, ground truth independiente y perfil/prompt versionados. No se implementa aquí ni se atribuyen métricas científicas a tests técnicos.

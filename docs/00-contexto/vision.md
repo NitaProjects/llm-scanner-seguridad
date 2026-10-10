@@ -8,7 +8,7 @@ Estas comprobaciones suelen realizarse de forma manual o mediante herramientas t
 
 ## Producto
 
-**LLM Scanner Seguridad** es una plataforma web defensiva que permite evaluar, con autorización, la seguridad de aplicaciones basadas en LLM. El usuario configura una aplicación objetivo, selecciona pruebas controladas, ejecuta un scan y consulta los findings obtenidos junto con su evidencia, severidad, explicación y recomendación.
+**LLM Scanner Seguridad** es una plataforma web defensiva que permite evaluar, con autorización, la seguridad de aplicaciones basadas en LLM. El usuario configura una aplicación objetivo e inicia un scan sobre el plan fijo de cuatro SecurityTests, sin selección configurable por usuario. El backend permite consultar findings con resúmenes de evidencia, severidad, explicación y recomendación, además del score y el informe estructurado.
 
 El nombre oficial del proyecto es **LLM Scanner Seguridad**.
 
@@ -33,7 +33,9 @@ La plataforma centraliza pruebas básicas de seguridad LLM y transforma las resp
 
 ## Visión general
 
-El producto permitirá crear proyectos de análisis, configurar un target, seleccionar Security Tests, ejecutar scans, consultar el histórico, visualizar un dashboard y generar un informe.
+El backend core aprobado e implementado permite crear proyectos de análisis, configurar un target, ejecutar scans asíncronos con las cuatro pruebas fijas, aplicar evaluación híbrida, consultar el histórico y obtener `scoring-v1` e informes estructurados `report-v1`. Cada Scan nuevo COMPLETED requiere cuatro ejecuciones y cuatro evaluaciones COMPLETED, ScanScore y SecurityReport confirmados; un fallo LLM consolidado no implica automáticamente Scan FAILED. El score es heurístico y cero no acredita seguridad. Los históricos conservan su significado sin recálculo.
+
+El frontend/dashboard y la demo vulnerable siguen en progreso. La instalación/ejecución completa, operación real de OpenAI, experimento académico, AWS y entrega final siguen pendientes. HTML/Markdown/PDF son futuras exportaciones del informe estructurado ya implementado.
 
 La primera versión se centrará en cuatro riesgos del OWASP GenAI LLM Top 10 (2026): LLM01 – Prompt Injection, LLM02 – Sensitive Information Disclosure, LLM08 – Hidden Context Exposure y LLM10 – Improper Output Handling.
 

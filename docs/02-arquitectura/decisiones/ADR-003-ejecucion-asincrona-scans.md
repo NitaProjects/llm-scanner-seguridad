@@ -35,6 +35,8 @@ El controller no realizará directamente todo el procesamiento. La ejecución qu
 
 El frontend consultará periódicamente el estado y el progreso del scan mediante polling. La API definitiva y sus contratos se definirán en el cambio OpenSpec correspondiente; este ADR no fija endpoints internos definitivos.
 
+**Nota de estado actual:** esta formulación y el párrafo siguiente conservan el alcance inicial de `scan-execution`. Los contratos REST ya están definidos en [OpenAPI](../../05-api/openapi.yaml). El worker real, evaluación híbrida, scoring e informe estructurado están implementados; las extensiones de este ADR y [ADR-008](ADR-008-reporting-snapshot-inmutable.md) describen el cierre actual de nuevos scans con cuatro ejecuciones, cuatro evaluaciones, ScanScore y SecurityReport íntegros. Los scans no-op históricos conservan su significado sin backfill. Frontend, reintentos, cancelación y distribución no se dan por completados.
+
 El incremento `scan-execution` implementa únicamente el ciclo de vida mediante `StartScanUseCase`, `ProcessScanUseCase`, `GetScanUseCase`, `ListProjectScansUseCase` y `RecoverInterruptedScansUseCase`. `ScanDispatcherPort` recibe el UUID y `ScanWorkPort` separa trabajo de estados. Su adaptador temporal no-op no genera pruebas, findings, score ni informes; COMPLETED solo acredita esa unidad temporal. El flujo completo anterior sigue perteneciendo al MVP global y requiere changes posteriores.
 
 ## Estados mínimos

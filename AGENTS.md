@@ -24,7 +24,7 @@ La aplicación no debe utilizarse para atacar sistemas ajenos. Todas las pruebas
 - `README.md` o `Readme.md`: introducción y guía general del proyecto.
 - `AGENTS.md`: contexto e instrucciones para agentes de IA.
 
-`openspec/specs/` es la fuente de verdad funcional del producto. `openspec/changes/` contiene las propuestas, diseños, especificaciones delta y tareas de los cambios en curso. `docs/` contiene la documentación académica, investigativa, explicativa y arquitectónica consolidada.
+En el estado actual, `openspec/specs/` aún no contiene specs consolidadas. Los contratos funcionales aprobados están en `openspec/changes/<cambio>/specs/<capacidad>/spec.md`, junto con los diseños, aprobaciones y registros de implementación. El backend core está aprobado e implementado por `project-management`, `target-configuration`, `scan-execution`, `security-test-execution`, `evaluation-engine`, `scoring-engine` y `reporting`. Los contratos deben leerse junto con sus extensiones posteriores, conservando el alcance histórico de cada incremento. La sincronización a `openspec/specs/` y el archivo de changes podrán realizarse posteriormente según el workflow, sin reescribir históricos. `docs/` contiene la documentación académica, investigativa, explicativa y arquitectónica consolidada.
 
 Si existe una contradicción entre el código y una especificación o decisión documentada, debe señalarse antes de cambiar el comportamiento.
 
@@ -63,16 +63,18 @@ Cada ADR o decisión arquitectónica importante debe incluir una sección **Fuer
 
 ## Flujo funcional principal
 
-El flujo principal previsto es:
+El flujo principal del MVP es:
 
 1. Crear un proyecto de análisis.
 2. Configurar un endpoint autorizado y su formato de petición.
-3. Seleccionar pruebas de seguridad.
+3. Preparar el plan fijo de exactamente cuatro SecurityTests, sin selección configurable por usuario.
 4. Ejecutar un análisis controlado.
 5. Registrar peticiones, respuestas, evaluaciones y evidencias.
 6. Calcular resultados y niveles de riesgo.
-7. Mostrar los hallazgos en el frontend.
-8. Generar un informe.
+7. Generar el informe estructurado y confirmar score, informe y Scan COMPLETED conjuntamente.
+8. Mostrar los hallazgos en el frontend (integración en progreso).
+
+El backend core implementa ejecución asíncrona, evaluación híbrida, `scoring-v1` e informe estructurado `report-v1`. Cada Scan nuevo COMPLETED requiere cuatro ejecuciones y cuatro evaluaciones COMPLETED, ScanScore y SecurityReport íntegros; score, informe y cierre se confirman juntos. Un fallo técnico global puede llevar a FAILED; un fallo/degradación LLM puede consolidar INCONCLUSIVE o VULNERABLE según las reglas sin implicar Scan FAILED. El score es heurístico, no una probabilidad; cero no acredita seguridad. El frontend, la demo vulnerable y la entrega final siguen en progreso o pendientes. Exportaciones HTML/Markdown/PDF, operación real de OpenAI y AWS no se dan por completados.
 
 Las primeras categorías de análisis son:
 
@@ -126,7 +128,7 @@ Los datos de demostración y scripts auxiliares pueden ubicarse en `database/` s
 
 ## Historias de usuario y requisitos
 
-Las especificaciones y criterios de aceptación del producto se almacenan en `openspec/specs/` y en los cambios de `openspec/changes/`. Deben incluir, como mínimo:
+Las especificaciones y criterios de aceptación aprobados se encuentran actualmente en los cambios de `openspec/changes/`; `openspec/specs/` queda destinado a su consolidación posterior. Deben incluir, como mínimo:
 
 - Identificador y título.
 - Rol, necesidad y beneficio.

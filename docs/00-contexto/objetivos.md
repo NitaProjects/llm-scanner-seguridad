@@ -49,7 +49,7 @@ El diseño concreto del despliegue en AWS queda como **Pendiente de decisión**.
 
 El tamaño del dataset, el número de repeticiones, el procedimiento de ground truth y los valores objetivo quedan como **Pendiente de decisión**.
 
-El proveedor o proveedores concretos del modelo evaluador quedan como **Pendiente de decisión**.
+La elección MVP está aprobada e implementada por `evaluation-engine`: OpenAI Responses API/Structured Outputs, modelo inicial `gpt-6-luna` configurable externamente, según [ADR-004](../02-arquitectura/decisiones/ADR-004-evaluador-llm.md). La verificación de cuenta, disponibilidad, retención y tarifa para operación real autorizada sigue pendiente. Comparar otros modelos/proveedores forma parte del trabajo académico o de una evolución posterior, sin darlo por ejecutado.
 
 ## Objetivos relacionados con seguridad
 

@@ -192,7 +192,7 @@ Estos riesgos afectan a la plataforma LLM Scanner Seguridad y no necesariamente 
 
 ## Decisiones pendientes
 
-- Payloads concretos y variantes de cada caso de prueba.
+- Variantes y nuevos payloads de cada caso, y composición del dataset experimental. Los cuatro prompts iniciales revisión 1 ya están definidos e implementados por security-test-execution D-11/V4; ver el [catálogo técnico aprobado](../04-ia/casos-de-prueba.md#catálogo-técnico-inicial-aprobado).
 - Calibración experimental de confidence-v1 y scoring global; la heurística ejecutable está cerrada por evaluation-engine D-05.
 - Calibración de impacto/severity; la política ejecutable v1 está cerrada por D-06.
 - Procedimiento experimental académico definitivo.

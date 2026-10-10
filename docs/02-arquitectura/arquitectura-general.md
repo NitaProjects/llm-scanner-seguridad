@@ -25,23 +25,21 @@ LLM Scanner Seguridad se plantea como un monolito modular con un frontend Angula
        |      +----------------------+
        |                             |
        v                             v
-+--------------+             +----------------+
-| Adaptadores  |             | Adaptadores    |
-| persistencia |             | HTTP / LLM     |
-+------+-------+             +--------+-------+
-       |                               |
-       v                               v
- PostgreSQL                 Aplicación objetivo
-                                      |
-                                      v
-                              Modelo evaluador
++--------------+             +-------------------------+
+| Adaptadores  |             | Adaptadores HTTP / LLM  |
+| persistencia |             | integraciones separadas |
++------+-------+             +------+-----------+------+
+       |                            |           |
+       v                            v           v
+ PostgreSQL                  Aplicación      Modelo
+                              objetivo      evaluador
 ```
 
-El diagrama representa responsabilidades conceptuales. No define todavía clases, endpoints ni contratos definitivos.
+El diagrama resume responsabilidades; el backend coordina las integraciones independientes con target y evaluador. El backend core está aprobado e implementado por `project-management`, `target-configuration`, `scan-execution`, `security-test-execution`, `evaluation-engine`, `scoring-engine` y `reporting`. Los contratos actuales están en `openspec/changes/<cambio>/specs/<capacidad>/spec.md` y en [OpenAPI](../05-api/openapi.yaml); `openspec/specs/` aún no contiene specs consolidadas. La consolidación/archivo podrá realizarse posteriormente según el workflow, conservando los históricos.
 
 ## Frontend
 
-Angular proporciona la interfaz web para crear proyectos, configurar targets, seleccionar pruebas, ejecutar scans, consultar findings y visualizar informes.
+Angular es la interfaz prevista para crear proyectos, configurar targets, iniciar scans sobre el plan fijo de cuatro pruebas, consultar findings y visualizar informes. Su integración y el dashboard siguen en progreso; no hay selección configurable de pruebas en el MVP actual.
 
 El frontend se comunica con el backend mediante la API REST. No accede directamente a PostgreSQL, a la aplicación objetivo ni al modelo evaluador.
 
@@ -54,14 +52,14 @@ El backend también controla la comunicación con los sistemas externos y debe a
 El flujo conceptual de un scan es:
 
 1. Recibir la solicitud de ejecución.
-2. Seleccionar los Security Tests configurados.
+2. Preparar el plan fijo de exactamente cuatro SecurityTests inmutables, uno por categoría, sin selección configurable por usuario.
 3. Enviar una colección controlada de casos de prueba al target.
 4. Registrar las peticiones y respuestas necesarias.
 5. Aplicar reglas deterministas y evaluación mediante LLM.
 6. Generar findings con evidencia, severidad, explicación, recomendación y confianza.
-7. Calcular el resultado del scan y dejarlo disponible para el dashboard y el informe.
+7. Calcular ScanScore (`scoring-v1`), generar SecurityReport (`report-v1`) y confirmar ambos junto al cierre COMPLETED; dejarlos disponibles por API para su futura visualización en el frontend.
 
-Este flujo se ejecutará de forma asíncrona en el MVP. La solicitud inicial crea el `Scan` en estado `PENDING` y devuelve un identificador de scan; el procesamiento posterior pasa a `RUNNING` y se realiza fuera del ciclo de la petición inicial. El frontend consultará el estado y el progreso mediante polling hasta que el scan termine.
+Este flujo se ejecuta de forma asíncrona en el MVP. La solicitud inicial crea el `Scan` en estado `PENDING` y devuelve un identificador de scan; el procesamiento posterior pasa a `RUNNING` y se realiza fuera del ciclo de la petición inicial. La API permite polling de estado y progreso derivado de ejecuciones. Cada Scan nuevo COMPLETED exige cuatro ejecuciones y cuatro evaluaciones COMPLETED, ScanScore y SecurityReport íntegros. Un fallo técnico global puede llevar a FAILED; un fallo/degradación LLM consolidado puede producir INCONCLUSIVE o VULNERABLE según las reglas sin implicar Scan FAILED. Los históricos conservan su semántica sin backfill.
 
 El controller no contiene procesamiento del análisis. `scan-execution` implementa StartScanUseCase/GetScanUseCase/ListProjectScansUseCase y desacopla ProcessScanUseCase mediante ScanDispatcherPort/ScanWorkPort. Un ThreadPoolTaskExecutor dedicado acotado/configurable acepta o rechaza inmediatamente; el índice único parcial PostgreSQL garantiza un activo por Project. Dominio/aplicación no dependen de Spring, JPA ni executor.
 
@@ -101,7 +99,7 @@ La capa de aplicación coordina los casos de uso del sistema. Orquesta el ciclo 
 
 Los casos de uso deben depender de abstracciones y no de implementaciones concretas de infraestructura.
 
-Como orientación de diseño, se prefieren casos de uso explícitos:
+Entre los casos de uso implementados se encuentran:
 
 - `CreateProjectUseCase`.
 - `ConfigureTargetUseCase`.
@@ -110,7 +108,7 @@ Como orientación de diseño, se prefieren casos de uso explícitos:
 - `CalculateScanScoreUseCase` y `GetScanScoreUseCase` (scoring-engine).
 - `GenerateReportUseCase` y `GetSecurityReportUseCase` (reporting).
 
-La división definitiva de responsabilidades y el nivel de granularidad quedan como **Pendiente de decisión** hasta definir cada cambio OpenSpec.
+Las responsabilidades, puertos y granularidad del backend core están definidos por los diseños aprobados de los siete changes e implementados en el backend. Los cambios de alcance futuros requieren su propio workflow OpenSpec.
 
 ## Infraestructura
 
@@ -131,9 +129,9 @@ Los adaptadores implementan esos puertos para tecnologías concretas. Este enfoq
 
 ## PostgreSQL
 
-PostgreSQL será la persistencia principal de proyectos, scans, ejecuciones, findings e informes. La evolución del esquema se gestionará mediante Flyway.
+PostgreSQL es la persistencia principal de proyectos, targets, scans, ejecuciones, evaluaciones, findings, scores e informes. Flyway gestiona la evolución del esquema hasta V7.
 
-El modelo relacional detallado, las relaciones y las restricciones se documentarán en `docs/06-base-de-datos/` cuando se definan.
+El modelo relacional, las relaciones y las restricciones aprobadas están documentados en [modelo-datos.md](../06-base-de-datos/modelo-datos.md), incluidas las diferencias entre históricos y nuevos scans.
 
 ## Aplicación objetivo
 
@@ -145,9 +143,9 @@ El contrato de integración del MVP queda limitado a HTTP REST, `POST` y JSON. L
 
 ## Modelo evaluador
 
-Es un modelo LLM independiente de la aplicación objetivo. Analiza las respuestas obtenidas y ayuda a determinar si existe un comportamiento de riesgo. Podrá evaluar semánticamente respuestas, detectar comportamientos que no puedan resolverse solo con reglas, proponer una categoría de riesgo, generar una explicación técnica, proponer una recomendación y devolver un nivel de confianza.
+Es un modelo LLM independiente de la aplicación objetivo. Evalúa semánticamente evidencia sintética autorizada e interpreta la categoría y los criterios fijados por el backend sin modificarlos. Devuelve un assessment con veredicto, confianza, severidad sugerida, explicación, recomendación y referencias verificables; el engine consolida el resultado híbrido y sustituye las narrativas libres por plantillas inertes.
 
-El backend no dependerá directamente de OpenAI, Gemini, Hugging Face ni de ningún proveedor concreto. La integración se realizará mediante una abstracción conceptual:
+El dominio y los casos de uso no dependen de un proveedor concreto. La integración utiliza el puerto:
 
 ```text
 EvaluatorPort
@@ -155,9 +153,9 @@ EvaluatorPort
 Adaptador de proveedor concreto
 ```
 
-Durante el MVP se utilizará un único proveedor, configurable externamente. La arquitectura permitirá sustituirlo sin modificar el dominio ni los casos de uso. Los adaptadores concretos podrán incluir, en el futuro, `OpenAiEvaluatorAdapter`, `GeminiEvaluatorAdapter` o `HuggingFaceEvaluatorAdapter`.
+El MVP implementa un único adaptador `OpenAiEvaluatorAdapter` para OpenAI Responses API/Structured Outputs, con modelo inicial `gpt-6-luna` configurable externamente (ADR-004). La abstracción permite sustituir el proveedor sin acoplar dominio ni casos de uso; otros adaptadores, como Gemini o Hugging Face, siguen siendo futuros. La validación real de cuenta, disponibilidad, retención y tarifa sigue pendiente antes de operación autorizada.
 
-El puerto podrá representar conceptualmente una operación como:
+El contrato aprobado e implementado es:
 
 ```text
 evaluate(EvaluatorInput, EvaluationCallBudget) → EvaluatorOutcome
@@ -198,9 +196,9 @@ Ejemplo conceptual de request:
 }
 ```
 
-La autenticación del target es `NONE`, `BEARER_TOKEN` o `API_KEY_HEADER`. El change `target-configuration` define un recurso único POST/GET/PUT en `/api/projects/{projectId}/target`, casos de uso explícitos, puertos de validación/cifrado/persistencia y adaptadores separados. Cada Project admite cero o un target en el MVP; no se ejecutan requests ni extracción de respuestas.
+La autenticación del target es `NONE`, `BEARER_TOKEN` o `API_KEY_HEADER`. El change `target-configuration` define un recurso único POST/GET/PUT en `/api/projects/{projectId}/target`, casos de uso explícitos, puertos de validación/cifrado/persistencia y adaptadores separados. Cada Project admite cero o un target en el MVP. Las operaciones de configuración no ejecutan requests ni extracción de respuestas; ese trabajo corresponde al worker implementado por `security-test-execution`.
 
-D-CRYPTO queda cerrado para el MVP local: AES-256-GCM con clave externa de 256 bits y envelope versionado (ADR-002). GET y conservación en PUT no descifran. La provisión AWS Secrets Manager/KMS y los controles SSRF completos de ejecución quedan fuera de este change.
+D-CRYPTO queda cerrado para el MVP local: AES-256-GCM con clave externa de 256 bits y envelope versionado (ADR-002). GET y conservación en PUT no descifran. Históricamente los controles SSRF de ejecución quedaron fuera de `target-configuration`; `security-test-execution` ya los incorpora, según la [política de autorización](../03-seguridad/politica-de-autorizacion.md). La provisión AWS Secrets Manager/KMS, custodia y rotación avanzada siguen pendientes.
 
 ## Decisiones todavía abiertas
 

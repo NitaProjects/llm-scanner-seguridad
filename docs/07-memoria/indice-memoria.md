@@ -1,5 +1,7 @@
 # Índice inicial de la memoria del TFM
 
+La memoria final sigue **EN PROGRESO**; este documento es su índice inicial. El backend core aprobado e implementado comprende `project-management`, `target-configuration`, `scan-execution`, `security-test-execution`, `evaluation-engine`, `scoring-engine` y `reporting`, cuyos contratos están actualmente en `openspec/changes/`, aún sin consolidar en `openspec/specs/`. Esta evidencia no completa frontend, demo vulnerable, experimento, operación real ni entrega final.
+
 ## 1. Introducción
 
 - Contexto del problema.
@@ -39,6 +41,8 @@
 
 ## 6. Implementación
 
+El capítulo describirá el backend implementado con plan fijo de cuatro SecurityTests sin selección configurable, Scan asíncrono, evaluación híbrida, scoring-v1 e informe estructurado report-v1. Los nuevos scans COMPLETED requieren cuatro ejecuciones y cuatro evaluaciones COMPLETED, ScanScore y SecurityReport, con score/informe/cierre atómicos. Un fallo técnico global puede llevar a FAILED; el fallo/degradación LLM puede consolidar INCONCLUSIVE o VULNERABLE según las reglas. El score es heurístico y cero no demuestra seguridad. Frontend y demo vulnerable siguen en progreso; exportación HTML/Markdown/PDF sigue siendo futura.
+
 - Frontend.
 - Backend.
 - Motor de scans.
@@ -67,9 +71,12 @@ La evaluación considerará, cuando sea viable:
 - Diferencia entre reglas deterministas, LLM evaluador y estrategia híbrida.
 - Efecto de los criterios de severidad y confidence.
 - Relación entre severidad, confidence y score global.
-- Comprensión del informe por parte de desarrolladores.
+
+El estudio con desarrolladores sobre comprensión del informe queda fuera del diseño experimental adoptado por [ADR-007](../02-arquitectura/decisiones/ADR-007-experimento-academico.md), salvo decisión posterior.
 
 Se compararán tres estrategias: reglas deterministas, LLM evaluador y evaluación híbrida. La memoria incluirá tablas por caso y estrategia, matrices de confusión, análisis de falsos positivos y falsos negativos, reproducibilidad, tiempos, costes y limitaciones.
+
+La comparación sigue pendiente: el assessment HYBRID_WITH_SIGNALS conservado por el backend no equivale a una ejecución LLM-only independiente. Se requiere una entrada experimental sin señales, ground truth separado y perfiles/prompts versionados; las pruebas técnicas registradas no sustituyen el benchmark ni la validación real de OpenAI.
 
 El score global se tratará como un resumen y no como sustituto de los findings individuales. Los hallazgos críticos deberán conservar visibilidad independiente aunque el score agregado sea bajo.
 

@@ -6,7 +6,7 @@
 
 El proyecto nace como Trabajo Fin de Máster y tiene un doble objetivo: por un lado, aplicar de forma práctica conceptos de desarrollo de software, inteligencia artificial y ciberseguridad; por otro, explorar cómo automatizar parte de la evaluación de seguridad de aplicaciones basadas en LLM mediante pruebas reproducibles y análisis asistido por inteligencia artificial.
 
-La plataforma permite configurar una aplicación objetivo mediante su API, ejecutar un conjunto controlado de pruebas de seguridad y registrar las respuestas y evidencias obtenidas. Sobre estas evidencias, el sistema está diseñado para aplicar posteriormente una estrategia de evaluación híbrida que combine reglas deterministas con un modelo de lenguaje evaluador, permitiendo detectar comportamientos potencialmente inseguros y generar findings explicables.
+El backend permite configurar una aplicación objetivo mediante su API, ejecutar un conjunto controlado de pruebas de seguridad y registrar las respuestas y evidencias obtenidas. Aplica una estrategia de evaluación híbrida que combina reglas deterministas con un modelo de lenguaje evaluador cuando el escenario sintético y su exportación están autorizados, genera findings sustentados, calcula `scoring-v1` y conserva un informe estructurado `report-v1`.
 
 El alcance actual se centra en cuatro categorías inspiradas en OWASP GenAI LLM Top 10:
 
@@ -42,7 +42,7 @@ Por este motivo, LLM Scanner Seguridad plantea una aproximación híbrida:
 2. capturar la evidencia producida por la aplicación objetivo;
 3. aplicar comprobaciones deterministas cuando exista una señal objetiva;
 4. utilizar un LLM evaluador para analizar semánticamente los casos que requieren interpretación;
-5. generar resultados trazables que puedan convertirse en findings, puntuaciones e informes.
+5. generar findings sustentados, puntuaciones heurísticas e informes estructurados trazables.
 
 Esta combinación busca conservar la reproducibilidad de las reglas tradicionales sin renunciar a la capacidad de interpretación que ofrece la inteligencia artificial.
 
@@ -56,8 +56,8 @@ Entre las posibles líneas de evolución se encuentran:
 - generar o adaptar dinámicamente pruebas mediante IA;
 - incorporar nuevos motores de evaluación;
 - comparar distintos modelos evaluadores;
-- generar informes de seguridad automáticos;
-- mantener históricos y comparar scans;
+- exportar el informe estructurado a HTML, Markdown o PDF;
+- comparar scans y sus históricos;
 - integrar el scanner en pipelines CI/CD;
 - realizar análisis periódicos;
 - incorporar autenticación, organizaciones y gestión de equipos;
@@ -72,13 +72,23 @@ El objetivo del TFM no es demostrar la viabilidad comercial de ese producto comp
 
 ## Estado del proyecto
 
-En desarrollo. La documentación, el alcance del MVP y las decisiones arquitectónicas se están consolidando antes de iniciar la implementación guiada por OpenSpec.
+En desarrollo. El backend core está aprobado e implementado mediante los changes `project-management`, `target-configuration`, `scan-execution`, `security-test-execution`, `evaluation-engine`, `scoring-engine` y `reporting`.
+
+Los contratos aprobados están actualmente en `openspec/changes/<cambio>/specs/<capacidad>/spec.md`, junto con sus diseños y tareas. `openspec/specs/` todavía no contiene las specs consolidadas; su sincronización y el archivo de changes podrán realizarse posteriormente según el workflow OpenSpec.
+
+Frontend, demo vulnerable, procedimientos completos de instalación/ejecución, experimento académico, operación real de OpenAI, despliegue AWS y entregables finales del TFM siguen en progreso o pendientes. Las validaciones técnicas registradas no completan esos trabajos.
 
 ## Funcionalidades
 
-El MVP previsto incluye gestión de proyectos, configuración de targets autorizados, ejecución asíncrona de scans, evaluación híbrida, findings, dashboard, informes y una aplicación vulnerable de demostración.
+El backend core implementado incluye gestión de proyectos, configuración de targets, ejecución asíncrona de scans, evaluación híbrida, findings, `scoring-v1` e informes estructurados persistidos `report-v1`. Configurar un target no autoriza por sí solo el tráfico; la ejecución exige la política externa de autorización.
 
-Las categorías iniciales son LLM01, LLM02, LLM08 y LLM10 del OWASP GenAI LLM Top 10 (2026). La implementación está **Pendiente de implementación**.
+El plan MVP ejecuta exactamente cuatro SecurityTests inmutables, uno por categoría LLM01, LLM02, LLM08 y LLM10 del OWASP GenAI LLM Top 10 (2026), sin selección configurable por usuario. No acredita cobertura completa de esas categorías; LLM10 observa únicamente output, sin verificar el consumidor posterior.
+
+Para confirmar `COMPLETED`, los scans nuevos requieren cuatro ejecuciones y cuatro evaluaciones `COMPLETED`, un `ScanScore` y un `SecurityReport` íntegros. Score, informe y transición de Scan a `COMPLETED` se confirman conjuntamente. Un fallo técnico global puede llevar a `FAILED`; un fallo o degradación del componente LLM puede consolidarse como `INCONCLUSIVE` o `VULNERABLE` según las reglas y la evidencia, sin implicar automáticamente `Scan FAILED`. Los históricos conservan su semántica sin recálculo ni backfill.
+
+El score es heurístico, no una probabilidad ni un porcentaje de seguridad. Score 0 significa ningún Finding detectado en las pruebas completadas; no demuestra que la aplicación sea segura. `INCONCLUSIVE` se conserva por separado y no equivale a `NOT_VULNERABLE`.
+
+El dashboard/frontend y la aplicación vulnerable de demostración siguen en progreso. Las exportaciones HTML/Markdown/PDF permanecen como evolución futura.
 
 ## Arquitectura
 
@@ -125,15 +135,15 @@ javac -version
 .\mvnw.cmd -version
 ```
 
-**Pendiente de implementación.** Se documentará el resto del procedimiento validado para preparar frontend, backend y PostgreSQL.
+**Pendiente de documentación y validación del procedimiento completo.** Se documentará el resto de la preparación de frontend, backend y PostgreSQL.
 
 ## Ejecución
 
-**Pendiente de implementación.** Se documentará el procedimiento validado para ejecutar la aplicación y sus servicios locales.
+**Pendiente de documentación y validación del procedimiento completo.** Se documentará cómo ejecutar la aplicación y sus servicios locales.
 
 ## Configuración
 
-La configuración se documentará cuando se definan los procedimientos de ejecución y despliegue. No se incluirán secretos, API keys ni credenciales en el repositorio.
+El contrato del target y sus controles están documentados en [target-contract.md](docs/05-api/target-contract.md), el executor en [ADR-003](docs/02-arquitectura/decisiones/ADR-003-ejecucion-asincrona-scans.md) y el evaluador en [prompts-evaluadores.md](docs/04-ia/prompts-evaluadores.md). La guía operativa completa sigue pendiente junto con los procedimientos de ejecución y despliegue. No se incluirán secretos, API keys ni credenciales en el repositorio.
 
 ## Seguridad y uso autorizado
 
@@ -141,7 +151,9 @@ El scanner debe utilizarse únicamente contra aplicaciones propias, autorizadas 
 
 ## Testing
 
-**Pendiente de implementación.** La estrategia de validación y el experimento académico se documentan en [`docs/01-investigacion/experimento-academico.md`](docs/01-investigacion/experimento-academico.md).
+El backend dispone de pruebas de dominio, casos de uso, API, transporte con fixtures/fakes, persistencia y migraciones sobre PostgreSQL de test. Los registros de cada change conservan los comandos, resultados y límites de las validaciones ejecutadas. El [registro de reporting](openspec/changes/reporting/tasks.md#validaciones-ejecutadas) documenta una regresión de 400 pruebas, sin fallos, errores ni omisiones, el 2026-10-10; es evidencia técnica registrada, no una validación del proveedor real.
+
+La operación real de OpenAI y el benchmark académico siguen pendientes. El [experimento académico](docs/01-investigacion/experimento-academico.md) requiere dataset, ground truth, repeticiones y análisis propios; las pruebas técnicas no acreditan calibración estadística ni resultados científicos.
 
 ## Despliegue
 

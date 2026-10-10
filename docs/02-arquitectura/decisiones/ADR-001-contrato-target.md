@@ -75,7 +75,7 @@ La incorporación futura de estos protocolos o capacidades requerirá una nueva 
 
 ## Seguridad
 
-La configuración del target deberá quedar sujeta posteriormente a:
+Contexto histórico de esta decisión: la configuración del target debía quedar sujeta posteriormente a:
 
 - Validación estricta de URL.
 - Bloqueo de localhost y loopback.
@@ -89,6 +89,8 @@ La configuración del target deberá quedar sujeta posteriormente a:
 El change `target-configuration` concreta la validación local sin DNS ni HTTP: URL HTTP/HTTPS estructuralmente válida, bloqueo por defecto de localhost y literales loopback/privados, plantilla JSON objeto con un único valor completo `{{PROMPT}}` y JSONPath restringido a propiedades e índices. Timeout 1000..60000 ms, por defecto 10000; method/contentType/promptPlaceholder son constantes y no se persisten.
 
 La excepción local/demo solo se activa con el perfil Spring `local`, `TARGET_LOCAL_DEMO_ENABLED=true` y orígenes explícitos separados por comas en `TARGET_LOCAL_DEMO_ORIGINS`. Se compara esquema, host normalizado y puerto efectivo; no se habilitan redes completas ni metadatos/link-local. La API no puede activar esta excepción. Guardar una URL no autoriza su ejecución: DNS, direcciones efectivas, redirecciones y política de autorización se implementarán en el change de ejecución.
+
+**Nota de estado actual:** el párrafo anterior conserva la separación histórica entre configuración y ejecución. `security-test-execution` ya implementa autorización externa, DNS efectivo, validación de todas las IPs, conexión fijada a una dirección y ausencia de redirecciones/reintentos. El contrato vigente se resume en [target-contract.md](../../05-api/target-contract.md) y en la [política de autorización](../../03-seguridad/politica-de-autorizacion.md). Configurar el target sigue sin autorizar tráfico. La operación productiva y AWS permanecen pendientes.
 
 ## Consecuencias
 
