@@ -39,9 +39,19 @@ El diagrama resume responsabilidades; el backend coordina las integraciones inde
 
 ## Frontend
 
-Angular es la interfaz prevista para crear proyectos, configurar targets, iniciar scans sobre el plan fijo de cuatro pruebas, consultar findings y visualizar informes. Su integración y el dashboard siguen en progreso; no hay selección configurable de pruebas en el MVP actual.
+El frontend MVP Angular 21 standalone implementa el change [frontend-mvp](../../openspec/changes/frontend-mvp/): proyectos y creación inline, detalle con histórico, configuración del target y detalle de Scan con progreso/resultados. Las cuatro rutas lazy son `/projects`, `/projects/:projectId`, `/projects/:projectId/target` y `/projects/:projectId/scans/:scanId`; raíz y ruta desconocida tienen respuesta explícita. Los enlaces directos recuperan datos desde parámetros y API, sin estado previo obligatorio. No hay dashboard global ni selección configurable de pruebas.
 
 El frontend se comunica con el backend mediante la API REST. No accede directamente a PostgreSQL, a la aplicación objetivo ni al modelo evaluador.
+
+La estructura separa `core/api`, `shared` y `features/projects`, `features/target`, `features/scans`. ProjectsApi, TargetApi y ScansApi son transportes HttpClient sin estado de negocio. Los DTOs manuales y decoders de respuestas unknown conservan nulabilidad, enums y versiones, con errores seguros de compatibilidad. Las páginas poseen sus lecturas y formularios; los componentes reciben datos y emiten acciones sin HTTP. ScanDetailState se proporciona por ScanPage, sin store/caché global ni persistencia de navegador. RxJS coordina solicitudes cancelables y signals mantienen el estado de vista por recurso.
+
+El seguimiento hace GET inmediato y ciclos activos con ejecuciones/evaluaciones, separados tres segundos desde el fin del ciclo anterior, con timeout de lectura de diez segundos. No hay solapamiento, porcentajes ni fases inventadas. Tres fallos consecutivos pausan; Reintentar hace GET inmediato y solo el éxito activo reanuda. Terminal/navegación/cambio de parámetros cancelan la repetición. COMPLETED/FAILED disparan una carga final única de ejecuciones/evaluaciones/findings/score/report con errores independientes, sin polling de resultados. `/score` determina riesgo y categorías; las listas proceden de sus endpoints y el informe conserva su snapshot report-v1. Discrepancias score-summary y PENDING terminal requieren relectura explícita, sin reparación local.
+
+El resultado prioriza score/riesgo/hallazgos/inconclusos. Cero no certifica seguridad; INCONCLUSIVE no equivale a no vulnerable ni a FAILED. El informe muestra alcance, interpretación, nueve limitaciones y trazabilidad sin duplicar listas/narrativas ni atribuir la URL actual al pasado. NOT_APPLICABLE se trata por bloque como ausencia histórica normal. Los errores no convierten datos ausentes en cero ni exponen cuerpos libres o internals del evaluador.
+
+TargetForm mantiene credenciales nuevas únicamente de forma transitoria. Conservar/Reemplazar y las nueve transiciones de autenticación siguen TC-10 contra el DTO público original; hasCredentials nunca recupera el secreto. El control se vacía al enviar, fallar, cancelar, cambiar tipo/proyecto o salir. Una respuesta de escritura perdida exige consulta pública antes de otro envío. Los textos de API se renderizan mediante interpolación inerte, sin HTML/Markdown ni storage/logging sensible. El backend conserva autoridad de validación avanzada y autorización de red.
+
+API_BASE_URL procede de environments con `/api`: proxy de desarrollo al puerto backend por defecto 8080 y mismo origen en producción. El hosting futuro debe proporcionar reverse proxy API y fallback SPA; no se modifica despliegue. CSS propio, labels, foco, badges textuales y details nativos cubren responsive/accesibilidad mínima. Pruebas Vitest/TestBed/HTTP simulado y revisión visual a 1280/1024/768/360 están registradas en [tasks.md](../../openspec/changes/frontend-mvp/tasks.md); ejecución y consumo se detallan en [README frontend](../../frontend/README.md). La integración con entorno/demo reales sigue pendiente.
 
 ## Backend
 
@@ -57,7 +67,7 @@ El flujo conceptual de un scan es:
 4. Registrar las peticiones y respuestas necesarias.
 5. Aplicar reglas deterministas y evaluación mediante LLM.
 6. Generar findings con evidencia, severidad, explicación, recomendación y confianza.
-7. Calcular ScanScore (`scoring-v1`), generar SecurityReport (`report-v1`) y confirmar ambos junto al cierre COMPLETED; dejarlos disponibles por API para su futura visualización en el frontend.
+7. Calcular ScanScore (`scoring-v1`), generar SecurityReport (`report-v1`) y confirmar ambos junto al cierre COMPLETED; dejarlos disponibles por API para su visualización en el frontend.
 
 Este flujo se ejecuta de forma asíncrona en el MVP. La solicitud inicial crea el `Scan` en estado `PENDING` y devuelve un identificador de scan; el procesamiento posterior pasa a `RUNNING` y se realiza fuera del ciclo de la petición inicial. La API permite polling de estado y progreso derivado de ejecuciones. Cada Scan nuevo COMPLETED exige cuatro ejecuciones y cuatro evaluaciones COMPLETED, ScanScore y SecurityReport íntegros. Un fallo técnico global puede llevar a FAILED; un fallo/degradación LLM consolidado puede producir INCONCLUSIVE o VULNERABLE según las reglas sin implicar Scan FAILED. Los históricos conservan su semántica sin backfill.
 

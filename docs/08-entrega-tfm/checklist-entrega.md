@@ -12,7 +12,7 @@ El estado COMPLETADO del backend core se limita a `project-management`, `target-
 | Instalación | PENDIENTE | [`/README.md`](../../README.md) | Pendiente de documentar el procedimiento validado. |
 | Ejecución | PENDIENTE | [`/README.md`](../../README.md) | Pendiente de documentar el procedimiento validado. |
 | Estructura del proyecto | COMPLETADO | [`/README.md`](../../README.md), [`docs/README.md`](../README.md) | Estructura principal documentada. |
-| Funcionalidades principales | EN PROGRESO | [`/README.md`](../../README.md), [`alcance.md`](../00-contexto/alcance.md) | Backend core implementado; frontend/dashboard y demo vulnerable siguen en progreso. |
+| Funcionalidades principales | EN PROGRESO | [`/README.md`](../../README.md), [`alcance.md`](../00-contexto/alcance.md), [`frontend-mvp/tasks.md`](../../openspec/changes/frontend-mvp/tasks.md) | Backend core y frontend MVP implementados; frontend verificado con HTTP simulado. Integración real, demo vulnerable y entrega completa pendientes. |
 | Backend core | COMPLETADO | [`backend/`](../../backend/), [`changes`](../../openspec/changes/), [`reporting/tasks.md`](../../openspec/changes/reporting/tasks.md#validaciones-ejecutadas) | Siete changes aprobados e implementados; plan fijo de cuatro pruebas, evaluación híbrida, scoring-v1 y report-v1. |
 | Credenciales de prueba | NO APLICA | [`/README.md`](../../README.md) | No existe login documentado actualmente; revisar al cierre. |
 | Repositorio GitHub | PENDIENTE | [`enlaces-entrega.md`](./enlaces-entrega.md) | URL pendiente de configurar. |

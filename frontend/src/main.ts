@@ -3,4 +3,7 @@ import { appConfig } from './app/app.config';
 import { App } from './app/app';
 
 bootstrapApplication(App, appConfig)
-  .catch((err) => console.error(err));
+  .catch(() => {
+    const host = document.querySelector('app-root');
+    if (host) host.textContent = 'No se ha podido iniciar LLM Scanner Seguridad. Recarga la página.';
+  });

@@ -1,0 +1,23 @@
+import { Category, Lifecycle, Severity, RiskLevel, Verdict, OutcomeReason } from '../models/contracts';
+import { FindingDto } from '../../features/scans/models/scan';
+export const riskLabels: Record<RiskLevel, string> = { NO_FINDINGS: 'Sin hallazgos detectados', LOW: 'Bajo', MEDIUM: 'Medio', HIGH: 'Alto', CRITICAL: 'Crítico' };
+export const severityLabels: Record<Severity, string> = { LOW: 'Baja', MEDIUM: 'Media', HIGH: 'Alta', CRITICAL: 'Crítica' };
+export const statusLabels: Record<Lifecycle, string> = { PENDING: 'Pendiente', RUNNING: 'Análisis en curso', COMPLETED: 'Completado', FAILED: 'Fallido' };
+export const verdictLabels: Record<Verdict, string> = { VULNERABLE: 'Vulnerable', NOT_VULNERABLE: 'No vulnerable en esta prueba', INCONCLUSIVE: 'Resultado inconcluso' };
+export const categoryLabels: Record<Category, string> = { LLM01: 'Prompt Injection', LLM02: 'Sensitive Information Disclosure', LLM08: 'Hidden Context Exposure', LLM10: 'Improper Output Handling' };
+export const outcomeLabels: Record<OutcomeReason, string> = {
+  CONTEXT_UNAVAILABLE: 'No hay contexto de evaluación disponible', CRITERION_NOT_APPLICABLE: 'El criterio no es aplicable', EXPORT_NOT_AUTHORIZED: 'Envío al evaluador no autorizado', EVIDENCE_NOT_EXPORTABLE: 'Evidencia no habilitada para el evaluador', EVIDENCE_TOO_LARGE: 'Evidencia demasiado extensa', EVIDENCE_INCOMPLETE: 'Evidencia incompleta', INSUFFICIENT_EVIDENCE: 'Evidencia insuficiente para concluir', SIGNAL_CONFLICT: 'Señales contradictorias', LLM_COMPONENT_UNAVAILABLE: 'Componente evaluador no disponible'
+};
+const errorLabels: Readonly<Record<string, string>> = {
+  SCAN_DISPATCH_FAILED: 'No se pudo iniciar el procesamiento.', SCAN_PROCESSING_FAILED: 'No se pudo completar el procesamiento.', SCAN_INTERRUPTED: 'El análisis se interrumpió tras un reinicio.',
+  EVALUATOR_TIMEOUT: 'El evaluador superó el tiempo de espera.', EVALUATOR_UNAVAILABLE: 'El evaluador no está disponible.', EVALUATOR_INVALID_OUTPUT: 'El evaluador devolvió una respuesta no válida.', EVALUATOR_RATE_LIMITED: 'Se alcanzó el límite de frecuencia del evaluador.', EVALUATOR_CONFIGURATION_INVALID: 'La configuración del evaluador no es válida.', EVALUATOR_BUDGET_EXCEEDED: 'Se agotó el presupuesto del evaluador.', EVALUATOR_SUPPRESSED: 'No se solicitó evaluación por la política aplicada.',
+  DNS_RESOLUTION_FAILED: 'No se pudo resolver el destino.', TARGET_CONNECTION_FAILED: 'No se pudo conectar al destino.', TARGET_TIMEOUT: 'El destino superó el tiempo de espera.', HTTP_STATUS_ERROR: 'El destino devolvió un estado HTTP no admitido.', REQUEST_TOO_LARGE: 'La petición supera el tamaño permitido.', RESPONSE_TOO_LARGE: 'La respuesta supera el tamaño permitido.', RESPONSE_FORMAT_ERROR: 'El formato de respuesta no es válido.', RESPONSE_INVALID_JSON: 'La respuesta no es JSON válido.', RESPONSE_PATH_NOT_FOUND: 'No se encontró la ruta de respuesta.', RESPONSE_NOT_TEXT: 'La respuesta seleccionada no es texto.', EVIDENCE_LIMIT_EXCEEDED: 'Se superó el límite de evidencia.', TARGET_NOT_AUTHORIZED: 'El destino no está autorizado.', TARGET_ADDRESS_BLOCKED: 'La dirección del destino está bloqueada.', TARGET_TRANSPORT_REJECTED: 'El transporte del destino fue rechazado.', TARGET_CONFIGURATION_INVALID: 'La configuración del destino no es válida.', CREDENTIAL_UNAVAILABLE: 'La credencial no está disponible.', SCAN_BUDGET_EXCEEDED: 'Se agotó el presupuesto del análisis.', EXECUTION_INTERNAL_ERROR: 'La ejecución no pudo completarse.', EXECUTION_ABORTED: 'La ejecución fue detenida.', EXECUTION_INTERRUPTED: 'La ejecución fue interrumpida.', CRITERIA_UNAVAILABLE: 'Los criterios de evaluación no están disponibles.', EVALUATION_INTERNAL_ERROR: 'La evaluación no pudo completarse.', EVALUATION_ABORTED: 'La evaluación fue detenida.', EVALUATION_INTERRUPTED: 'La evaluación fue interrumpida.'
+};
+export function publicReason(code: string | null): string { return code ? errorLabels[code] ?? 'No se pudo completar esta operación.' : ''; }
+export const confidenceHelp = 'Soporte de la conclusión; no es una probabilidad calibrada ni una medida de impacto.';
+export function confidenceLabel(value: number): string { return `Confianza heurística: ${Math.round(value * 100)} %`; }
+export function sortFindings(items: readonly FindingDto[]): readonly FindingDto[] {
+  const ranks: Record<Severity, number> = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
+  const compare = (a: string, b: string) => a < b ? -1 : a > b ? 1 : 0;
+  return [...items].sort((a, b) => ranks[a.severity] - ranks[b.severity] || compare(a.category, b.category) || compare(a.id.toLowerCase(), b.id.toLowerCase()));
+}
