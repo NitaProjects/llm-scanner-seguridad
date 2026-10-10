@@ -22,6 +22,9 @@ public final class TransactionalScanLifecycle implements ScanLifecyclePort {
     private final TransactionTemplate transaction;
     private final TestExecutionRepositoryPort executions;
     private final com.llmscannerseguridad.application.evaluation.EvaluationRepositoryPort evaluations;
+    private final com.llmscannerseguridad.application.scoring.ScanScoreRepositoryPort scores;
+    private final com.llmscannerseguridad.application.scoring.CalculateScanScoreUseCase calculateScore;
+    private final com.llmscannerseguridad.application.scan.ScanRepositoryPort scans;
 
     public TransactionalScanLifecycle(ScanLifecyclePort delegate, PlatformTransactionManager manager,
             ScanExecutionGate gate) {
@@ -36,10 +39,22 @@ public final class TransactionalScanLifecycle implements ScanLifecyclePort {
     public TransactionalScanLifecycle(ScanLifecyclePort delegate, PlatformTransactionManager manager,
             ScanExecutionGate gate, TestExecutionRepositoryPort executions,
             com.llmscannerseguridad.application.evaluation.EvaluationRepositoryPort evaluations) {
+        this(delegate, manager, gate, executions, evaluations, null, null, null);
+    }
+
+    public TransactionalScanLifecycle(ScanLifecyclePort delegate, PlatformTransactionManager manager,
+            ScanExecutionGate gate, TestExecutionRepositoryPort executions,
+            com.llmscannerseguridad.application.evaluation.EvaluationRepositoryPort evaluations,
+            com.llmscannerseguridad.application.scoring.ScanScoreRepositoryPort scores,
+            com.llmscannerseguridad.application.scoring.CalculateScanScoreUseCase calculateScore,
+            com.llmscannerseguridad.application.scan.ScanRepositoryPort scans) {
         this.delegate = delegate;
         this.gate = gate;
         this.executions = executions;
         this.evaluations = evaluations;
+        this.scores = scores;
+        this.calculateScore = calculateScore;
+        this.scans = scans;
         transaction = new TransactionTemplate(manager);
         transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
@@ -58,6 +73,7 @@ public final class TransactionalScanLifecycle implements ScanLifecyclePort {
         return gate.admit(() -> confirmed(() -> {
             var scan = delegate.create(projectId);
             if (evaluations != null) evaluations.setProfile(scan.id());
+            if (scores != null) scores.setRequiredVersion(scan.id());
             return scan;
         }));
     }
@@ -70,6 +86,19 @@ public final class TransactionalScanLifecycle implements ScanLifecyclePort {
     @Override
     public boolean complete(UUID scanId) {
         return confirmed(() -> {
+            if (scores != null) {
+                var snapshot = scores.lock(scanId);
+                snapshot.validate();
+                if (!snapshot.scan().status().active()) return snapshot.scan().status() == ScanStatus.COMPLETED;
+                if (snapshot.requiredVersion() != null) {
+                    var score = calculateScore.execute(snapshot);
+                    scores.insert(score);
+                    var now = Clock.systemUTC().instant();
+                    var finished = now.isBefore(score.calculatedAt()) ? score.calculatedAt() : now;
+                    if (!scans.transition(ScanStatus.RUNNING, snapshot.scan().complete(finished))) throw ScanOperationException.internal();
+                    return true;
+                }
+            }
             if (executions != null && !executions.allCompleted(scanId)) {
                 throw ScanOperationException.internal();
             }
@@ -81,6 +110,7 @@ public final class TransactionalScanLifecycle implements ScanLifecyclePort {
     @Override
     public boolean fail(UUID scanId, ScanStatus expected, ScanFailureReason reason) {
         return confirmed(() -> {
+            if (scores != null) scores.lock(scanId).validate();
             boolean changed = delegate.fail(scanId, expected, reason);
             if (changed && evaluations != null) {
                 evaluations.closeActive(scanId, Clock.systemUTC().instant(),
@@ -96,6 +126,7 @@ public final class TransactionalScanLifecycle implements ScanLifecyclePort {
     @Override
     public int recoverInterrupted() {
         return confirmed(() -> {
+            if (scores != null) scores.verifyRecoveryIntegrity();
             if (evaluations != null) evaluations.recoverActive(Clock.systemUTC().instant());
             if (executions != null) {
                 executions.recoverActive(Clock.systemUTC().instant());

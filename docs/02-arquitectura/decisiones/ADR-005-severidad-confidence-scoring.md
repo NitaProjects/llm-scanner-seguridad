@@ -4,7 +4,7 @@
 
 Aceptada como decisión conceptual para el MVP.
 
-`evaluation-engine` aprueba `confidence-v1` y `severity-v1` para el MVP. Calibración estadística, scoring y revisión manual permanecen pendientes y fuera de este change.
+`evaluation-engine` aprueba `confidence-v1` y `severity-v1`. `scoring-engine` aprueba e implementa `scoring-v1` (D-01..D-17, SC-01..SC-13). Calibración estadística y revisión manual permanecen fuera del MVP actual.
 
 ## Contexto
 
@@ -88,16 +88,36 @@ Finding es una proyección atómica de EvaluationResult COMPLETED/VULNERABLE, un
 
 ## Score global
 
-El score considerará, como mínimo, número de findings, severidad, confidence y categoría afectada. Se propone inicialmente ponderar la severidad así:
+`scoring-v1` resume riesgo detectado en escala entera 0..100 creciente, sin representar porcentaje, probabilidad de compromiso ni CVSS. Sustituye los pesos provisionales 1/3/7/10 por estas bases definitivas para v1:
 
 ```text
-LOW      = 1
-MEDIUM   = 3
-HIGH     = 7
-CRITICAL = 10
+LOW      = 10
+MEDIUM   = 40
+HIGH     = 70
+CRITICAL = 90
+
+confidenceBonus = ROUND_HALF_UP(5 * confidence)  // decimal exacto, entero 0..5
+w = severityBase + confidenceBonus
+sin Findings: score = 0
+con Findings:
+  B = max(w)
+  R = sum(w) - B
+  score = min(100, B + min(10, floor(R / 10)))
 ```
 
-Los pesos son provisionales y no constituyen todavía una fórmula numérica definitiva. La normalización, la influencia exacta de `confidence` y los pesos por categoría se validarán con el experimento académico.
+Se usa confidence final persistida 0..1, sin descontar severity ni usar severity × confidence. HALF_UP es a entero: 0.09→0, 0.10→1, 0.30→2, 0.50→3, 0.70→4, 0.90→5, 1.00→5. El límite matemático 1 no modifica el cap 0.95 de confidence-v1. No se asignan pesos por categoría ni se cambia la política del evaluador. CRITICAL sigue reservado en evaluación, aunque la fórmula admite esa entrada sintética.
+
+HIGH impone score>=70 y CRITICAL>=90; el incremento acumulativo adicional es como máximo 10 y el score como máximo 100. Solo LOW no supera 25; severity máxima MEDIUM no supera 55; máxima HIGH no supera 85. Agregar Findings o permutarlos no diluye el más grave. Un LOW/0.00 da 10; LOW/0.90 da 15; MEDIUM/0.90 da 45; HIGH/0.90 da 75; CRITICAL/0.90 da 95. Tres/cuatro/veinte LOW/0.90 dan 18/19/25. HIGH+LOW/0.90 da 76, HIGH+MEDIUM+LOW da 81, cuatro HIGH dan 85 y CRITICAL+HIGH da 100.
+
+`RiskLevel` es un tipo separado de Severity: 0→NO_FINDINGS, 1..39→LOW, 40..69→MEDIUM, 70..89→HIGH, 90..100→CRITICAL. Score 0 significa **ningún Finding detectado en las pruebas completadas**, no aplicación segura. NOT_VULNERABLE describe únicamente el test; INCONCLUSIVE no suma riesgo ni equivale a NOT_VULNERABLE. Cuatro N y cuatro I producen 0, pero conservan contadores distintos. Un FAILED técnico impide calcular.
+
+El motor valida exactamente cuatro ejecuciones y cuatro evaluaciones COMPLETED del plan aprobado, sus revisiones, identidades y la correspondencia exacta V↔Finding. Usa solo datos estructurados persistidos, sin evidencia, prompts, narrativa ni llamadas LLM. `ScanScore` contiene resultado global, contadores y breakdown ordenado LLM01/LLM02/LLM08/LLM10 con la misma fórmula. Las categorías son VOs contenidos, sin tabla, identidad ni lifecycle propio. El global se calcula sobre Findings, no promediando categorías; LLM10 conserva OUTPUT_ONLY.
+
+T1 fija `scans.scoring_version=scoring-v1` junto al perfil de evaluación. T3 bloquea Scan y confirma inserción de score y COMPLETED en una transacción corta. Error de scoring revierte T3 y aplica FAILED/SCAN_PROCESSING_FAILED; no fabrica INCONCLUSIVE. PK `(scan_id,scoring_version)`, inserción inmutable y lock de Scan garantizan idempotencia/concurrencia; repetición conserva calculatedAt y un candidato derivado distinto se rechaza. Recovery interrumpe activos sin recalcular, conservando Findings y scores ya confirmados.
+
+GET scoped `/api/projects/{projectId}/scans/{scanId}/score` devuelve `{availability,score}`: AVAILABLE con objeto incluso 0; PENDING para activos nuevos sin score; UNAVAILABLE para FAILED nuevo sin score; NOT_APPLICABLE para históricos sin marcador. Las tres ausencias contienen null. COMPLETED marcado sin score, score con estado/versión incompatibles o error de lectura producen 500 sanitizado. El DTO de Scan conserva siete campos y `scans.global_score` permanece intacto y sin uso/fallback/backfill.
+
+La reproducibilidad usa inputs originales inmutables, relaciones, scoringVersion y calculatedAt UTC/microsegundos, nunca un hash nuevo ni snapshots duplicados. La versión congela fórmula, bases, redondeo, bandas, categorías, ausencia e incertidumbre. Cambiarlos requiere otro change y versión, sin reinterpretar históricos. La heurística no está calibrada empíricamente; el experimento académico sigue separado.
 
 El score global será únicamente un resumen. Un score bajo no podrá ocultar un finding `CRITICAL`, que deberá destacarse de forma independiente en dashboard e informe.
 
@@ -109,7 +129,7 @@ Se deja preparada una evolución para confirmar findings, rechazar falsos positi
 
 - Calibración estadística del confidence.
 - Fórmula de scoring validada con datos etiquetados.
-- Ajuste de pesos por categoría OWASP.
+- Cualquier política alternativa de pesos o categorías requiere nueva aprobación y versión.
 - Revisión manual integrada en la interfaz.
 - Comparación de scores entre estrategias determinista, LLM e híbrida.
 

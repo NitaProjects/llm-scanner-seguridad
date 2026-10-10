@@ -85,6 +85,12 @@ El rechazo de dispatch se compensa a FAILED/SCAN_DISPATCH_FAILED y devuelve 503 
 
 La extensión `evaluation-engine` conserva las fronteras transaccionales: preparación de ocho filas; claim condicional de evaluación y reserva 0/1 confirmadas antes de red; resultado terminal y Finding en una transacción nueva corta. No se repiten llamadas ante commit ambiguo. ScanStartup recupera también evaluaciones activas a FAILED/EVALUATION_INTERRUPTED en la misma transacción antes de admisión/executor. Conserva terminales y Findings. Solo un Scan nuevo que estaba activo permite registrar una evaluación ausente como interrupción explícita; nunca se rellenan históricos ni se reconstruye una respuesta perdida.
 
+## Extensión scoring-engine
+
+T1 fija scoring-v1 junto a evaluation-engine-v1 antes del dispatch, sin modificar los siete campos públicos. Para estos scans, COMPLETED requiere además ScanScore de la versión fijada. T3 bloquea Scan, comprueba plan/finales y correspondencia de Findings, calcula localmente e inserta score y transición a COMPLETED en la misma transacción corta. Un false inesperado o error de cálculo/escritura/commit revierte ambos y aplica FAILED/SCAN_PROCESSING_FAILED; si también falla compensar se conserva la compuerta existente. Nunca se fabrica INCONCLUSIVE técnico.
+
+La PK (scan_id,scoring_version) y el lock persistente evitan duplicados concurrentes; terminales no se reabren, fechas/resultados no se sobrescriben. Un commit ambiguo conserva el par ya confirmado o permite la compensación condicional sin relanzar target/evaluador. Recovery interrumpe activos sin score y conserva Findings; tras commit conserva score+COMPLETED. COMPLETED marcado sin score o score durable con estado incompatible es error de integridad, no reparación automática. Históricos sin marcador mantienen su semántica sin scoring retroactivo; global_score permanece sin uso. La consulta /score distingue resultado cero de ausencia mediante availability, según ADR-005/OpenAPI.
+
 ## Fuera del MVP / Evolución futura
 
 Se podrán valorar posteriormente:

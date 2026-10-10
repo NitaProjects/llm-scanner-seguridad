@@ -45,9 +45,11 @@ public class ScanConfiguration {
     ScanLifecyclePort scanLifecyclePort(ProjectRepositoryPort projects, TargetConfigurationRepositoryPort targets,
             ScanRepositoryPort scans, PlatformTransactionManager manager, ScanExecutionGate gate,
             TestExecutionRepositoryPort executions,
-            com.llmscannerseguridad.application.evaluation.EvaluationRepositoryPort evaluations) {
+            com.llmscannerseguridad.application.evaluation.EvaluationRepositoryPort evaluations,
+            com.llmscannerseguridad.application.scoring.ScanScoreRepositoryPort scores,
+            com.llmscannerseguridad.application.scoring.CalculateScanScoreUseCase calculateScore) {
         return new TransactionalScanLifecycle(new ScanLifecycleService(projects, targets, scans,
-                Clock.systemUTC(), UUID::randomUUID), manager, gate, executions, evaluations);
+                Clock.systemUTC(), UUID::randomUUID), manager, gate, executions, evaluations, scores, calculateScore, scans);
     }
 
     @Bean

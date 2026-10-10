@@ -238,7 +238,7 @@ El `confidence` representará la confianza del sistema en la corrección del fin
 
 Las señales se conservarán separadas como `deterministicResult`, `llmVerdict`, `finalVerdict`, `confidence` y `rationale`. La coincidencia entre reglas y LLM aumentará la confianza; las discrepancias se registrarán y podrán reducirla o requerir revisión.
 
-El score global del scan considerará número de findings, severidad, confidence y categoría. Como pesos provisionales se documentan `LOW = 1`, `MEDIUM = 3`, `HIGH = 7` y `CRITICAL = 10`. La fórmula definitiva, normalización, pesos por categoría y umbrales deberán validarse experimentalmente.
+`scoring-v1`, aprobado por scoring-engine D-01..D-17, sustituye los pesos provisionales por bases LOW=10, MEDIUM=40, HIGH=70 y CRITICAL=90. Cada Finding aporta w=base+ROUND_HALF_UP(5*confidence); con Findings, score=min(100,max(w)+min(10,floor((sum(w)-max(w))/10))); sin Findings, 0. Sin pesos por categoría. RiskLevel es independiente de Severity; bandas y propiedades completas en ADR-005. INCONCLUSIVE permanece visible sin sumar riesgo; cero no significa aplicación segura. La calibración empírica y cualquier versión futura requieren trabajo separado.
 
 Un score global bajo nunca podrá ocultar un finding `CRITICAL`, que deberá mostrarse claramente de forma independiente.
 
@@ -246,7 +246,7 @@ Un score global bajo nunca podrá ocultar un finding `CRITICAL`, que deberá mos
 
 Permite presentar resultados claros y comparar estrategias en el experimento. La revisión manual podrá incorporarse posteriormente para confirmar findings, rechazar falsos positivos, modificar severidad o añadir comentarios.
 
-**Estado: confidence-v1 y severity-v1 ejecutables cerrados por evaluation-engine D-05/D-06, detalle en ADR-005. CRITICAL reservado sin asignación automática; HIGH requiere señal fuerte e impacto explícito. Calibración estadística, scoring global y revisión manual siguen pendientes/fuera del change.**
+**Estado: confidence-v1 y severity-v1 cerrados por evaluation-engine; scoring-v1 cerrado e implementado por scoring-engine, detalle en ADR-005. CRITICAL sigue reservado en evaluación. Score y COMPLETED se confirman juntos, con idempotencia, recovery sin recálculo y availability explícita; históricos sin marcador no reciben scores. Calibración estadística y revisión manual siguen pendientes/fuera del MVP actual.**
 
 ## 7. Criterios de detección del MVP
 

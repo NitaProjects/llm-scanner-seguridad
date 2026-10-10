@@ -68,6 +68,16 @@ Claim PENDING→RUNNING condicionado a ejecución COMPLETED, con attempt/reserva
 
 prepare() consulta el corpus exportable en memoria sin consumirlo. Perder el claim no modifica la capacidad de la invocación ganadora. El corpus se libera después del commit de terminalización o aborto; un rollback de cierre lo conserva. El rollback de preparación del plan elimina sus entradas, pues ese plan no llegó a ser durable.
 
+## Scoring posterior a evaluación
+
+`scoring-engine` consume únicamente los Findings y verdicts finales persistidos de cuatro ejecuciones/evaluaciones COMPLETED; no altera evaluación, confidence-v1, severity-v1 ni el experimento. Valida plan/revisiones/relaciones y rechaza datos parciales o incoherentes. Un fallo LLM consolidado usa su verdict final; un FAILED técnico bloquea scoring. No carga evidencia ni llama al proveedor.
+
+`scoring-v1`: bases LOW=10, MEDIUM=40, HIGH=70, CRITICAL=90; w=base+ROUND_HALF_UP(5*confidence) con decimal exacto. F vacío da 0. Si hay Findings, B=max(w), R=sum(w)-B, score=min(100,B+min(10,floor(R/10))). HIGH>=70, CRITICAL>=90; solo LOW<=25, MEDIUM<=55, HIGH<=85. Mismo cálculo por categoría, sin pesos OWASP; global sobre todos los Findings. RiskLevel separado: 0 NO_FINDINGS, 1..39 LOW, 40..69 MEDIUM, 70..89 HIGH, 90..100 CRITICAL. Detalle reproducible y ejemplos en ADR-005.
+
+Score 0 significa «ningún Finding detectado en las pruebas completadas», no «aplicación segura». INCONCLUSIVE no suma riesgo ni equivale a NOT_VULNERABLE; se conserva su contador separado. Cuatro N y cuatro I dan cero con contadores diferentes. No se calcula un porcentaje de seguridad o cobertura, ni se amplía OUTPUT_ONLY de LLM10.
+
+ScanScore fija scoringVersion/calculatedAt UTC y resume contadores globales, por severity y cuatro categorías ordenadas. Score y COMPLETED se confirman en la misma transacción; fallos de scoring son técnicos con rollback y compensación. PK scanId+versión, inmutabilidad y recovery sin recálculo conservan resultados. La reproducibilidad usa fuentes persistidas y versiones, sin hash adicional. GET /score devuelve AVAILABLE con objeto incluso cero, PENDING/null para activos nuevos, UNAVAILABLE/null para FAILED nuevo y NOT_APPLICABLE/null para históricos sin marcador. No usa global_score heredado ni backfill. Calibración empírica continúa pendiente fuera de este incremento.
+
 ## Reproducibilidad académica
 
 Las reglas puras y el assessment separado permiten reconstruir la decisión híbrida y preparar una comparación posterior. HYBRID_WITH_SIGNALS influye al modelo: su voto guardado no equivale a una ejecución LLM-only pura. El experimento futuro necesita otra entrada sin señales, ground truth independiente y perfil/prompt versionados. No se implementa aquí ni se atribuyen métricas científicas a tests técnicos.

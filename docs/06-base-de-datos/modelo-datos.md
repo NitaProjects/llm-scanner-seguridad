@@ -128,6 +128,29 @@ Un Finding por EvaluationResult COMPLETED/VULNERABLE y por TestExecution, confir
 
 UNIQUE(test_execution_id) y UNIQUE(evaluation_result_id). FK compuesta a EvaluationResult incluye resultado/ejecución/Scan/test/categoría/verdict/severity/confidence; ningún campo nullable puede omitir esa integridad. El resultado vulnerable solo puede estar COMPLETED por los checks de ciclo. No estados de revisión ni score.
 
+### ScanScore (V6 / scoring-v1)
+
+`V6__incorporar_motor_scoring.sql` añade `scans.scoring_version VARCHAR(64) NULL`: null identifica históricos, scoring-v1 exige evaluation_profile_version no null e igual a evaluation-engine-v1. T1 lo fija antes de dispatch, sin añadir campo al DTO de Scan. V1–V5 permanecen intactas. V6 admite Findings V5 legítimos y no convierte históricos ni escribe/lee `scans.global_score`, aunque tenga valor previo.
+
+| Columna scan_scores | Tipo PostgreSQL / restricciones |
+| --- | --- |
+| scan_id, scoring_version | UUID FK scans(id), VARCHAR(64) NOT NULL; PK compuesta y versión scoring-v1. Sin UUID adicional. |
+| calculated_at | TIMESTAMPTZ(6) NOT NULL, UTC; fecha original no anterior a startedAt/finales de inputs/createdAt de Findings ni posterior a Scan.finishedAt. |
+| global_score | SMALLINT NOT NULL, 0..100, cero si y solo si finding_count=0. |
+| risk_level | VARCHAR(20) NOT NULL; NO_FINDINGS/LOW/MEDIUM/HIGH/CRITICAL y correspondencia exacta con bandas. |
+| evaluation_count | SMALLINT NOT NULL, exactamente 4 en v1. |
+| finding_count, not_vulnerable_count, inconclusive_count | SMALLINT NOT NULL, 0..4; suma=evaluation_count. |
+| severity_counts | JSONB NOT NULL; objeto cerrado con LOW/MEDIUM/HIGH/CRITICAL, enteros 0..4 incluidos ceros, suma=finding_count. |
+| categories | JSONB NOT NULL; array cerrado de cuatro VOs ordenados LLM01/LLM02/LLM08/LLM10. |
+
+Cada VO contiene exactamente category, score, riskLevel, evaluationCount=1, findingCount, notVulnerableCount, inconclusiveCount y severityCounts. Se comprueban tipos JSON, enteros, claves exactas, orden/identidades, bandas, sumas de contadores/severities y correspondencia del score global con los cuatro pesos de categoría del plan v1. Tamaño combinado serializado severity_counts+categories<=16 KiB. Funciones SQL inmutables `scoring_v1_summary_valid` y `scoring_v1_categories_valid` implementan CHECKs defensivos; aplicación valida además vínculos, terminales y fechas. JSON null/missing no omite integridad. No hay defaults de score, input_hash, snapshots de inputs, tabla/lifecycle por categoría, updatedAt ni cascadas.
+
+Una fila representa todo el resultado inmutable. Insert y RUNNING→COMPLETED comparten T3, con lock de Scan primero; fallo revierte ambas escrituras. La PK garantiza exclusión también en persistencia. Reentrada reutiliza la fila sin overwrite/actualizar calculatedAt; un candidato derivado diferente es error. Recovery no calcula ni reanuda: activos→FAILED/SCAN_INTERRUPTED conservando fuentes, y score+COMPLETED confirmados permanecen intactos. Corrupción durable no se repara automáticamente.
+
+Fórmula reproducible congelada: bases LOW=10/MEDIUM=40/HIGH=70/CRITICAL=90; w=base+ROUND_HALF_UP(5*confidence) decimal exacto. Sin Findings, 0; con Findings B=max(w), R=sum(w)-B, score=min(100,B+min(10,floor(R/10))). HIGH>=70, CRITICAL>=90, solo LOW<=25, incremento adicional<=10 y cap100. RiskLevel: 0 NO_FINDINGS, 1..39 LOW, 40..69 MEDIUM, 70..89 HIGH, 90..100 CRITICAL. Misma fórmula por categoría sin pesos distintos. INCONCLUSIVE no suma riesgo ni equivale a N. Cero significa ningún Finding detectado en las pruebas completadas, no aplicación segura; contadores distinguen cuatro N de cuatro I.
+
+GET scoped /score lee marcador/estado/resultado en una instantánea conjunta: AVAILABLE con objeto incluso cero, PENDING/null para activos nuevos, UNAVAILABLE/null para FAILED nuevo y NOT_APPLICABLE/null para cualquier histórico sin marcador. Un COMPLETED marcado sin score, versión/vínculo incorrectos o score en Scan no COMPLETED son integridad inválida/500; error de lectura nunca se transforma en ausencia. No fallback a global_score, backfill ni recálculo al consultar. Fuentes inmutables, relaciones, scoringVersion y calculatedAt permiten reproducir sin hash nuevo; cambiar política exige otra versión/change. Contrato exacto en OpenAPI y fundamentos en ADR-005.
+
 ### Report
 
 Representa el informe generado para un Scan. El formato, almacenamiento y ciclo de vida del informe quedan como **Pendiente de decisión**.

@@ -69,7 +69,11 @@ T1 confirma PENDING antes de dispatch, T2 reclama RUNNING condicionalmente y T3 
 
 SecurityTestCatalogPort, TestExecutionRepositoryPort y TargetInvocationPort separan catálogo, persistencia e invocación. HttpClient 5 queda dentro del adaptador HTTP, con DNS acotado, validación de todas las IPs y conexión fijada a una sola, TLS del hostname original, cero redirects/retries/proxy/pooling entre intentos y lectura limitada. CredentialDecryptionPort reutiliza AES existente; el plaintext no sale del adaptador. Una compuerta global permite una invocación simultánea y separación mínima de un segundo. Defaults/márgenes y códigos están en STE-09/STE-10 del change.
 
-`evaluation-engine` fija `evaluation-engine-v1` en T1 de cada Scan nuevo. El plan confirma cuatro ejecuciones y cuatro evaluaciones PENDING atómicamente. Tras confirmar cada ejecución, EvaluateExecutionUseCase aplica reglas, solicita EvaluatorPort cuando la proyección sintética está autorizada y consolida antes del siguiente probe. COMPLETED exige cuatro ejecuciones y cuatro evaluaciones COMPLETED: VULNERABLE, INCONCLUSIVE y fallos LLM consolidados no son fallo técnico global. EvaluationResult FAILED, fallos del target o deadline global impiden ese cierre. T3 cierra hijos activos y Scan atómicamente. Históricos sin perfil permanecen intactos. GET executions conserva su contrato; evaluations/findings añaden proyecciones sin evidencia. No hay scoring; LLM10 conserva OUTPUT_ONLY sin validar downstream/sink.
+`evaluation-engine` fija `evaluation-engine-v1` en T1 de cada Scan nuevo. El plan confirma cuatro ejecuciones y cuatro evaluaciones PENDING atómicamente. Tras confirmar cada ejecución, EvaluateExecutionUseCase aplica reglas, solicita EvaluatorPort cuando la proyección sintética está autorizada y consolida antes del siguiente probe. COMPLETED exige cuatro ejecuciones y cuatro evaluaciones COMPLETED: VULNERABLE, INCONCLUSIVE y fallos LLM consolidados no son fallo técnico global. EvaluationResult FAILED, fallos del target o deadline global impiden ese cierre. T3 cierra hijos activos y Scan atómicamente. Históricos sin perfil permanecen intactos. GET executions conserva su contrato; evaluations/findings añaden proyecciones sin evidencia. LLM10 conserva OUTPUT_ONLY sin validar downstream/sink.
+
+`scoring-engine` añade `domain/scoring` y `application/scoring` sin modificar Evaluation Engine. T1 fija además `scoring-v1` en un marcador interno nullable. T3 bloquea Scan primero; ScoringInputPort lee únicamente plan, identidades y finales estructurados, valida cuatro pruebas/revisiones/categorías y correspondencia V↔Finding; CalculateScanScoreUseCase aplica ScoringPolicyV1 sin red. ScanScoreRepositoryPort inserta un único resultado inmutable y la misma transacción confirma RUNNING→COMPLETED. Un error revierte ambas escrituras y aplica la compensación existente. CalculatedAt no precede inputs y finishedAt no precede calculatedAt. No cambia el presupuesto de 300 s, el DTO de Scan ni las transacciones del evaluador.
+
+V6 añade scan_scores con PK Scan+versión, contadores y cuatro VOs de categoría en JSONB cerrado; no hay tablas/lifecycle por categoría. El GET scoped /score lee estado, marcador y score en una única instantánea SQL, sin calcular ni acceder a evidencia, target o proveedor. Distingue AVAILABLE/PENDING/UNAVAILABLE/NOT_APPLICABLE; un histórico sin marcador no recibe backfill y global_score heredado sigue sin uso. Recovery valida integridad y conserva score+COMPLETED confirmados; interrumpe activos sin recalcular. Fórmula, bandas, cero e incertidumbre: ADR-005; contrato y persistencia: OpenAPI/modelo de datos.
 
 Los estados son `PENDING`, `RUNNING`, `COMPLETED` y `FAILED`. ScanStartup recupera ejecuciones activas a FAILED/EXECUTION_INTERRUPTED y scans activos a FAILED/SCAN_INTERRUPTED en la misma transacción antes de habilitar nuevos inicios y el executor; fallo de recuperación impide arrancar. Conserva terminales, también ejecuciones ya correctas, y cierra ejecuciones activas de scans terminales. Si durante ejecución no puede confirmarse tampoco FAILED, una compuerta local bloquea nuevos inicios/reclamaciones hasta reinicio, preservando consultas y permitiendo finalizar tareas ya RUNNING. Se soporta una sola instancia; no hay relanzamientos ni cola durable. No hay PARTIAL; cancelación y reintentos siguen fuera del incremento.
 
@@ -82,6 +86,7 @@ El dominio representa las reglas y conceptos principales del producto, entre ell
 - SecurityTest.
 - TestExecution.
 - Finding.
+- ScanScore, RiskLevel y los VOs contenidos CategoryScore/SeverityCounts.
 - Report.
 
 El dominio no debe depender directamente de Spring, PostgreSQL, clientes HTTP ni proveedores de modelos LLM.
@@ -98,6 +103,7 @@ Como orientación de diseño, se prefieren casos de uso explícitos:
 - `ConfigureTargetUseCase`.
 - `StartScanUseCase`, `GetScanUseCase`, `ListProjectScansUseCase`, `ProcessScanUseCase` y `RecoverInterruptedScansUseCase` (scan-execution).
 - `EvaluateExecutionUseCase`.
+- `CalculateScanScoreUseCase` y `GetScanScoreUseCase` (scoring-engine).
 - `GenerateReportUseCase`.
 
 La división definitiva de responsabilidades y el nivel de granularidad quedan como **Pendiente de decisión** hasta definir cada cambio OpenSpec.
@@ -197,7 +203,7 @@ D-CRYPTO queda cerrado para el MVP local: AES-256-GCM con clave externa de 256 b
 - Las alternativas y recomendaciones se recogen en `docs/02-arquitectura/decisiones/decisiones-abiertas.md`.
 - OpenAI y modelo inicial configurable gpt-6-luna están aprobados; cuenta/disponibilidad/retención operativa se comprueban antes de uso real autorizado.
 - Límites y fallback del evaluador cerrados en evaluation-engine D-09/D-15; coste monetario estimado opcional y externo.
-- confidence-v1/severity-v1 aprobadas; calibración estadística y scoring siguen pendientes.
+- confidence-v1/severity-v1/scoring-v1 aprobadas; calibración estadística sigue pendiente.
 - Diseño del experimento académico definitivo.
 - Evolución del executor interno de instancia única hacia cola durable, AWS SQS o workers distribuidos.
 - Reintentos y cancelación; recuperación local y fallo agregado con éxitos conservados aprobados en ADR-003.

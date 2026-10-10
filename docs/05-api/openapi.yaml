@@ -494,6 +494,63 @@ paths:
           content:
             application/json:
               schema: {$ref: '#/components/schemas/ScanApiError'}
+  /api/projects/{projectId}/scans/{scanId}/score:
+    parameters:
+      - $ref: '#/components/parameters/ScanProjectId'
+      - in: path
+        name: scanId
+        required: true
+        schema: {type: string, format: uuid}
+    get:
+      operationId: getScanScore
+      summary: Consultar el resumen de riesgo detectado
+      description: >-
+        SC-12/SC-13, scoring-v1. Solo lectura sin cálculo, target ni proveedor.
+        Lee estado, marcador y resultado en una instantánea coherente. AVAILABLE: resultado confirmado
+        con Scan COMPLETED, incluido globalScore=0. PENDING: nuevo PENDING/RUNNING sin score.
+        UNAVAILABLE: nuevo FAILED sin score, incluso antes del plan. NOT_APPLICABLE: histórico sin
+        marcador ni score, independientemente de estado/evaluaciones/global_score heredado.
+        En las tres ausencias score es null. Sin backfill ni fallback.
+        Score 0 significa ningún Finding detectado en las pruebas completadas, no aplicación segura.
+        No es porcentaje ni probabilidad. INCONCLUSIVE no suma riesgo ni equivale a NOT_VULNERABLE;
+        consultar los contadores. Cero inconclusos no acredita cobertura exhaustiva. LLM10 conserva
+        OUTPUT_ONLY sin inferir sink. Sin evidencia, prompts ni razonamiento LLM.
+      responses:
+        '200':
+          description: Disponibilidad y resultado inmutable, sin duplicarlo en Scan.
+          headers:
+            Cache-Control:
+              required: true
+              schema: {type: string, const: no-store}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ScoreResponse'}
+        '400':
+          description: INVALID_PROJECT_ID antes de INVALID_SCAN_ID; UUID validados antes de persistencia.
+          headers:
+            Cache-Control:
+              schema: {type: string, const: no-store}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ScanApiError'}
+        '404':
+          description: PROJECT_NOT_FOUND o SCAN_NOT_FOUND, incluido Scan ajeno al Project.
+          headers:
+            Cache-Control:
+              schema: {type: string, const: no-store}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ScanApiError'}
+        '500':
+          description: >-
+            INTERNAL_ERROR sanitizado por fallo de lectura/integridad, COMPLETED marcado sin score,
+            versión/vínculo incorrectos o score asociado a Scan no COMPLETED. No repara ni calcula.
+          headers:
+            Cache-Control:
+              schema: {type: string, const: no-store}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ScanApiError'}
 components:
   parameters:
     ScanProjectId:
@@ -505,6 +562,82 @@ components:
         format: uuid
         pattern: '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
   schemas:
+    ScoreResponse:
+      type: object
+      additionalProperties: false
+      required: [availability, score]
+      properties:
+        availability: {type: string, enum: [AVAILABLE, PENDING, UNAVAILABLE, NOT_APPLICABLE]}
+        score:
+          oneOf:
+            - $ref: '#/components/schemas/ScanScore'
+            - {type: 'null'}
+      oneOf:
+        - properties:
+            availability: {const: AVAILABLE}
+            score: {$ref: '#/components/schemas/ScanScore'}
+        - properties:
+            availability: {enum: [PENDING, UNAVAILABLE, NOT_APPLICABLE]}
+            score: {type: 'null'}
+    ScanScore:
+      type: object
+      additionalProperties: false
+      required: [scanId, scoringVersion, calculatedAt, globalScore, riskLevel, evaluationCount, findingCount, notVulnerableCount, inconclusiveCount, severityCounts, categories]
+      description: >-
+        scoring-v1. Bases LOW=10/MEDIUM=40/HIGH=70/CRITICAL=90;
+        w=base+ROUND_HALF_UP(5*confidence) decimal exacto. Sin Findings, globalScore=0.
+        Con Findings, B=max(w), R=sum(w)-B, globalScore=min(100,B+min(10,floor(R/10))).
+        HIGH>=70, CRITICAL>=90; solo LOW<=25, MEDIUM<=55, HIGH<=85. Sin pesos OWASP.
+        evaluationCount=findingCount+notVulnerableCount+inconclusiveCount=4. Contadores globales
+        suman categories; severityCounts suma findingCount. Inmutable por scanId/version.
+      properties:
+        scanId: {type: string, format: uuid}
+        scoringVersion: {type: string, const: scoring-v1}
+        calculatedAt:
+          type: string
+          format: date-time
+          pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$'
+          description: Fecha original UTC, no anterior a inputs ni posterior a Scan.finishedAt.
+        globalScore: {type: integer, minimum: 0, maximum: 100}
+        riskLevel: {$ref: '#/components/schemas/ScoreRiskLevel'}
+        evaluationCount: {type: integer, const: 4}
+        findingCount: {type: integer, minimum: 0, maximum: 4}
+        notVulnerableCount: {type: integer, minimum: 0, maximum: 4}
+        inconclusiveCount: {type: integer, minimum: 0, maximum: 4}
+        severityCounts: {$ref: '#/components/schemas/SeverityCounts'}
+        categories:
+          type: array
+          minItems: 4
+          maxItems: 4
+          description: Orden fijo LLM01, LLM02, LLM08, LLM10; una evaluación por categoría.
+          items: {$ref: '#/components/schemas/CategoryScore'}
+    ScoreRiskLevel:
+      type: string
+      enum: [NO_FINDINGS, LOW, MEDIUM, HIGH, CRITICAL]
+      description: Tipo separado de Severity. 0=NO_FINDINGS, 1..39=LOW, 40..69=MEDIUM, 70..89=HIGH, 90..100=CRITICAL.
+    SeverityCounts:
+      type: object
+      additionalProperties: false
+      required: [LOW, MEDIUM, HIGH, CRITICAL]
+      properties:
+        LOW: {type: integer, minimum: 0, maximum: 4}
+        MEDIUM: {type: integer, minimum: 0, maximum: 4}
+        HIGH: {type: integer, minimum: 0, maximum: 4}
+        CRITICAL: {type: integer, minimum: 0, maximum: 4}
+    CategoryScore:
+      type: object
+      additionalProperties: false
+      required: [category, score, riskLevel, evaluationCount, findingCount, notVulnerableCount, inconclusiveCount, severityCounts]
+      description: VO contenido indivisible. Misma fórmula por categoría; sin identidad ni lifecycle propios.
+      properties:
+        category: {type: string, enum: [LLM01, LLM02, LLM08, LLM10]}
+        score: {type: integer, minimum: 0, maximum: 100}
+        riskLevel: {$ref: '#/components/schemas/ScoreRiskLevel'}
+        evaluationCount: {type: integer, const: 1}
+        findingCount: {type: integer, minimum: 0, maximum: 1}
+        notVulnerableCount: {type: integer, minimum: 0, maximum: 1}
+        inconclusiveCount: {type: integer, minimum: 0, maximum: 1}
+        severityCounts: {$ref: '#/components/schemas/SeverityCounts'}
     EvaluationListing:
       type: object
       additionalProperties: false
