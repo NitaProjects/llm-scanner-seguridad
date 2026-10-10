@@ -37,7 +37,7 @@ Controles previstos:
 - Mantener un mecanismo para demostrar la autorización del target.
 - Validar la plantilla JSON, el `responsePath` y los headers configurables sin permitir transformaciones arbitrarias.
 
-La estrategia de ejecución real (allowlist efectiva, DNS, redirecciones y autorización) queda pendiente para el change que sustituya el trabajo no-op de `scan-execution`. Este incremento solo gestiona estados y comprueba existencia del target sin cargar credenciales ni realizar DNS/HTTP. `target-configuration` solo valida localmente, sin DNS/HTTP. Por defecto bloquea localhost y literales loopback/privados. La excepción demo exige perfil `local`, `TARGET_LOCAL_DEMO_ENABLED=true` y orígenes explícitos en `TARGET_LOCAL_DEMO_ORIGINS`; nunca se activa desde la API ni admite metadatos/link-local. No equivale a protección SSRF completa ni certifica autorización del destino.
+`security-test-execution` concreta la ejecución real: TARGET_ALLOWED_ORIGINS inicialmente vacía, orígenes exactos externos y autorización antes de DNS/crypto. La excepción demo conserva perfil local, TARGET_LOCAL_DEMO_ENABLED y TARGET_LOCAL_DEMO_ORIGINS; nunca se activa por API. Todas las A/AAAA (máximo 16) se validan y un conjunto mixto se rechaza; se conecta a una sola IP validada manteniendo Host/SNI/TLS originales, sin nueva resolución, fallback, proxies ni reutilización entre intentos. Cero redirects y retries; no se reenvían credenciales. La tabla estable de exclusiones está en TargetDestinationPolicy y se documenta en la política de autorización; demo no permite link-local/metadatos/CGNAT ni otras redes especiales. No certifica titularidad del destino.
 
 ## Configuración del target
 
@@ -64,6 +64,10 @@ La aplicación objetivo puede devolver contenido diseñado para influir en el mo
 ## Exposición de información sensible
 
 Las peticiones y respuestas pueden contener credenciales, datos personales, información interna o secretos. Deben aplicarse minimización, redacción, controles de acceso y políticas de retención antes de almacenar o mostrar evidencias.
+
+En este incremento local y sintético, solo se persiste request JSON preparado y string extraído, con redacción exacta de la credencial conocida sobre claves/cadenas JSON decodificadas y responseText. Una colisión de claves tras redacción omite evidencia y falla; no conserva copia bruta. No se eliminan otros datos del target que puedan constituir evidencia, ni se promete detectar secretos arbitrarios/codificados. La evidencia no sale por REST/logs/terceros y se trata como no confiable. Los límites por Scan no resuelven retención temporal, borrado ni autorización de usuarios: esas decisiones siguen pendientes antes de datos reales/exposición pública.
+
+Defaults técnicos: request 64 KiB, response 256 KiB, texto 64 KiB, evidencia 128 KiB por ejecución/512 KiB por Scan y 300 s globales; una invocación y separación >= 1 s. Se cuentan bytes de red antes de parsear y evidencia después de serializar/redactar. DNS tiene dos hilos/cola ocho, máximo 2 s, conexión/TLS 5 s y deadline monotónico total recortado por presupuesto. El parser acota profundidad/cabeceras; UTF-8 y JSON son estrictos. Cierre/cancelación impiden continuar un intento terminado tarde.
 
 ## Errores de evaluación
 

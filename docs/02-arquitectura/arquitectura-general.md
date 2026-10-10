@@ -65,9 +65,13 @@ Este flujo se ejecutará de forma asíncrona en el MVP. La solicitud inicial cre
 
 El controller no contiene procesamiento del análisis. `scan-execution` implementa StartScanUseCase/GetScanUseCase/ListProjectScansUseCase y desacopla ProcessScanUseCase mediante ScanDispatcherPort/ScanWorkPort. Un ThreadPoolTaskExecutor dedicado acotado/configurable acepta o rechaza inmediatamente; el índice único parcial PostgreSQL garantiza un activo por Project. Dominio/aplicación no dependen de Spring, JPA ni executor.
 
-T1 confirma PENDING antes de dispatch, T2 reclama RUNNING condicionalmente y T3 confirma terminal; todas son transacciones nuevas cortas. ScanWorkerEntry suspende una transacción ambiente durante la orquestación y el trabajo. El adaptador temporal NoOpScanWorkAdapter no realiza análisis: COMPLETED solo acredita el ciclo de vida, sin DNS/HTTP, credenciales, pruebas, findings, scoring ni informes. La sustitución por análisis real requiere otro change con prompts/casos, selección estable del target, controles SSRF/DNS/redirecciones y límites.
+T1 confirma PENDING antes de dispatch, T2 reclama RUNNING condicionalmente y T3 confirma terminal; todas son transacciones nuevas cortas. ScanWorkerEntry suspende una transacción ambiente durante la orquestación y el trabajo. `security-test-execution` sustituye el trabajo no-op por ExecuteSecurityTestsUseCase sobre ScanWorkPort. Fija una sola lectura del target y las cuatro definiciones inmutables del catálogo; confirma el plan PENDING completo y cada RUNNING antes de la red. HTTP y espera de cuota ocurren sin transacción; cada resultado se confirma antes del siguiente intento. Los scans no-op históricos conservan sus estados y ejecuciones vacías.
 
-Los estados son `PENDING`, `RUNNING`, `COMPLETED` y `FAILED`. ScanStartup recupera activos a FAILED/SCAN_INTERRUPTED antes de habilitar nuevos inicios y el executor; fallo de recuperación impide arrancar. Si durante ejecución no puede confirmarse tampoco FAILED, una compuerta local bloquea nuevos inicios/reclamaciones hasta reinicio, preservando consultas y permitiendo finalizar tareas ya RUNNING. Se soporta una sola instancia; no hay relanzamientos ni cola durable. Los futuros fallos individuales se registrarán en TestExecution; resultados parciales, cancelación y reintentos siguen pendientes.
+SecurityTestCatalogPort, TestExecutionRepositoryPort y TargetInvocationPort separan catálogo, persistencia e invocación. HttpClient 5 queda dentro del adaptador HTTP, con DNS acotado, validación de todas las IPs y conexión fijada a una sola, TLS del hostname original, cero redirects/retries/proxy/pooling entre intentos y lectura limitada. CredentialDecryptionPort reutiliza AES existente; el plaintext no sale del adaptador. Una compuerta global permite una invocación simultánea y separación mínima de un segundo. Defaults/márgenes y códigos están en STE-09/STE-10 del change.
+
+COMPLETED exige cuatro ejecuciones técnicamente COMPLETED, sin juicio de vulnerabilidad. Un fallo individual permite continuar pero produce Scan FAILED; uno global aborta pendientes. T3 confirma el fallo de Scan y el cierre de ejecuciones activas en una sola transacción. El listado GET executions solo devuelve metadatos; la evidencia JSON/texto redactada queda disponible internamente. No hay evaluador, Findings ni scoring en este incremento. LLM10 observa únicamente output y no valida downstream/sink.
+
+Los estados son `PENDING`, `RUNNING`, `COMPLETED` y `FAILED`. ScanStartup recupera ejecuciones activas a FAILED/EXECUTION_INTERRUPTED y scans activos a FAILED/SCAN_INTERRUPTED en la misma transacción antes de habilitar nuevos inicios y el executor; fallo de recuperación impide arrancar. Conserva terminales, también ejecuciones ya correctas, y cierra ejecuciones activas de scans terminales. Si durante ejecución no puede confirmarse tampoco FAILED, una compuerta local bloquea nuevos inicios/reclamaciones hasta reinicio, preservando consultas y permitiendo finalizar tareas ya RUNNING. Se soporta una sola instancia; no hay relanzamientos ni cola durable. No hay PARTIAL; cancelación y reintentos siguen fuera del incremento.
 
 ## Dominio
 
@@ -125,7 +129,7 @@ El modelo relacional detallado, las relaciones y las restricciones se documentar
 
 Es el endpoint autorizado que se desea analizar. Recibe los prompts o peticiones de prueba y devuelve respuestas que serán registradas y evaluadas.
 
-El acceso al target debe incorporar posteriormente controles contra SSRF, límites de tiempo y tamaño, validación de URL, restricciones de red y límites de uso.
+El acceso al target incorpora los controles contra SSRF, autorización externa de orígenes, DNS efectivo, tiempo, tamaño y frecuencia definidos por security-test-execution. Configurar un target por API no autoriza tráfico; ver la política de autorización consolidada.
 
 El contrato de integración del MVP queda limitado a HTTP REST, `POST` y JSON. La autenticación es opcional y se configura como parte del target.
 
@@ -201,4 +205,4 @@ D-CRYPTO queda cerrado para el MVP local: AES-256-GCM con clave externa de 256 b
 - Fórmula numérica definitiva, normalización y calibración de severidad, confidence y scoring.
 - Diseño del experimento académico definitivo.
 - Evolución del executor interno de instancia única hacia cola durable, AWS SQS o workers distribuidos.
-- Reintentos, cancelación y representación de resultados parciales; recuperación local aprobada en ADR-003.
+- Reintentos y cancelación; recuperación local y fallo agregado con éxitos conservados aprobados en ADR-003.

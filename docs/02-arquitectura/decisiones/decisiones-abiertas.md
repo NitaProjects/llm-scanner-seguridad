@@ -202,15 +202,15 @@ Los estados mínimos serán:
 - `COMPLETED`: procesamiento finalizado.
 - `FAILED`: procesamiento terminado con un error que impide completar el scan.
 
-Un fallo individual debe persistirse en la ejecución de la prueba y no tiene por qué detener el resto del scan. La política definitiva para representar resultados parciales y determinar el estado final queda pendiente.
+`security-test-execution` cierra la política de este incremento: fallos técnicos individuales permiten continuar, pero cualquier FAILED implica Scan FAILED/SCAN_PROCESSING_FAILED. Fallos globales abortan pendientes. COMPLETED exige cuatro éxitos técnicos persistidos; no hay PARTIAL ni evaluación. El detalle y los límites técnicos están en ADR-003 y STE-09/STE-10.
 
 ### Impacto en el MVP
 
-Mejora la experiencia y permite registrar histórico sin mantener una petición HTTP abierta durante todo el análisis. El incremento actual usa trabajo no-op: COMPLETED no acredita análisis de seguridad y los contadores se aplazan a SecurityTest/TestExecution. Reiniciar una única instancia marca activos FAILED/SCAN_INTERRUPTED sin relanzar, antes de admitir nuevos scans. Si falla la persistencia terminal y también registrar FAILED, se bloquean nuevos inicios/reclamos hasta recuperación correcta tras reinicio. Cancelación, timeout del trabajo real, reintentos y error parcial siguen pendientes.
+Mejora la experiencia y permite registrar histórico sin mantener una petición HTTP abierta. El worker real aprobado usa catálogo/plan persistidos y GET executions para derivar progreso, sin ampliar Scan. Reiniciar interrumpe ejecuciones y scans activos atómicamente, sin relanzar. Si falla persistencia terminal y compensación se bloquean nuevos inicios/reclamos hasta recuperación. Los históricos no-op permanecen identificables por ejecuciones vacías. Timeout/cuota/fallos técnicos del trabajo real quedan cerrados por STE-09/STE-10; cancelación y reintentos siguen fuera del incremento.
 
 `CANCELLED` y `PARTIAL` no forman parte de los estados mínimos del MVP. Su incorporación queda como **Pendiente de decisión**.
 
-**Estado: Decisión funcional y ejecución local/recuperación cerradas por scan-execution. La evolución distribuida, cancelación, reintentos y resultados parciales permanecen pendientes.**
+**Estado: Ejecución local/recuperación cerradas por scan-execution y worker técnico/fallos mixtos cerrados por security-test-execution. Distribución, cancelación y reintentos siguen pendientes.**
 
 ## 6. Métrica de severidad y scoring
 
@@ -259,7 +259,7 @@ Los criterios conceptuales de detección de LLM01, LLM02, LLM08 y LLM10 quedan d
 
 Se adopta la regla de que no puede generarse un finding únicamente a partir de la opinión del LLM evaluador. Debe existir evidencia asociada a una `TestExecution`, señales deterministas o criterios esperados cuando sean aplicables, y un veredicto final entre `VULNERABLE`, `NOT_VULNERABLE` o `INCONCLUSIVE`.
 
-La fórmula matemática de `confidence`, los umbrales concretos, los payloads, la severidad definitiva por caso y el procedimiento experimental siguen **Pendientes de decisión**.
+La fórmula matemática de `confidence`, los umbrales, las variantes de payloads, la severidad definitiva por caso y el procedimiento experimental siguen **Pendientes de decisión**. Los cuatro prompts técnicos iniciales de revisión 1 y su persistencia están aprobados en D-11 de security-test-execution, sin reglas ni evaluación ejecutables.
 
 **Estado: Decisión conceptual cerrada para el MVP.**
 

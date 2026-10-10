@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: LLM Scanner Seguridad - Projects, TargetConfiguration y Scans
   version: 0.0.1
-  description: Contratos de project-management (PM-01 a PM-07), target-configuration (TC-01 a TC-12) y scan-execution (SE-01 a SE-10).
+  description: Contratos de project-management, target-configuration, scan-execution y security-test-execution (STE-01 a STE-14).
 paths:
   /api/projects:
     post:
@@ -221,9 +221,11 @@ paths:
         también ante concurrencia mediante índice único parcial PostgreSQL.
         Confirma PENDING antes de dispatch. Devuelve la fotografía inicial sin esperar
         al worker; el estado consultado puede haber avanzado. Sin idempotencia ni
-        entrega durable garantizada. El trabajo actual es no-op: COMPLETED acredita
-        únicamente el ciclo de vida, nunca pruebas de seguridad, cobertura OWASP,
-        findings, score, evaluación ni informe. La instancia backend debe ser única.
+        entrega durable garantizada. El worker ejecuta las cuatro pruebas iniciales;
+        COMPLETED exige todas técnicamente COMPLETED. Cualquier fallo produce FAILED,
+        conservando éxitos individuales; nunca acredita seguridad, vulnerabilidad o
+        cobertura OWASP. Los scans no-op históricos conservan ejecuciones vacías.
+        Sin findings, score, evaluación ni informe. La instancia backend debe ser única.
       responses:
         '202':
           description: PENDING confirmado y lanzamiento local aceptado; no acredita análisis de seguridad.
@@ -280,7 +282,8 @@ paths:
         SE-06. Comprueba Project primero. Array completo sin filtros/paginación,
         ordenado por createdAt descendente e id canónico ascendente en empate.
         No carga target, lanza trabajo ni modifica fechas. Un fallo de almacenamiento
-        nunca se transforma en array vacío. El no-op no produce resultados de seguridad.
+        nunca se transforma en array vacío. Los estados expresan resultado técnico;
+        los scans no-op históricos no tienen ejecuciones ni resultados de seguridad.
       responses:
         '200':
           description: Todos los Scans del Project; [] para Project existente sin scans.
@@ -318,7 +321,9 @@ paths:
         mutación ni relanzamiento. FAILED se devuelve con 200. Al reiniciar una única
         instancia, todos los PENDING/RUNNING quedan FAILED/SCAN_INTERRUPTED antes de
         habilitar nuevos inicios; conserva terminales y no relanza. Si no confirma esa
-        recuperación, falla el arranque. COMPLETED del trabajo temporal no acredita seguridad.
+        recuperación, falla el arranque. Se interrumpen también las ejecuciones activas,
+        en la misma transacción y sin reenvíos. COMPLETED técnico no acredita seguridad;
+        los históricos no-op conservan un listado de ejecuciones vacío.
       responses:
         '200':
           description: Los siete campos confirmados; incluye recursos FAILED con motivo cerrado.
@@ -335,6 +340,53 @@ paths:
           $ref: '#/components/responses/ScanNotFound'
         '500':
           $ref: '#/components/responses/ScanInternalError'
+  /api/projects/{projectId}/scans/{scanId}/executions:
+    parameters:
+      - $ref: '#/components/parameters/ScanProjectId'
+      - in: path
+        name: scanId
+        required: true
+        schema:
+          type: string
+          format: uuid
+          pattern: '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+    get:
+      operationId: listTestExecutions
+      summary: Consultar metadatos técnicos de las ejecuciones
+      description: >-
+        STE-13. Valida ambos UUID antes de persistencia, con precedencia de
+        INVALID_PROJECT_ID sobre INVALID_SCAN_ID. Comprueba Project y Scan scoped;
+        un Scan ajeno produce SCAN_NOT_FOUND. Orden ascendente por securityTestCode
+        y securityTestRevision. Array completo sin filtros ni paginación. Vacío
+        antes de preparar plan, ante fallo previo al plan y para scans no-op históricos;
+        no representa cero pruebas satisfactorias. No lee target/clave ni modifica
+        estados. Un fallo de lectura es 500 INTERNAL_ERROR. Sin evidencia, prompts,
+        respuestas, URL, headers o credenciales. Progreso derivable de filas terminales.
+        COMPLETED solo expresa éxito técnico. LLM10 observa output, sin validar sink.
+      responses:
+        '200':
+          description: Metadatos confirmados; también para Scan y ejecuciones FAILED.
+          headers:
+            Cache-Control:
+              required: true
+              schema: {type: string, const: no-store}
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/TestExecutionMetadata'}
+        '400':
+          description: INVALID_PROJECT_ID o INVALID_SCAN_ID, sin acceso a persistencia.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ScanApiError'}
+        '404':
+          description: PROJECT_NOT_FOUND o SCAN_NOT_FOUND, incluido Scan ajeno.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ScanApiError'}
+        '500':
+          $ref: '#/components/responses/ScanInternalError'
 components:
   parameters:
     ScanProjectId:
@@ -346,6 +398,34 @@ components:
         format: uuid
         pattern: '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
   schemas:
+    TestExecutionMetadata:
+      type: object
+      additionalProperties: false
+      required: [id, scanId, securityTestCode, securityTestRevision, securityTestName,
+        category, status, startedAt, finishedAt, httpStatus, latencyMs, errorReason,
+        requestRedacted, responseRedacted]
+      properties:
+        id: {type: string, format: uuid}
+        scanId: {type: string, format: uuid}
+        securityTestCode: {type: string}
+        securityTestRevision: {type: integer, minimum: 1}
+        securityTestName: {type: string}
+        category: {type: string, enum: [LLM01, LLM02, LLM08, LLM10]}
+        status: {type: string, enum: [PENDING, RUNNING, COMPLETED, FAILED]}
+        startedAt: {type: [string, 'null'], format: date-time}
+        finishedAt: {type: [string, 'null'], format: date-time}
+        httpStatus: {type: [integer, 'null'], minimum: 100, maximum: 599}
+        latencyMs: {type: [integer, 'null'], minimum: 0}
+        errorReason:
+          type: [string, 'null']
+          enum: [null, DNS_RESOLUTION_FAILED, TARGET_CONNECTION_FAILED, TARGET_TIMEOUT,
+            HTTP_STATUS_ERROR, REQUEST_TOO_LARGE, RESPONSE_TOO_LARGE, RESPONSE_FORMAT_ERROR,
+            RESPONSE_INVALID_JSON, RESPONSE_PATH_NOT_FOUND, RESPONSE_NOT_TEXT,
+            EVIDENCE_LIMIT_EXCEEDED, TARGET_NOT_AUTHORIZED, TARGET_ADDRESS_BLOCKED,
+            TARGET_TRANSPORT_REJECTED, TARGET_CONFIGURATION_INVALID, CREDENTIAL_UNAVAILABLE,
+            SCAN_BUDGET_EXCEEDED, EXECUTION_INTERNAL_ERROR, EXECUTION_ABORTED, EXECUTION_INTERRUPTED]
+        requestRedacted: {type: boolean}
+        responseRedacted: {type: boolean}
     Scan:
       type: object
       additionalProperties: false
@@ -356,7 +436,9 @@ components:
         FAILED con fin/error y startedAt conservado (null si no comenzó).
         createdAt <= startedAt <= finishedAt cuando existen. Fechas UTC con máximo
         seis decimales, sin retroceso. Terminales inmutables. No hay contadores,
-        porcentaje, targetSnapshot ni score. COMPLETED solo acredita el no-op actual.
+        porcentaje, targetSnapshot ni score. El worker actual exige cuatro ejecuciones
+        técnicamente COMPLETED; cualquier fallo implica FAILED sin borrar éxitos.
+        Los históricos no-op COMPLETED conservan ejecuciones vacías y no se recalculan.
       properties:
         id: {type: string, format: uuid, readOnly: true}
         projectId: {type: string, format: uuid, readOnly: true}

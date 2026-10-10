@@ -44,6 +44,24 @@ final class ScanTestDatabase implements AutoCloseable {
     }
 
     ConfigurableApplicationContext open(ScanWorkPort work) {
+        return open(Map.of(), work, true);
+    }
+
+    ConfigurableApplicationContext openSecurity(Map<String, Object> settings) {
+        return openSecurity(settings, ignored -> { });
+    }
+
+    ConfigurableApplicationContext openSecurity(Map<String, Object> settings,
+            java.util.function.Consumer<GenericApplicationContext> customize) {
+        return open(settings, null, false, customize);
+    }
+
+    private ConfigurableApplicationContext open(Map<String, Object> settings, ScanWorkPort work, boolean historicalLifecycle) {
+        return open(settings, work, historicalLifecycle, ignored -> { });
+    }
+
+    private ConfigurableApplicationContext open(Map<String, Object> settings, ScanWorkPort work, boolean historicalLifecycle,
+            java.util.function.Consumer<GenericApplicationContext> customize) {
         Map<String, Object> properties = new HashMap<>();
         properties.put("spring.datasource.url", url);
         properties.put("spring.datasource.username", username);
@@ -60,17 +78,36 @@ final class ScanTestDatabase implements AutoCloseable {
         properties.put("spring.flyway.enabled", true);
         properties.put("spring.sql.init.mode", "never");
         properties.put("TARGET_CREDENTIAL_ENCRYPTION_KEY", "");
+        properties.put("spring.profiles.active", "local");
+        properties.put("TARGET_ALLOWED_ORIGINS", "");
+        properties.put("TARGET_LOCAL_DEMO_ENABLED", "false");
+        properties.put("TARGET_LOCAL_DEMO_ORIGINS", "");
         properties.put("app.scan.executor.core-pool-size", 1);
         properties.put("app.scan.executor.max-pool-size", 1);
         properties.put("app.scan.executor.queue-capacity", 10);
+        properties.putAll(settings);
         var context = new SpringApplicationBuilder(LlmScannerSeguridadApplication.class)
                 .web(WebApplicationType.NONE).registerShutdownHook(false)
                 .initializers(application -> {
                     application.getEnvironment().getPropertySources().addFirst(new MapPropertySource("scan-execution-test", properties));
-                    if (work != null) {
+                    if (historicalLifecycle) {
+                        // Las pruebas anteriores verifican el incremento no-op histórico, aislado del worker real.
+                        ((GenericApplicationContext) application).registerBean("historicalScanLifecycle",
+                                com.llmscannerseguridad.application.scan.ScanLifecyclePort.class, () ->
+                                    new com.llmscannerseguridad.config.TransactionalScanLifecycle(
+                                        new com.llmscannerseguridad.application.scan.ScanLifecycleService(
+                                            application.getBean(com.llmscannerseguridad.application.project.ProjectRepositoryPort.class),
+                                            application.getBean(com.llmscannerseguridad.application.target.TargetConfigurationRepositoryPort.class),
+                                            application.getBean(com.llmscannerseguridad.application.scan.ScanRepositoryPort.class),
+                                            java.time.Clock.systemUTC(), UUID::randomUUID),
+                                        application.getBean(org.springframework.transaction.PlatformTransactionManager.class),
+                                        application.getBean(com.llmscannerseguridad.config.ScanExecutionGate.class)),
+                                definition -> definition.setPrimary(true));
                         ((GenericApplicationContext) application).registerBean("scanTestWork", ScanWorkPort.class,
-                                () -> work, definition -> definition.setPrimary(true));
+                                () -> work == null ? new com.llmscannerseguridad.adapters.out.execution.scan.NoOpScanWorkAdapter() : work,
+                                definition -> definition.setPrimary(true));
                     }
+                    customize.accept((GenericApplicationContext) application);
                 }).run();
         applications.add(context);
         return context;

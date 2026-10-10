@@ -2,7 +2,73 @@
 
 ## Descripción
 
-LLM Scanner Seguridad es una plataforma web defensiva para evaluar, con autorización, la seguridad de aplicaciones basadas en modelos de lenguaje. El proyecto forma parte de un Trabajo Fin de Máster.
+**LLM Scanner Seguridad** es una plataforma web defensiva orientada a evaluar, de forma controlada y autorizada, la seguridad de aplicaciones que incorporan modelos de lenguaje (LLM).
+
+El proyecto nace como Trabajo Fin de Máster y tiene un doble objetivo: por un lado, aplicar de forma práctica conceptos de desarrollo de software, inteligencia artificial y ciberseguridad; por otro, explorar cómo automatizar parte de la evaluación de seguridad de aplicaciones basadas en LLM mediante pruebas reproducibles y análisis asistido por inteligencia artificial.
+
+La plataforma permite configurar una aplicación objetivo mediante su API, ejecutar un conjunto controlado de pruebas de seguridad y registrar las respuestas y evidencias obtenidas. Sobre estas evidencias, el sistema está diseñado para aplicar posteriormente una estrategia de evaluación híbrida que combine reglas deterministas con un modelo de lenguaje evaluador, permitiendo detectar comportamientos potencialmente inseguros y generar findings explicables.
+
+El alcance actual se centra en cuatro categorías inspiradas en OWASP GenAI LLM Top 10:
+
+- **LLM01 – Prompt Injection**
+- **LLM02 – Sensitive Information Disclosure**
+- **LLM08 – Hidden Context Exposure**
+- **LLM10 – Improper Output Handling**
+
+LLM Scanner Seguridad no pretende sustituir herramientas profesionales de auditoría ni afirmar una cobertura completa de todos los riesgos asociados a aplicaciones de inteligencia artificial. Se plantea como un **MVP académico funcional y extensible**, diseñado para demostrar una arquitectura y una metodología de análisis que puedan evolucionar progresivamente.
+
+### ¿Qué tipo de aplicaciones pretende analizar?
+
+El objetivo principal son aplicaciones que incorporan un LLM detrás de una API controlada por su propietario, por ejemplo:
+
+- chatbots internos;
+- asistentes empresariales;
+- aplicaciones web que integran modelos de lenguaje;
+- modelos open source desplegados de forma local o privada;
+- servicios propios construidos sobre proveedores externos de IA;
+- prototipos y pequeñas aplicaciones que necesitan una primera evaluación de seguridad.
+
+La plataforma no tiene como objetivo auditar directamente servicios generales como ChatGPT, Claude o Gemini sin autorización. El objeto de evaluación es la **aplicación desarrollada alrededor del modelo y el endpoint autorizado que esta expone**.
+
+### Motivación
+
+La incorporación de modelos de lenguaje en aplicaciones introduce una nueva superficie de ataque. Vulnerabilidades como la inyección de prompts, la exposición de información sensible o la revelación de contexto interno no siempre pueden analizarse utilizando únicamente las herramientas tradicionales de seguridad web.
+
+Además, las respuestas de un LLM son probabilísticas y semánticas. Dos respuestas distintas pueden representar el mismo comportamiento inseguro aunque no compartan exactamente las mismas palabras.
+
+Por este motivo, LLM Scanner Seguridad plantea una aproximación híbrida:
+
+1. ejecutar pruebas de seguridad controladas;
+2. capturar la evidencia producida por la aplicación objetivo;
+3. aplicar comprobaciones deterministas cuando exista una señal objetiva;
+4. utilizar un LLM evaluador para analizar semánticamente los casos que requieren interpretación;
+5. generar resultados trazables que puedan convertirse en findings, puntuaciones e informes.
+
+Esta combinación busca conservar la reproducibilidad de las reglas tradicionales sin renunciar a la capacidad de interpretación que ofrece la inteligencia artificial.
+
+### Evolución futura
+
+El proyecto ha sido diseñado para poder crecer más allá del alcance del TFM.
+
+Entre las posibles líneas de evolución se encuentran:
+
+- ampliar el catálogo de pruebas y la cobertura OWASP;
+- generar o adaptar dinámicamente pruebas mediante IA;
+- incorporar nuevos motores de evaluación;
+- comparar distintos modelos evaluadores;
+- generar informes de seguridad automáticos;
+- mantener históricos y comparar scans;
+- integrar el scanner en pipelines CI/CD;
+- realizar análisis periódicos;
+- incorporar autenticación, organizaciones y gestión de equipos;
+- soportar arquitecturas LLM más complejas, como RAG, agentes y uso de herramientas;
+- ofrecer integraciones con plataformas de desarrollo y seguridad.
+
+A nivel empresarial, una evolución natural sería convertir el sistema en una herramienta de **LLM Security Testing / AI Security Testing**, orientada a equipos que desarrollan aplicaciones con modelos de lenguaje y necesitan incorporar comprobaciones de seguridad durante el ciclo de desarrollo.
+
+El modelo podría evolucionar hacia un servicio SaaS, una herramienta desplegable dentro de la infraestructura del cliente o una integración de seguridad para pipelines de desarrollo.
+
+El objetivo del TFM no es demostrar la viabilidad comercial de ese producto completo, sino construir y validar técnicamente una base suficientemente sólida sobre la que una solución de este tipo pueda evolucionar.
 
 ## Estado del proyecto
 

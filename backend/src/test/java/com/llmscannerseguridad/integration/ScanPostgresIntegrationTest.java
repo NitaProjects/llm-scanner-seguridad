@@ -525,7 +525,8 @@ class ScanPostgresIntegrationTest {
     }
 
     private void assertNoSecurityResults(ScanTestDatabase database) {
-        for (String table : List.of("test_cases", "test_executions", "findings")) {
+        assertThat(database.jdbc().queryForObject("SELECT count(*) FROM test_cases", Long.class)).isEqualTo(4L);
+        for (String table : List.of("test_executions", "findings")) {
             assertThat(database.jdbc().queryForObject("SELECT count(*) FROM " + table, Long.class)).isZero();
         }
     }

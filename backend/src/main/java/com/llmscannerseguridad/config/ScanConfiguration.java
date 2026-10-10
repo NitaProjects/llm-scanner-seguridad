@@ -2,7 +2,10 @@ package com.llmscannerseguridad.config;
 
 import java.time.Clock;
 import java.util.UUID;
-import com.llmscannerseguridad.adapters.out.execution.scan.NoOpScanWorkAdapter;
+import com.llmscannerseguridad.application.execution.ExecuteSecurityTestsUseCase;
+import com.llmscannerseguridad.application.execution.TestExecutionRepositoryPort;
+import com.llmscannerseguridad.application.execution.TargetInvocationPort;
+import com.llmscannerseguridad.adapters.out.execution.securitytest.ExecutionLimits;
 import com.llmscannerseguridad.adapters.out.execution.scan.SpringScanDispatcherAdapter;
 import com.llmscannerseguridad.adapters.out.persistence.scan.PostgresScanRepositoryAdapter;
 import com.llmscannerseguridad.application.project.ProjectRepositoryPort;
@@ -40,9 +43,10 @@ public class ScanConfiguration {
 
     @Bean
     ScanLifecyclePort scanLifecyclePort(ProjectRepositoryPort projects, TargetConfigurationRepositoryPort targets,
-            ScanRepositoryPort scans, PlatformTransactionManager manager, ScanExecutionGate gate) {
+            ScanRepositoryPort scans, PlatformTransactionManager manager, ScanExecutionGate gate,
+            TestExecutionRepositoryPort executions) {
         return new TransactionalScanLifecycle(new ScanLifecycleService(projects, targets, scans,
-                Clock.systemUTC(), UUID::randomUUID), manager, gate);
+                Clock.systemUTC(), UUID::randomUUID), manager, gate, executions);
     }
 
     @Bean
@@ -75,8 +79,8 @@ public class ScanConfiguration {
     }
 
     @Bean
-    ScanWorkPort scanWorkPort() {
-        return new NoOpScanWorkAdapter();
+    ScanWorkPort scanWorkPort(TestExecutionRepositoryPort executions, TargetInvocationPort invocation, ExecutionLimits limits) {
+        return new ExecuteSecurityTestsUseCase(executions, invocation, limits.scanBudgetMs(), Clock.systemUTC(), System::nanoTime);
     }
 
     @Bean

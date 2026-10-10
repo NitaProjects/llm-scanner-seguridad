@@ -8,7 +8,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-@RestControllerAdvice(assignableTypes = ScanController.class)
+@RestControllerAdvice(assignableTypes = {ScanController.class, TestExecutionController.class})
 public class ScanExceptionHandler {
     @ExceptionHandler(InvalidScanRequestException.class)
     public ResponseEntity<ScanApiError> invalid(InvalidScanRequestException error) {

@@ -4,7 +4,7 @@
 
 Aceptada para el comportamiento funcional del MVP.
 
-`scan-execution` concreta la tecnología y recuperación del incremento local de una única instancia: executor interno de Spring acotado/configurable, un scan activo por Project y recuperación a FAILED tras reinicio. Reintentos, cancelación y resultados parciales siguen pendientes.
+`scan-execution` concreta executor interno acotado y una única instancia. `security-test-execution` aprueba el worker real, los límites de transporte y la política de fallos individuales/globales descrita abajo. Reintentos y cancelación siguen fuera del incremento.
 
 ## Contexto
 
@@ -44,7 +44,7 @@ El incremento `scan-execution` implementa únicamente el ciclo de vida mediante 
 - `COMPLETED`: el procesamiento ha terminado.
 - `FAILED`: un error impide completar el procesamiento del scan.
 
-Un error de una prueba individual no implica necesariamente que el scan completo pase a `FAILED`. El error debe persistirse en su `TestExecution` y el comportamiento final ante resultados parciales queda **Pendiente de decisión**.
+Para el worker real, un fallo individual seguro se persiste y permite continuar; cualquier TestExecution FAILED obliga a Scan FAILED/SCAN_PROCESSING_FAILED, conservando éxitos. Un fallo global de autorización/SSRF/configuración/credenciales/persistencia/presupuesto aborta pendientes como FAILED/EXECUTION_ABORTED. COMPLETED exige un plan no vacío con las cuatro pruebas técnicamente COMPLETED; no expresa seguridad ni vulnerabilidad. No se añade PARTIAL. Esta concreción aprobada sustituye la decisión anteriormente pendiente, sin recalcular históricos no-op.
 
 `CANCELLED` y `PARTIAL` no se incorporan al conjunto mínimo del MVP. Su necesidad se revisará al diseñar cancelación, recuperación y tratamiento de errores parciales.
 
@@ -60,13 +60,13 @@ Un error de una prueba individual no implica necesariamente que el scan completo
 - `finishedAt`.
 - `errorReason` opcional.
 
-En `scan-execution` estos son exactamente los siete campos. `totalTests` y `completedTests` se aplazan a SecurityTest/TestExecution, cuando haya un total significativo; no se publican 0/0 ni porcentajes artificiales. La columna existente global_score se conserva sin uso ni mapeo al modelo.
+Estos siguen siendo exactamente los siete campos. security-test-execution permite derivar total/terminales del listado GET executions, sin añadir totalTests/completedTests a Scan ni porcentajes artificiales. La columna global_score se conserva sin uso ni mapeo.
 
 Cada `TestExecution` debe conservar su resultado o su error, sin confundir un fallo del LLM evaluador con una vulnerabilidad del target.
 
 ## Límites y errores
 
-La ejecución asíncrona deberá contemplar timeouts, concurrencia, rate limiting, número máximo de pruebas y coste de llamadas al LLM. Los valores concretos son **Pendiente de decisión**.
+El worker real usa los límites técnicos de STE-09: cuatro pruebas, request 64 KiB, response 256 KiB, texto 64 KiB, evidencia 128 KiB por ejecución/512 KiB por Scan y presupuesto 300 s desde Scan.startedAt. Hay una invocación global y al menos 1 s entre inicios. DNS máximo 2 s, conexión/TLS 5 s y timeout del target 1..60 s, todos recortados por deadline monotónico; DNS tiene dos hilos/cola ocho y scheduler compartido. Son defaults externos con hard caps, no propiedades de la API. Los límites del futuro evaluador LLM siguen pendientes.
 
 El executor dedicado es `ThreadPoolTaskExecutor`, con `AbortPolicy` y configuración externa `SCAN_EXECUTOR_CORE_POOL_SIZE`, `SCAN_EXECUTOR_MAX_POOL_SIZE` y `SCAN_EXECUTOR_QUEUE_CAPACITY`. Defaults técnicos 1/1/10, ajustables y ajenos al contrato funcional. Se valida core positivo, max >= core y cola finita no negativa; no se ejecuta en el hilo HTTP al saturar. La exclusión por Project corresponde al índice único parcial `uq_scans_active_project` para PENDING/RUNNING; un exists previo no es garantía suficiente.
 
@@ -74,7 +74,7 @@ T1 confirma PENDING antes de dispatch; T2 confirma el reclamo condicional RUNNIN
 
 El rechazo de dispatch se compensa a FAILED/SCAN_DISPATCH_FAILED y devuelve 503 con Location. Una excepción ordinaria o fallo de confirmar RUNNING/COMPLETED intenta FAILED/SCAN_PROCESSING_FAILED en otra transacción. Si tampoco se confirma FAILED, se conserva el estado durable, se registra solo id/código y se bloquean nuevos inicios/reclamos hasta reinicio; tareas ya RUNNING pueden terminar y GET sigue consultando lo confirmado.
 
-`ScanStartup` confirma recuperación de todos los PENDING/RUNNING a FAILED/SCAN_INTERRUPTED antes de habilitar admisión y crear el executor. Conserva startedAt y terminales; no relanza. Fallar la recuperación impide arrancar el backend. Esta limpieza solo es válida con una instancia; no se soportan despliegues concurrentes. Reintentos, cancelación y manejo definitivo de resultados parciales no se deciden aquí.
+`ScanStartup` confirma recuperación de ejecuciones PENDING/RUNNING a FAILED/EXECUTION_INTERRUPTED y scans activos a FAILED/SCAN_INTERRUPTED en una misma transacción, antes de habilitar admisión y crear el executor. Conserva startedAt, evidencia y terminales; no relanza. También cierra ejecuciones activas de scans terminales. Fallar la recuperación impide arrancar. T3 fallida cierra hijos activos y Scan atómicamente; una transición de Scan que no coincide no modifica hijos. Esta limpieza solo es válida con una instancia. Reintentos y cancelación no se deciden aquí.
 
 ## Alternativas descartadas para el MVP
 

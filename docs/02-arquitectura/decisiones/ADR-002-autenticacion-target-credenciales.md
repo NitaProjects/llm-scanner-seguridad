@@ -59,7 +59,7 @@ X-API-Key: <SECRET>
 - No deben exponerse al frontend después de ser configuradas.
 - Los errores no deben devolver secretos.
 - Los payloads persistidos deben sanitizar headers sensibles.
-- El secreto solo está en memoria durante recepción/cifrado y, en una futura ejecución autorizada, durante su uso. GET y conservación en PUT no lo descifran.
+- El secreto solo está en memoria durante recepción/cifrado y durante su uso por el adaptador de invocación autorizado. GET y conservación en PUT no lo descifran.
 
 Flujo conceptual:
 
@@ -88,7 +88,9 @@ El change `target-configuration` concreta AES-256-GCM mediante JCA de Java 21, s
 
 El envelope binario v1 se almacena en BYTEA: un byte de versión (1), 12 bytes de nonce aleatorio generado con SecureRandom y el ciphertext seguido de 16 bytes de tag GCM. Se utiliza AES/GCM/NoPadding y la versión como AAD. Cada cifrado genera un nonce nuevo. La clave no forma parte del envelope. El parser rechaza versiones desconocidas y material truncado; la verificación GCM con clave incorrecta o material alterado falla sin producir plaintext utilizable.
 
-La clave se consulta únicamente al cifrar. Su ausencia, formato inválido o tamaño distinto de 32 bytes provoca un error interno sanitizado y ninguna escritura, sin degradar a NONE. GET y PUT que conservan credencial funcionan sin consultar la clave. Las pruebas de recuperación usan exclusivamente datos y claves sintéticos y descifran en memoria, sin ampliar el puerto de configuración con una operación de descifrado.
+El recurso de configuración consulta la clave únicamente al cifrar. Su ausencia, formato inválido o tamaño distinto de 32 bytes provoca un error interno sanitizado y ninguna escritura, sin degradar a NONE. GET y PUT que conservan credencial funcionan sin consultar la clave.
+
+security-test-execution añade CredentialDecryptionPort separado del contrato de configuración. El mismo adaptador AES reutiliza provisión de clave/envelope/JCA y descifra solo después de autorizar y validar destino, inmediatamente antes del request. NONE no invoca crypto. Un recurso efímero limpia los buffers propios; no se promete borrado garantizado de Strings del runtime. Error de clave/envelope/tag/secreto utilizable produce CREDENTIAL_UNAVAILABLE sin causa, envío ni degradación. El adaptador HTTP redacta coincidencias exactas conocidas en cadenas/claves JSON decodificadas y texto extraído, marca flags y no retorna plaintext, blobs o headers. El snapshot conserva el cifrado original solo en memoria durante el Scan. Las pruebas preparadas usan claves y certificados exclusivamente sintéticos.
 
 La actualización conserva el blob únicamente con el mismo origen URL, tipo de autenticación y headerName exacto, con authConfig presente y secretValue omitido. Un nuevo secreto reemplaza el anterior; NONE elimina el blob en la misma transacción.
 
@@ -97,7 +99,7 @@ La actualización conserva el blob únicamente con el mismo origen URL, tipo de 
 - Provisión operativa y custodia de la clave en PRE/PRO y AWS.
 - Uso de un gestor de secretos en PRE/PRO y AWS.
 - Rotación, revocación y ciclo de vida de credenciales.
-- Política de redacción y retención de payloads persistidos.
+- Retención/borrado de evidencia y redacción avanzada de secretos arbitrarios; la redacción exacta de credenciales conocidas queda cerrada por security-test-execution.
 
 ## Consecuencias
 

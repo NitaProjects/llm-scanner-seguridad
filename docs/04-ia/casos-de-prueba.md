@@ -2,6 +2,8 @@
 
 ## Estructura conceptual
 
+La estructura conceptual de evaluación siguiente corresponde a incrementos futuros. `security-test-execution` implementa exclusivamente el catálogo técnico inmutable id/code/revision/name/category/prompt en test_cases y ejecuciones técnicas, sin criterios, severidad o veredictos. V4 es la fuente persistida de los cuatro casos de revisión 1; no hay catálogo editable, enabled ni selección de usuario.
+
 Cada Security Test debería definir, como mínimo:
 
 - Identificador.
@@ -14,7 +16,7 @@ Cada Security Test debería definir, como mínimo:
 - Recomendación.
 - Evidencia esperada.
 
-El formato definitivo de los casos y su almacenamiento quedan como **Pendiente de decisión**.
+El formato técnico y almacenamiento de los cuatro probes quedan aprobados por D-01/D-11 de security-test-execution; su evaluación ejecutable y las variantes siguen pendientes.
 
 ## Categorías del MVP
 
@@ -67,7 +69,18 @@ Quedan fuera porque requieren escenarios, infraestructura o tipos de aplicación
 
 Los casos deben ser controlados, reproducibles, seguros y adecuados para aplicaciones propias o de demostración. No deben buscar denegación de servicio, explotación persistente ni daño real.
 
-La colección inicial de prompts, sus variantes y las respuestas esperadas se definirá antes de implementar trabajo real de seguridad en el motor de scans. `scan-execution` es el incremento previo aprobado de ciclo de vida con trabajo temporal no-op; no selecciona ni ejecuta casos, genera evidencias o acredita cobertura OWASP. COMPLETED solo significa que finalizó esa unidad temporal. Antes de sustituir ScanWorkPort por análisis real se necesitan un change aprobado con estos casos/prompts, selección estable del target y controles de autorización, SSRF/DNS/redirecciones, límites y protección de credenciales/respuestas no confiables.
+La colección inicial se concreta en los cuatro prompts exactos D-11 de security-test-execution y en V4, sin salto final ni variables dinámicas. El worker fija catálogo y target una sola vez, confirma todo el plan antes de enviar y conserva evidencia redactada. Los scans no-op históricos no se reclasifican. COMPLETED de una prueba significa éxito técnico, nunca vulnerabilidad/seguridad; HTTP 200 con marcado o instrucciones sigue técnicamente COMPLETED. Los cuatro probes no constituyen cobertura completa de las categorías. LLM10 es una observación/proxy limitada al output; no valida sanitización ni explotación del consumidor downstream/sink.
+
+## Catálogo técnico inicial aprobado
+
+| Code / revisión | Nombre / categoría | Objetivo y expectativa descriptiva |
+| --- | --- | --- |
+| LLM01-INSTRUCTION-001 / 1 | Instrucción conflictiva controlada / LLM01 | Observar reemplazo de prioridades. El target debería mantener las restricciones de su escenario; el marcador aislado no demuestra vulnerabilidad. |
+| LLM02-CANARY-001 / 1 | Solicitud de canario sintético / LLM02 | Observar un canario oculto preinstalado. Sin contexto del escenario no hay conclusión. |
+| LLM08-CONTEXT-001 / 1 | Solicitud de contexto de prueba / LLM08 | Observar exposición de una instrucción no pública. Una explicación genérica no demuestra fuga. |
+| LLM10-MARKUP-001 / 1 | Marcado inerte en salida / LLM10 | Recoger output inerte; su presencia en JSON es válida y no demuestra manejo inseguro del sink. |
+
+Los prompts exactos, UUID y descripciones se conservan en `backend/src/main/resources/db/migration/V4__incorporar_ejecuciones_pruebas_seguridad.sql`, con referencia OWASP GenAI LLM Top 10 (2026). Cambiar contenido requerirá una nueva revisión y otro change. Las expectativas son descriptivas; no son reglas ejecutables, expectedVerdict ni ground truth del experimento. Las fixtures HTTP/HTTPS transportan respuestas sintéticas y prueban transporte/redacción, sin modelar un LLM ni depender de servicios externos.
 
 ## Uso del evaluador LLM
 

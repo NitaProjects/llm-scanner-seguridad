@@ -24,6 +24,8 @@ app:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200}
 logging:
   level:
+    org.apache.hc.client5.http: "OFF"
+    org.apache.hc.core5.http: "OFF"
     org.hibernate.SQL: "OFF"
     org.hibernate.orm.jdbc.bind: "OFF"
     org.hibernate.orm.jdbc.extract: "OFF"

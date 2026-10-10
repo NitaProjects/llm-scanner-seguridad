@@ -48,3 +48,25 @@ Después de modificar código, indicar los comandos de validación que debería 
 ## Resultado esperado
 
 Resumir archivos modificados, relación con la spec, decisiones aplicadas, riesgos y validaciones pendientes. No ampliar la tarea por iniciativa propia.
+
+## Validación técnica y entorno de test
+
+El agente está autorizado a ejecutar automáticamente las validaciones técnicas necesarias del change, incluyendo:
+
+- compilación;
+- tests unitarios;
+- tests de integración;
+- migraciones sobre la base de test;
+- `package`;
+- validaciones OpenSpec;
+- fixtures locales necesarias para los tests.
+
+### Java
+
+Usar Java 21.
+
+Antes de ejecutar Maven, verificar:
+
+```powershell
+java -version
+javac -version

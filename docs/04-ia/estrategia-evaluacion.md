@@ -4,6 +4,8 @@
 
 Evaluar si la respuesta de una aplicación LLM presenta un comportamiento asociado a la prueba ejecutada y generar un finding explicable para el usuario.
 
+Esta estrategia corresponde a incrementos posteriores al trabajo técnico `security-test-execution`. El incremento actual solo obtiene evidencia no confiable mediante cuatro probes persistidos y no ejecuta reglas/evaluador ni escribe confidence, severity, verdict, findings o scoring. COMPLETED significa invocación/extracción/persistencia correctas. LLM10 solo observa output del endpoint, sin validar consumidor downstream/sink ni acreditar cobertura completa. El futuro evaluador podrá recuperar evidencia internamente por repositorio/aplicación; no necesita ni dispone ahora de un endpoint público de evidencia. Proveedor/modelo, umbrales, scoring y experimento no se cierran aquí.
+
 ## Evaluación híbrida
 
 La estrategia no dependerá exclusivamente de un LLM evaluador. Combinará, según el caso:

@@ -70,6 +70,11 @@ public final class JsonTargetConfigurationValidator implements ConfigurationVali
     }
 
     public void responsePath(String raw) {
+        pathSegments(raw);
+    }
+
+    public List<Object> pathSegments(String raw) {
+        var result = new java.util.ArrayList<Object>();
         TargetRules.noNullCharacter(raw, "responsePath");
         String path = TargetRules.trim(raw);
         if (path == null || path.isEmpty()) {
@@ -99,6 +104,7 @@ public final class JsonTargetConfigurationValidator implements ConfigurationVali
                 if (offset == start) {
                     invalidPath();
                 }
+                result.add(path.substring(start, offset));
             } else if (next == '[') {
                 if (offset < path.length() && path.charAt(offset) == '"') {
                     int start = offset++;
@@ -124,6 +130,7 @@ public final class JsonTargetConfigurationValidator implements ConfigurationVali
                             invalidPath();
                         } else {
                             TargetRules.noNullCharacter(text, "responsePath");
+                            result.add(text);
                         }
                     } catch (JacksonException error) {
                         invalidPath();
@@ -140,6 +147,7 @@ public final class JsonTargetConfigurationValidator implements ConfigurationVali
                     if (Long.parseLong(index) > Integer.MAX_VALUE) {
                         invalidPath();
                     }
+                    result.add(Integer.parseInt(index));
                 }
                 if (offset >= path.length() || path.charAt(offset++) != ']') {
                     invalidPath();
@@ -148,6 +156,7 @@ public final class JsonTargetConfigurationValidator implements ConfigurationVali
                 invalidPath();
             }
         }
+        return List.copyOf(result);
     }
 
     private static boolean identifierStart(char value) {

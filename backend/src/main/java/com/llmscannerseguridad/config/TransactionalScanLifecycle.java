@@ -3,6 +3,10 @@ package com.llmscannerseguridad.config;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
+import java.time.Clock;
+import com.llmscannerseguridad.application.execution.TestExecutionRepositoryPort;
+import com.llmscannerseguridad.application.scan.ScanOperationException;
+import com.llmscannerseguridad.domain.execution.ExecutionError;
 import com.llmscannerseguridad.adapters.out.persistence.scan.ScanPersistenceErrors;
 import com.llmscannerseguridad.application.scan.ScanLifecyclePort;
 import com.llmscannerseguridad.domain.scan.Scan;
@@ -16,11 +20,18 @@ public final class TransactionalScanLifecycle implements ScanLifecyclePort {
     private final ScanLifecyclePort delegate;
     private final ScanExecutionGate gate;
     private final TransactionTemplate transaction;
+    private final TestExecutionRepositoryPort executions;
 
     public TransactionalScanLifecycle(ScanLifecyclePort delegate, PlatformTransactionManager manager,
             ScanExecutionGate gate) {
+        this(delegate, manager, gate, null);
+    }
+
+    public TransactionalScanLifecycle(ScanLifecyclePort delegate, PlatformTransactionManager manager,
+            ScanExecutionGate gate, TestExecutionRepositoryPort executions) {
         this.delegate = delegate;
         this.gate = gate;
+        this.executions = executions;
         transaction = new TransactionTemplate(manager);
         transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
@@ -46,16 +57,32 @@ public final class TransactionalScanLifecycle implements ScanLifecyclePort {
 
     @Override
     public boolean complete(UUID scanId) {
-        return confirmed(() -> delegate.complete(scanId));
+        return confirmed(() -> {
+            if (executions != null && !executions.allCompleted(scanId)) {
+                throw ScanOperationException.internal();
+            }
+            return delegate.complete(scanId);
+        });
     }
 
     @Override
     public boolean fail(UUID scanId, ScanStatus expected, ScanFailureReason reason) {
-        return confirmed(() -> delegate.fail(scanId, expected, reason));
+        return confirmed(() -> {
+            boolean changed = delegate.fail(scanId, expected, reason);
+            if (changed && executions != null) {
+                executions.closeActive(scanId, Clock.systemUTC().instant(), ExecutionError.EXECUTION_ABORTED);
+            }
+            return changed;
+        });
     }
 
     @Override
     public int recoverInterrupted() {
-        return confirmed(delegate::recoverInterrupted);
+        return confirmed(() -> {
+            if (executions != null) {
+                executions.recoverActive(Clock.systemUTC().instant());
+            }
+            return delegate.recoverInterrupted();
+        });
     }
 }

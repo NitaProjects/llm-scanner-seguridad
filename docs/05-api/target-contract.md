@@ -19,7 +19,11 @@ Las fechas UTC tienen precisión de microsegundos y son iguales al crear. PUT co
 - Headers: hasta 20; nombres HTTP token ASCII de hasta 128 caracteres; valores hasta 4096 bytes UTF-8 y total nombres/valores hasta 16384 bytes. Sin controles U+0000..U+001F/U+007F, duplicados por caso ni colisiones con autenticación. Se prohíben Authorization, Proxy-Authorization, Cookie, Set-Cookie, X-API-Key, API-Key, Host, Content-Length, Content-Type, Connection, Transfer-Encoding, TE, Trailer, Upgrade, Keep-Alive, Proxy-Connection, Forwarded y prefijo X-Forwarded-.
 - U+0000 se rechaza antes de normalizar, también en claves/cadenas JSON decodificadas y rutas. No se elimina ni sustituye. JSON estricto sin coerción, claves duplicadas ni campos desconocidos/generados.
 
-La futura ejecución debe resolver DNS, validar direcciones efectivas, autorización, redirecciones y límites. Guardar la configuración no acredita seguridad ni autorización. El futuro prompt se insertará como cadena JSON escapada; extracción debe producir un único texto y fallar ante ausencia o tipo distinto, sin usar todo el documento.
+`security-test-execution` realiza POST/JSON mediante HttpClient 5, inserta el prompt como nodo string completo y extrae exactamente un texto con la gramática anterior, incluido vacío. Exige response application/json o application/*+json y UTF-8 estricto, sin duplicados, múltiples documentos ni profundidad superior a 64. No sigue redirects, reintenta ni acepta compresión. Un JSON/path/tipo/tamaño inválido es fallo técnico individual; no significa vulnerabilidad. Guardar la configuración sigue sin autorizar tráfico: TARGET_ALLOWED_ORIGINS declara orígenes públicos exactos y la excepción demo conserva perfil local, flag y lista explícita. Todas las IPs efectivas se validan antes de conectar a una sola, sin segunda resolución ni fallback. Credenciales sobre HTTP público se rechazan; solo HTTP demo explícito puede autenticarse.
+
+Defaults técnicos externos: request 64 KiB, response 256 KiB, texto 64 KiB, evidencia serializada 128 KiB/ejecución y 512 KiB/Scan, Scan 300 s, una invocación simultánea y separación >= 1 s. Los márgenes están en STE-09. El timeout del target conserva 1000..60000 ms. El snapshot se fija al preparar el plan; PUT no altera pruebas posteriores de ese Scan. GET executions publica únicamente metadatos técnicos y nunca evidencia.
+
+Una credencial que no pueda representarse íntegramente en un valor de header HTTP se considera no utilizable (CREDENTIAL_UNAVAILABLE); no se envía con sustituciones de caracteres. Esto no modifica la validación/cifrado UTF-8 del recurso de configuración.
 
 ## Autenticación y secretos
 
@@ -39,4 +43,4 @@ Forma {code,message,fieldErrors}, mensajes en español sin valores rechazados. 4
 
 ## Fuera del MVP / Evolución futura
 
-Ejecución HTTP, extracción real, múltiples targets, historial, borrado, protocolos distintos de REST/POST/JSON, OAuth2, mTLS, cookies/sesión, AWS y rotación avanzada requieren otros changes. La concurrencia de PUT aplica última escritura sin detección de cambios perdidos.
+Múltiples targets, historial, borrado, protocolos distintos de REST/POST/JSON, OAuth2, mTLS, cookies/sesión, AWS y rotación avanzada requieren otros changes. La concurrencia de PUT aplica última escritura sin detección de cambios perdidos. Evidencia pública, autenticación de usuario y retención/borrado requieren un contrato posterior antes de datos reales.

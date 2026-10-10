@@ -42,7 +42,7 @@ public class TargetConfigurationBeans {
     }
 
     @Bean
-    CredentialEncryptionPort targetCredentialEncryptionPort(Environment environment) {
+    AesGcmCredentialEncryptionAdapter targetCredentialEncryptionPort(Environment environment) {
         // Lectura diferida: GET y conservación de credencial no necesitan consultar la clave.
         return new AesGcmCredentialEncryptionAdapter(() ->
                 environment.getProperty("TARGET_CREDENTIAL_ENCRYPTION_KEY"));

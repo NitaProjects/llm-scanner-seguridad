@@ -60,7 +60,7 @@ public class ScanController {
         return URI.create("/api/projects/" + projectId + "/scans/" + scanId);
     }
 
-    private UUID identifier(String value, InvalidScanRequestException.Reason reason) {
+    static UUID identifier(String value, InvalidScanRequestException.Reason reason) {
         if (!value.matches("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")) {
             throw new InvalidScanRequestException(reason);
         }
