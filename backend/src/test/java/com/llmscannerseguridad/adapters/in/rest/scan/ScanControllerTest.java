@@ -133,7 +133,7 @@ class ScanControllerTest {
         var running = pending.start(now);
         var completed = running.complete(now);
         var failed = running.fail(ScanFailureReason.SCAN_PROCESSING_FAILED, now);
-        when(scans.findByProjectIdAndId(project, id)).thenReturn(Optional.of(pending), Optional.of(running), Optional.of(completed), Optional.of(failed));
+        when(scans.findByProjectIdAndId(project, id)).thenReturn(Optional.of(pending)).thenReturn(Optional.of(running)).thenReturn(Optional.of(completed)).thenReturn(Optional.of(failed));
         for (String state : List.of("PENDING", "RUNNING", "COMPLETED", "FAILED")) {
             mvc.perform(get(path + "/" + id.toString().toUpperCase(Locale.ROOT)))
                     .andExpect(status().isOk()).andExpect(header().string("Cache-Control", "no-store"))
