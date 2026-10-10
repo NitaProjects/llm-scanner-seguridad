@@ -193,7 +193,7 @@ La abstracción permite cambiar de proveedor sin modificar el dominio ni la apli
 
 El MVP utilizará ejecución asíncrona de scans con estados persistidos y comunicación desacoplada entre el controller y el procesamiento del análisis. La solicitud inicial creará un scan en estado `PENDING` y devolverá su identificador; el frontend consultará el estado y el progreso mediante polling.
 
-La decisión funcional no selecciona todavía entre asincronía interna de Spring, una cola de mensajes, AWS SQS o un worker independiente. Para el MVP se prioriza mantener la solución simple y evolutiva, dejando la selección tecnológica para el diseño del cambio OpenSpec que la implemente.
+`scan-execution` selecciona ThreadPoolTaskExecutor interno de Spring, acotado y configurable con rechazo inmediato. Un índice único parcial PostgreSQL garantiza un PENDING/RUNNING por Project. La creación confirma commit antes de dispatch; reclamo y terminales usan transacciones nuevas independientes, sin transacción larga durante trabajo. Detalle en ADR-003 y en el diseño aprobado del change.
 
 Los estados mínimos serán:
 
@@ -206,11 +206,11 @@ Un fallo individual debe persistirse en la ejecución de la prueba y no tiene po
 
 ### Impacto en el MVP
 
-Mejora la experiencia y permite registrar histórico sin mantener una petición HTTP abierta durante todo el análisis. Deben definirse posteriormente el comportamiento ante reinicio, cancelación, timeout, reintentos, recuperación y error parcial.
+Mejora la experiencia y permite registrar histórico sin mantener una petición HTTP abierta durante todo el análisis. El incremento actual usa trabajo no-op: COMPLETED no acredita análisis de seguridad y los contadores se aplazan a SecurityTest/TestExecution. Reiniciar una única instancia marca activos FAILED/SCAN_INTERRUPTED sin relanzar, antes de admitir nuevos scans. Si falla la persistencia terminal y también registrar FAILED, se bloquean nuevos inicios/reclamos hasta recuperación correcta tras reinicio. Cancelación, timeout del trabajo real, reintentos y error parcial siguen pendientes.
 
 `CANCELLED` y `PARTIAL` no forman parte de los estados mínimos del MVP. Su incorporación queda como **Pendiente de decisión**.
 
-**Estado: Decisión funcional cerrada para el MVP. La tecnología concreta de ejecución y las políticas operativas permanecen pendientes.**
+**Estado: Decisión funcional y ejecución local/recuperación cerradas por scan-execution. La evolución distribuida, cancelación, reintentos y resultados parciales permanecen pendientes.**
 
 ## 6. Métrica de severidad y scoring
 

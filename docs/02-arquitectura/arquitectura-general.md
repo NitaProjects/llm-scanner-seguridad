@@ -63,9 +63,11 @@ El flujo conceptual de un scan es:
 
 Este flujo se ejecutará de forma asíncrona en el MVP. La solicitud inicial crea el `Scan` en estado `PENDING` y devuelve un identificador de scan; el procesamiento posterior pasa a `RUNNING` y se realiza fuera del ciclo de la petición inicial. El frontend consultará el estado y el progreso mediante polling hasta que el scan termine.
 
-El controller no debe contener el procesamiento completo del análisis. La coordinación del trabajo en segundo plano debe quedar desacoplada de la entrada HTTP y utilizar los casos de uso y puertos de aplicación correspondientes. La tecnología concreta de ejecución asíncrona no se decide en esta documentación.
+El controller no contiene procesamiento del análisis. `scan-execution` implementa StartScanUseCase/GetScanUseCase/ListProjectScansUseCase y desacopla ProcessScanUseCase mediante ScanDispatcherPort/ScanWorkPort. Un ThreadPoolTaskExecutor dedicado acotado/configurable acepta o rechaza inmediatamente; el índice único parcial PostgreSQL garantiza un activo por Project. Dominio/aplicación no dependen de Spring, JPA ni executor.
 
-Los estados mínimos son `PENDING`, `RUNNING`, `COMPLETED` y `FAILED`. Un fallo individual debe quedar registrado en su `TestExecution` y no tiene por qué terminar todo el scan. La política definitiva para representar resultados parciales, cancelaciones, reintentos y recuperación tras reinicios queda pendiente.
+T1 confirma PENDING antes de dispatch, T2 reclama RUNNING condicionalmente y T3 confirma terminal; todas son transacciones nuevas cortas. ScanWorkerEntry suspende una transacción ambiente durante la orquestación y el trabajo. El adaptador temporal NoOpScanWorkAdapter no realiza análisis: COMPLETED solo acredita el ciclo de vida, sin DNS/HTTP, credenciales, pruebas, findings, scoring ni informes. La sustitución por análisis real requiere otro change con prompts/casos, selección estable del target, controles SSRF/DNS/redirecciones y límites.
+
+Los estados son `PENDING`, `RUNNING`, `COMPLETED` y `FAILED`. ScanStartup recupera activos a FAILED/SCAN_INTERRUPTED antes de habilitar nuevos inicios y el executor; fallo de recuperación impide arrancar. Si durante ejecución no puede confirmarse tampoco FAILED, una compuerta local bloquea nuevos inicios/reclamaciones hasta reinicio, preservando consultas y permitiendo finalizar tareas ya RUNNING. Se soporta una sola instancia; no hay relanzamientos ni cola durable. Los futuros fallos individuales se registrarán en TestExecution; resultados parciales, cancelación y reintentos siguen pendientes.
 
 ## Dominio
 
@@ -90,7 +92,7 @@ Como orientación de diseño, se prefieren casos de uso explícitos:
 
 - `CreateProjectUseCase`.
 - `ConfigureTargetUseCase`.
-- `RunScanUseCase`.
+- `StartScanUseCase`, `GetScanUseCase`, `ListProjectScansUseCase`, `ProcessScanUseCase` y `RecoverInterruptedScansUseCase` (scan-execution).
 - `EvaluateExecutionUseCase`.
 - `GenerateReportUseCase`.
 
@@ -198,5 +200,5 @@ D-CRYPTO queda cerrado para el MVP local: AES-256-GCM con clave externa de 256 b
 - Valores de coste, número máximo de evaluaciones, timeout, rate limits, longitud máxima y fallback del evaluador.
 - Fórmula numérica definitiva, normalización y calibración de severidad, confidence y scoring.
 - Diseño del experimento académico definitivo.
-- Tecnología concreta para ejecutar el procesamiento asíncrono: asincronía interna, cola de mensajes, AWS SQS o worker independiente.
-- Estrategia de reintentos, recuperación tras reinicios, cancelación y representación de resultados parciales.
+- Evolución del executor interno de instancia única hacia cola durable, AWS SQS o workers distribuidos.
+- Reintentos, cancelación y representación de resultados parciales; recuperación local aprobada en ADR-003.

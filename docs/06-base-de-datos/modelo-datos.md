@@ -48,22 +48,25 @@ El material cifrado separa la credencial de la configuración pública. Formato 
 
 ### Scan
 
-Representa una ejecución de análisis asociada a un proyecto.
+Recurso de ejecución asociado a Project, definido por `scan-execution` (SE-01 a SE-10). En este incremento solo acredita un ciclo de vida no-op: `COMPLETED` no significa que se hayan ejecutado pruebas de seguridad.
 
-Datos previstos:
+| Campo | Columna | Tipo PostgreSQL | Restricciones |
+| --- | --- | --- | --- |
+| id | id | UUID | PK generada por aplicación; default V1 conservado. |
+| projectId | project_id | UUID | NOT NULL, FK projects(id) conservada, sin cascada. |
+| status | status | VARCHAR(30) | NOT NULL; PENDING, RUNNING, COMPLETED o FAILED. |
+| createdAt | created_at | TIMESTAMPTZ(6) | NOT NULL; default V1 conservado, asignado por aplicación. |
+| startedAt | started_at | TIMESTAMPTZ(6) | Nullable; no anterior a created_at. |
+| finishedAt | finished_at | TIMESTAMPTZ(6) | Nullable; no anterior a created_at ni started_at si existe. |
+| errorReason | error_reason | VARCHAR(40) | Solo FAILED, obligatorio: SCAN_DISPATCH_FAILED, SCAN_PROCESSING_FAILED o SCAN_INTERRUPTED. |
 
-- `id`.
-- `projectId` o proyecto asociado.
-- `status`, con valores mínimos `PENDING`, `RUNNING`, `COMPLETED` y `FAILED`.
-- `createdAt`.
-- `startedAt`.
-- `finishedAt`.
-- `errorReason` opcional.
-- `totalTests`.
-- `completedTests`.
-- Score o resultado global del scan.
+V3 `V3__ajustar_ciclo_vida_scans.sql` añade `error_reason`, `ck_scans_status`, `ck_scans_error_reason`, `ck_scans_lifecycle` y `uq_scans_active_project`. El índice único parcial sobre project_id para PENDING/RUNNING garantiza un único activo por Project incluso ante concurrencia. Conserva `idx_scans_project_id`, FK, V1/V2 y `global_score NUMERIC(5,2)`: este último no se mapea, expone, calcula ni modifica; nuevas filas lo dejan null.
 
-El scan se creará en `PENDING`, pasará a `RUNNING` durante el procesamiento asíncrono y terminará en `COMPLETED` o `FAILED`. `CANCELLED` y `PARTIAL` no forman parte de los estados mínimos del MVP; su incorporación queda como **Pendiente de decisión**.
+PENDING exige inicio/fin/error null; RUNNING exige inicio y fin/error null; COMPLETED exige inicio/fin y error null; FAILED exige fin/error, conservando inicio si ocurrió. SCAN_DISPATCH_FAILED exige inicio null. Los checks comprueban NULL explícitamente. Aplicación trunca a microsegundos y limita cada fecha al máximo entre reloj y fecha previa. Las transiciones son condicionales y los terminales no se reabren.
+
+Tras reiniciar una única instancia se confirma PENDING/RUNNING → FAILED/SCAN_INTERRUPTED antes de admitir nuevos scans, sin relanzar ni alterar terminales. V3 debe fallar transaccionalmente ante históricos incompatibles o activos duplicados; no inventa fechas/motivos ni borra datos. Recuperación no sustituye esa validación. No se ha ejecutado Flyway durante la implementación.
+
+La existencia del target se comprueba mediante proyección de id, sin cargar el blob. No hay FK directa a TargetConfiguration, snapshot ni versión: la precondición es su pertenencia al Project, y el no-op no consume configuración. La selección estable del target debe decidirse antes de ejecutar seguridad real. `totalTests`/`completedTests`, scoring y resultados se incorporarán con cambios posteriores del MVP global. CANCELLED/PARTIAL y cancelación siguen pendientes.
 
 ### SecurityTest / TestCase
 
@@ -136,7 +139,7 @@ Representa el informe generado para un Scan. El formato, almacenamiento y ciclo 
 ```text
 Project 1 ---- N Scan
 Project 1 ---- 0..1 TargetConfiguration (MVP; N como evolución futura)
-TargetConfiguration 1 ---- N Scan
+TargetConfiguration: precondición de Scan a través de Project, sin FK/snapshot en scan-execution
 Scan 1 ------- N TestExecution
 SecurityTest 1 ---- N TestExecution
 Scan 1 ------- N Finding
@@ -150,7 +153,7 @@ Scan 1 ------- N Report
 - Las credenciales o referencias de autenticación deben gestionarse de forma segura y solo durante la ejecución autorizada.
 - Las peticiones, respuestas y evidencias pueden contener información sensible.
 - Deben aplicarse minimización, redacción, control de acceso y retención limitada.
-- Project y TargetConfiguration tienen esquema aprobado; los campos e índices de las demás entidades siguen pendientes.
+- Project, TargetConfiguration y el ciclo de vida de Scan tienen esquema aprobado; los campos e índices de las demás entidades siguen pendientes.
 
 ## Persistencia
 

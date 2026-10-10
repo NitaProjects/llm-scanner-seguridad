@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
-  title: LLM Scanner Seguridad - Projects y TargetConfiguration
+  title: LLM Scanner Seguridad - Projects, TargetConfiguration y Scans
   version: 0.0.1
-  description: Contratos de project-management (PM-01 a PM-07) y target-configuration (TC-01 a TC-12).
+  description: Contratos de project-management (PM-01 a PM-07), target-configuration (TC-01 a TC-12) y scan-execution (SE-01 a SE-10).
 paths:
   /api/projects:
     post:
@@ -208,8 +208,191 @@ paths:
           $ref: '#/components/responses/TargetNotFound'
         '500':
           $ref: '#/components/responses/InternalError'
+  /api/projects/{projectId}/scans:
+    parameters:
+      - $ref: '#/components/parameters/ScanProjectId'
+    post:
+      operationId: startScan
+      summary: Iniciar el ciclo de vida asíncrono de un Scan
+      description: >-
+        SE-01 a SE-05/SE-07/SE-09/SE-10. No admite cuerpo, tampoco {} ni null
+        ni espacios. Comprueba Project y existencia del target sin cargar credenciales,
+        descifrar ni realizar DNS/HTTP. Solo admite un PENDING/RUNNING por Project,
+        también ante concurrencia mediante índice único parcial PostgreSQL.
+        Confirma PENDING antes de dispatch. Devuelve la fotografía inicial sin esperar
+        al worker; el estado consultado puede haber avanzado. Sin idempotencia ni
+        entrega durable garantizada. El trabajo actual es no-op: COMPLETED acredita
+        únicamente el ciclo de vida, nunca pruebas de seguridad, cobertura OWASP,
+        findings, score, evaluación ni informe. La instancia backend debe ser única.
+      responses:
+        '202':
+          description: PENDING confirmado y lanzamiento local aceptado; no acredita análisis de seguridad.
+          headers:
+            Location:
+              required: true
+              description: Ruta relativa /api/projects/{projectId}/scans/{scanId} para polling.
+              schema: {type: string, format: uri-reference}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Scan'}
+        '400':
+          $ref: '#/components/responses/ScanBadRequest'
+        '404':
+          description: PROJECT_NOT_FOUND o TARGET_NOT_CONFIGURED; sin crear ni lanzar trabajo.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ScanApiError'}
+        '409':
+          description: SCAN_ALREADY_ACTIVE; otro PENDING/RUNNING del Project, sin crear ni lanzar otro.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ScanApiError'}
+        '503':
+          description: >-
+            SCAN_DISPATCH_FAILED si el executor rechaza (incluida saturación):
+            el intento se conserva FAILED con el mismo motivo, sin startedAt.
+            SCAN_EXECUTION_UNAVAILABLE si la infraestructura está bloqueada:
+            no crea otro Scan. El rechazo no ejecuta trabajo en el hilo HTTP.
+          headers:
+            Location:
+              description: Obligatoria en SCAN_DISPATCH_FAILED; ausente en SCAN_EXECUTION_UNAVAILABLE.
+              schema: {type: string, format: uri-reference}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ScanApiError'}
+        '500':
+          description: >-
+            INTERNAL_ERROR. Si falla creación/commit no hay lanzamiento ni Location.
+            Si falla compensar un rechazo, incluye Location del intento confirmado,
+            conserva el último estado confirmado y bloquea nuevos inicios/reclamaciones
+            hasta reinicio con recuperación correcta. Nunca afirma un estado sin commit.
+          headers:
+            Location:
+              description: Obligatoria únicamente si el intento ya estaba confirmado antes de fallar dispatch y compensación.
+              schema: {type: string, format: uri-reference}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ScanApiError'}
+    get:
+      operationId: listProjectScans
+      summary: Consultar histórico completo de Scans del Project
+      description: >-
+        SE-06. Comprueba Project primero. Array completo sin filtros/paginación,
+        ordenado por createdAt descendente e id canónico ascendente en empate.
+        No carga target, lanza trabajo ni modifica fechas. Un fallo de almacenamiento
+        nunca se transforma en array vacío. El no-op no produce resultados de seguridad.
+      responses:
+        '200':
+          description: Todos los Scans del Project; [] para Project existente sin scans.
+          headers:
+            Cache-Control:
+              required: true
+              schema: {type: string, const: no-store}
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/Scan'}
+        '400':
+          $ref: '#/components/responses/ScanBadRequest'
+        '404':
+          $ref: '#/components/responses/ScanNotFound'
+        '500':
+          $ref: '#/components/responses/ScanInternalError'
+  /api/projects/{projectId}/scans/{scanId}:
+    parameters:
+      - $ref: '#/components/parameters/ScanProjectId'
+      - in: path
+        name: scanId
+        required: true
+        schema:
+          type: string
+          format: uuid
+          pattern: '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+    get:
+      operationId: getScan
+      summary: Consultar estado persistido para polling
+      description: >-
+        SE-06/SE-07/SE-08. Valida ambos UUID antes de persistencia y comprueba Project
+        antes del Scan. Un Scan ajeno equivale a SCAN_NOT_FOUND. Sin lectura de target,
+        mutación ni relanzamiento. FAILED se devuelve con 200. Al reiniciar una única
+        instancia, todos los PENDING/RUNNING quedan FAILED/SCAN_INTERRUPTED antes de
+        habilitar nuevos inicios; conserva terminales y no relanza. Si no confirma esa
+        recuperación, falla el arranque. COMPLETED del trabajo temporal no acredita seguridad.
+      responses:
+        '200':
+          description: Los siete campos confirmados; incluye recursos FAILED con motivo cerrado.
+          headers:
+            Cache-Control:
+              required: true
+              schema: {type: string, const: no-store}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Scan'}
+        '400':
+          $ref: '#/components/responses/ScanBadRequest'
+        '404':
+          $ref: '#/components/responses/ScanNotFound'
+        '500':
+          $ref: '#/components/responses/ScanInternalError'
 components:
+  parameters:
+    ScanProjectId:
+      in: path
+      name: projectId
+      required: true
+      schema:
+        type: string
+        format: uuid
+        pattern: '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
   schemas:
+    Scan:
+      type: object
+      additionalProperties: false
+      required: [id, projectId, status, createdAt, startedAt, finishedAt, errorReason]
+      description: >-
+        SE-01/SE-05/SE-10. Identidad/pertenencia inmutables. PENDING sin inicio/fin/error;
+        RUNNING con inicio y sin fin/error; COMPLETED con inicio/fin y sin error;
+        FAILED con fin/error y startedAt conservado (null si no comenzó).
+        createdAt <= startedAt <= finishedAt cuando existen. Fechas UTC con máximo
+        seis decimales, sin retroceso. Terminales inmutables. No hay contadores,
+        porcentaje, targetSnapshot ni score. COMPLETED solo acredita el no-op actual.
+      properties:
+        id: {type: string, format: uuid, readOnly: true}
+        projectId: {type: string, format: uuid, readOnly: true}
+        status: {type: string, enum: [PENDING, RUNNING, COMPLETED, FAILED], readOnly: true}
+        createdAt: {type: string, format: date-time, pattern: 'Z$', readOnly: true}
+        startedAt: {type: [string, 'null'], format: date-time, pattern: 'Z$', readOnly: true}
+        finishedAt: {type: [string, 'null'], format: date-time, pattern: 'Z$', readOnly: true}
+        errorReason:
+          type: [string, 'null']
+          enum: [null, SCAN_DISPATCH_FAILED, SCAN_PROCESSING_FAILED, SCAN_INTERRUPTED]
+          readOnly: true
+          description: >-
+            Solo FAILED. SCAN_DISPATCH_FAILED exige startedAt null.
+            SCAN_PROCESSING_FAILED admite fallo previo al inicio o durante trabajo/commit.
+            SCAN_INTERRUPTED corresponde a recuperación tras reinicio. Nunca texto técnico.
+      example:
+        id: ee6acb5f-a407-4a1a-8d04-5e9cd6ace45f
+        projectId: b33bfe85-a166-4bef-bb36-184a1c27e322
+        status: PENDING
+        createdAt: '2026-10-10T08:00:00.123456Z'
+        startedAt: null
+        finishedAt: null
+        errorReason: null
+    ScanApiError:
+      type: object
+      additionalProperties: false
+      required: [code, message, fieldErrors]
+      description: SE-09; sin entradas, SQL, causas, stack traces ni datos/configuración/credenciales del target.
+      properties:
+        code:
+          type: string
+          enum: [INVALID_REQUEST, INVALID_PROJECT_ID, INVALID_SCAN_ID, PROJECT_NOT_FOUND,
+            TARGET_NOT_CONFIGURED, SCAN_NOT_FOUND, SCAN_ALREADY_ACTIVE, SCAN_DISPATCH_FAILED,
+            SCAN_EXECUTION_UNAVAILABLE, INTERNAL_ERROR]
+        message: {type: string, description: Mensaje sanitizado en español.}
+        fieldErrors: {type: array, maxItems: 0, items: {}}
     TargetConfigurationInput:
       type: object
       additionalProperties: false
@@ -450,6 +633,23 @@ components:
         message:
           type: string
   responses:
+    ScanBadRequest:
+      description: >-
+        INVALID_PROJECT_ID o INVALID_SCAN_ID antes de persistencia; prevalece Project
+        si ambos UUID son inválidos. INVALID_REQUEST para cualquier cuerpo no vacío.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ScanApiError'}
+    ScanNotFound:
+      description: PROJECT_NOT_FOUND primero; SCAN_NOT_FOUND si falta o pertenece a otro Project (consulta individual).
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ScanApiError'}
+    ScanInternalError:
+      description: INTERNAL_ERROR; fallo de lectura, nunca ausencia, éxito ni array vacío.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ScanApiError'}
     TargetBadRequest:
       description: >-
         INVALID_PROJECT_ID (UUID mal formado antes de persistencia), INVALID_REQUEST

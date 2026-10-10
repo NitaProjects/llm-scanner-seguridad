@@ -1,0 +1,2 @@
+org.springframework.boot.SpringBootExceptionReporter=\
+com.llmscannerseguridad.config.ScanRecoveryFailureDiagnostics

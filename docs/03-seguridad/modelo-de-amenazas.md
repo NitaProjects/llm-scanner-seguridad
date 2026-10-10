@@ -37,7 +37,7 @@ Controles previstos:
 - Mantener un mecanismo para demostrar la autorización del target.
 - Validar la plantilla JSON, el `responsePath` y los headers configurables sin permitir transformaciones arbitrarias.
 
-La estrategia de ejecución (allowlist efectiva, DNS, redirecciones y autorización) queda pendiente para el change de ejecución. `target-configuration` solo valida localmente, sin DNS/HTTP. Por defecto bloquea localhost y literales loopback/privados. La excepción demo exige perfil `local`, `TARGET_LOCAL_DEMO_ENABLED=true` y orígenes explícitos en `TARGET_LOCAL_DEMO_ORIGINS`; nunca se activa desde la API ni admite metadatos/link-local. No equivale a protección SSRF completa ni certifica autorización del destino.
+La estrategia de ejecución real (allowlist efectiva, DNS, redirecciones y autorización) queda pendiente para el change que sustituya el trabajo no-op de `scan-execution`. Este incremento solo gestiona estados y comprueba existencia del target sin cargar credenciales ni realizar DNS/HTTP. `target-configuration` solo valida localmente, sin DNS/HTTP. Por defecto bloquea localhost y literales loopback/privados. La excepción demo exige perfil `local`, `TARGET_LOCAL_DEMO_ENABLED=true` y orígenes explícitos en `TARGET_LOCAL_DEMO_ORIGINS`; nunca se activa desde la API ni admite metadatos/link-local. No equivale a protección SSRF completa ni certifica autorización del destino.
 
 ## Configuración del target
 
@@ -79,7 +79,7 @@ Un usuario podría provocar costes o degradación mediante demasiados scans, pro
 
 La ejecución asíncrona evita mantener una petición HTTP abierta durante todo el análisis, pero introduce trabajo pendiente y tareas en segundo plano que también deben protegerse. Deben controlarse el número máximo de pruebas por scan, la concurrencia de scans y ejecuciones, el rate limiting, los timeouts del target y del evaluador y el coste máximo de llamadas al LLM.
 
-Los fallos individuales deben persistirse sin reintentos automáticos no definidos. La estrategia de reintentos, recuperación tras reinicios, cancelación y limpieza de tareas huérfanas queda como **Pendiente de decisión**. Un fallo del modelo evaluador debe registrarse como error de evaluación y no clasificarse automáticamente como vulnerabilidad del target.
+`scan-execution` limita un activo por Project mediante índice único parcial y acota pool/cola configurables con rechazo inmediato. Reiniciar una única instancia marca activos FAILED/SCAN_INTERRUPTED sin relanzar; un fallo irrecuperable de persistencia bloquea nuevos inicios/reclamos hasta reinicio con recuperación correcta. Esta política no soporta múltiples instancias concurrentes. Los futuros fallos individuales deben persistirse sin reintentos automáticos no definidos. Reintentos, cancelación y políticas distribuidas siguen **Pendientes de decisión**. Un fallo del modelo evaluador debe registrarse como error de evaluación y no clasificarse automáticamente como vulnerabilidad del target. COMPLETED del no-op no acredita seguridad ni produce findings.
 
 ## Alcance pendiente
 

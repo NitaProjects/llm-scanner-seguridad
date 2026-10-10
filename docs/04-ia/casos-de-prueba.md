@@ -67,7 +67,7 @@ Quedan fuera porque requieren escenarios, infraestructura o tipos de aplicación
 
 Los casos deben ser controlados, reproducibles, seguros y adecuados para aplicaciones propias o de demostración. No deben buscar denegación de servicio, explotación persistente ni daño real.
 
-La colección inicial de prompts, sus variantes y las respuestas esperadas se definirá antes de implementar el motor de scans.
+La colección inicial de prompts, sus variantes y las respuestas esperadas se definirá antes de implementar trabajo real de seguridad en el motor de scans. `scan-execution` es el incremento previo aprobado de ciclo de vida con trabajo temporal no-op; no selecciona ni ejecuta casos, genera evidencias o acredita cobertura OWASP. COMPLETED solo significa que finalizó esa unidad temporal. Antes de sustituir ScanWorkPort por análisis real se necesitan un change aprobado con estos casos/prompts, selección estable del target y controles de autorización, SSRF/DNS/redirecciones, límites y protección de credenciales/respuestas no confiables.
 
 ## Uso del evaluador LLM
 

@@ -18,6 +18,19 @@ public class PostgresTargetConfigurationRepositoryAdapter implements TargetConfi
 
     @Override
     @Transactional(readOnly = true)
+    public boolean existsByProjectId(UUID projectId) {
+        try {
+            // Proyección escalar: no materializa configuración ni credential_ciphertext.
+            return !entityManager.createQuery(
+                            "select t.id from TargetConfigurationJpaEntity t where t.projectId = :projectId", UUID.class)
+                    .setParameter("projectId", projectId).setMaxResults(1).getResultList().isEmpty();
+        } catch (RuntimeException error) {
+            throw TargetOperationException.internal();
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Optional<TargetConfiguration> findByProjectId(UUID projectId) {
         try {
             return find(projectId).map(TargetConfigurationJpaEntity::toDomain);
