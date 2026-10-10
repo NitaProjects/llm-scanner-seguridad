@@ -13,14 +13,22 @@ public final class ExecuteSecurityTestsUseCase implements ScanWorkPort {
     private final long budgetMs;
     private final Clock clock;
     private final LongSupplier ticker;
+    private final com.llmscannerseguridad.application.evaluation.EvaluateExecutionUseCase evaluations;
 
     public ExecuteSecurityTestsUseCase(TestExecutionRepositoryPort executions, TargetInvocationPort invocation,
             long budgetMs, Clock clock, LongSupplier ticker) {
+        this(executions, invocation, budgetMs, clock, ticker, null);
+    }
+
+    public ExecuteSecurityTestsUseCase(TestExecutionRepositoryPort executions, TargetInvocationPort invocation,
+            long budgetMs, Clock clock, LongSupplier ticker,
+            com.llmscannerseguridad.application.evaluation.EvaluateExecutionUseCase evaluations) {
         this.executions = executions;
         this.invocation = invocation;
         this.budgetMs = budgetMs;
         this.clock = clock;
         this.ticker = ticker;
+        this.evaluations = evaluations;
     }
 
     @Override
@@ -42,6 +50,11 @@ public final class ExecuteSecurityTestsUseCase implements ScanWorkPort {
             }
             // Una escritura fallida aborta inmediatamente; nunca vuelve a invocar.
             executions.finish(running, result);
+            if (evaluations != null) {
+                var confirmed = executions.findByScanId(scanId).stream().filter(row -> row.id().equals(running.id()))
+                        .findFirst().orElseThrow(ScanOperationException::internal);
+                evaluations.execute(confirmed, plan.tests().get(i), budget);
+            }
             if (result.errorReason() != null) {
                 failed = true;
                 if (result.errorReason().global()) {
@@ -49,7 +62,8 @@ public final class ExecuteSecurityTestsUseCase implements ScanWorkPort {
                 }
             }
         }
-        if (failed || !executions.allCompleted(scanId)) {
+        if (failed || !executions.allCompleted(scanId) || evaluations != null && !evaluations.allCompleted(scanId)
+                || budget.remainingNanos() == 0 || Thread.currentThread().isInterrupted()) {
             throw ScanOperationException.internal();
         }
     }

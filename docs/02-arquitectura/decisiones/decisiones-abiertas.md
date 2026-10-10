@@ -154,24 +154,19 @@ Proveedor concreto
 
 Podrán existir adaptadores como `OpenAiEvaluatorAdapter`, `GeminiEvaluatorAdapter` o `HuggingFaceEvaluatorAdapter`, sin que el dominio dependa de ellos.
 
-El puerto podrá representar conceptualmente una operación como:
+El contrato aprobado por evaluation-engine D-07 es:
 
 ```text
-evaluate(
-    securityTest,
-    targetRequest,
-    targetResponse,
-    deterministicResults
-) → EvaluationResult
+evaluate(EvaluatorInput, EvaluationCallBudget) → EvaluatorOutcome
 ```
 
-`EvaluationResult` deberá contemplar, conceptualmente, veredicto, confianza, resumen del razonamiento, severidad sugerida, recomendación, proveedor, modelo y fecha de evaluación.
+EvaluatorOutcome contiene assessment validado o fallo tipado del componente, sin entidades/HTTP/Throwable. La aplicación consolida después EvaluationResult y Finding; el adapter no devuelve el verdict híbrido ni recibe TargetConfiguration/request/credenciales.
 
 ### Impacto en el MVP
 
 La abstracción permite cambiar de proveedor sin modificar el dominio ni la aplicación. El MVP deberá controlar costes, proteger los datos enviados, registrar el proveedor y modelo utilizados y mantener la decisión final dentro de la estrategia híbrida. El LLM evaluador no podrá determinar por sí solo la existencia de una vulnerabilidad.
 
-**Estado: Decisión arquitectónica cerrada. El proveedor y el modelo concretos, así como sus límites operativos, permanecen Pendientes de decisión.**
+**Estado: Cerrada por evaluation-engine D-07/D-15: OpenAI, Responses API/Structured Outputs, modelo inicial externo gpt-6-luna; cuatro llamadas, 16/24/16 KiB, 20 s, concurrencia uno, intervalo 1 s y 1024 tokens. Cuenta/disponibilidad/retención y tarifa operativa requieren verificación antes de uso real autorizado, sin bloquear implementación con fake.**
 
 ## 5. Ejecución asíncrona de scans
 
@@ -202,7 +197,7 @@ Los estados mínimos serán:
 - `COMPLETED`: procesamiento finalizado.
 - `FAILED`: procesamiento terminado con un error que impide completar el scan.
 
-`security-test-execution` cierra la política de este incremento: fallos técnicos individuales permiten continuar, pero cualquier FAILED implica Scan FAILED/SCAN_PROCESSING_FAILED. Fallos globales abortan pendientes. COMPLETED exige cuatro éxitos técnicos persistidos; no hay PARTIAL ni evaluación. El detalle y los límites técnicos están en ADR-003 y STE-09/STE-10.
+`security-test-execution` cierra fallos técnicos individuales/globales en ADR-003 y STE-09/STE-10. evaluation-engine amplía prospectivamente el perfil nuevo: COMPLETED exige cuatro ejecuciones y cuatro evaluaciones COMPLETED. VULNERABLE, INCONCLUSIVE y fallo LLM consolidado no implican Scan FAILED; EvaluationResult FAILED global sí. Conserva siete campos públicos y semántica histórica sin backfill.
 
 ### Impacto en el MVP
 
@@ -251,7 +246,7 @@ Un score global bajo nunca podrá ocultar un finding `CRITICAL`, que deberá mos
 
 Permite presentar resultados claros y comparar estrategias en el experimento. La revisión manual podrá incorporarse posteriormente para confirmar findings, rechazar falsos positivos, modificar severidad o añadir comentarios.
 
-**Estado: Decisión conceptual cerrada para el MVP. La fórmula numérica definitiva, los umbrales, la calibración de confidence y la revisión manual permanecen pendientes.**
+**Estado: confidence-v1 y severity-v1 ejecutables cerrados por evaluation-engine D-05/D-06, detalle en ADR-005. CRITICAL reservado sin asignación automática; HIGH requiere señal fuerte e impacto explícito. Calibración estadística, scoring global y revisión manual siguen pendientes/fuera del change.**
 
 ## 7. Criterios de detección del MVP
 
@@ -259,7 +254,7 @@ Los criterios conceptuales de detección de LLM01, LLM02, LLM08 y LLM10 quedan d
 
 Se adopta la regla de que no puede generarse un finding únicamente a partir de la opinión del LLM evaluador. Debe existir evidencia asociada a una `TestExecution`, señales deterministas o criterios esperados cuando sean aplicables, y un veredicto final entre `VULNERABLE`, `NOT_VULNERABLE` o `INCONCLUSIVE`.
 
-La fórmula matemática de `confidence`, los umbrales, las variantes de payloads, la severidad definitiva por caso y el procedimiento experimental siguen **Pendientes de decisión**. Los cuatro prompts técnicos iniciales de revisión 1 y su persistencia están aprobados en D-11 de security-test-execution, sin reglas ni evaluación ejecutables.
+evaluation-engine cierra criterios v1 separados por code/revision, reglas tipadas, HYB-01..07, confidence-v1 y severity-v1 sin cambiar los cuatro prompts V4. Calibración, variantes y procedimiento experimental permanecen pendientes; el ground truth no entra al evaluador. ADR-006 y estrategia-evaluacion.md describen los contratos ejecutables aprobados.
 
 **Estado: Decisión conceptual cerrada para el MVP.**
 
@@ -273,6 +268,6 @@ Se medirán true positives, true negatives, false positives, false negatives, pr
 
 El benchmark controlado y la comparación de estrategias quedan adoptados como núcleo del experimento. No se incorpora como requisito el estudio con desarrolladores sobre comprensión del informe.
 
-El tamaño del dataset, número de repeticiones, etiquetado definitivo, tratamiento estadístico de `INCONCLUSIVE`, proveedor/modelo evaluador y valores objetivo permanecen **Pendientes de decisión**.
+El tamaño del dataset, repeticiones, etiquetado definitivo, tratamiento estadístico de `INCONCLUSIVE` y valores objetivo permanecen **Pendientes de decisión**. La elección MVP del evaluador está cerrada por evaluation-engine; su operación real y la comparación científica siguen sin ejecutarse. El assessment HYBRID_WITH_SIGNALS conservado no equivale a una ejecución LLM-only pura.
 
 **Estado: Decisión conceptual cerrada para el TFM.**

@@ -30,6 +30,21 @@ final class ScanTestDatabase implements AutoCloseable {
             "Configura SCAN_TEST_DB_PASSWORD externamente, sin incluirlo en el repositorio.");
     private final List<ConfigurableApplicationContext> applications = new ArrayList<>();
 
+    ScanTestDatabase() {
+        if (!url.matches("jdbc:postgresql://[^/]+/llm_scanner_seguridad_test(?:\\?[^#]*)?")) {
+            throw new IllegalStateException("BLOCKED: se requiere exactamente llm_scanner_seguridad_test.");
+        }
+        try (var connection = DriverManager.getConnection(url, username, password);
+                var statement = connection.createStatement(); var result = statement.executeQuery("select current_database(), current_setting('server_version_num')")) {
+            if (!result.next() || !"llm_scanner_seguridad_test".equals(result.getString(1))
+                    || result.getInt(2) < 160000 || result.getInt(2) >= 170000) {
+                throw new IllegalStateException("BLOCKED: identidad o versión de PostgreSQL de test no válida.");
+            }
+        } catch (SQLException error) {
+            throw new IllegalStateException("BLOCKED: no se pudo verificar PostgreSQL de test.");
+        }
+    }
+
     void migrate(String target) {
         var configuration = Flyway.configure().dataSource(url, username, password).schemas(schema)
                 .defaultSchema(schema).createSchemas(true).locations("classpath:db/migration");
@@ -82,6 +97,10 @@ final class ScanTestDatabase implements AutoCloseable {
         properties.put("TARGET_ALLOWED_ORIGINS", "");
         properties.put("TARGET_LOCAL_DEMO_ENABLED", "false");
         properties.put("TARGET_LOCAL_DEMO_ORIGINS", "");
+        properties.put("EVALUATOR_API_KEY", "");
+        properties.put("EVALUATOR_EXPORT_ENABLED", false);
+        properties.put("EVALUATOR_ALLOWED_SCENARIOS", "");
+        properties.put("EVALUATION_SCENARIO_FILE", "");
         properties.put("app.scan.executor.core-pool-size", 1);
         properties.put("app.scan.executor.max-pool-size", 1);
         properties.put("app.scan.executor.queue-capacity", 10);

@@ -4,7 +4,7 @@
 
 Aceptada para la arquitectura del MVP.
 
-El proveedor, el modelo concreto y los límites operativos permanecen **Pendientes de decisión**.
+Proveedor, modelo inicial y límites aprobados por `evaluation-engine`, D-07..D-09/D-15: OpenAI, `gpt-6-luna` configurable, Responses API y Structured Outputs con JSON Schema estricto. No se ha verificado una cuenta real ni su disponibilidad o tarifa mediante Internet.
 
 ## Contexto
 
@@ -28,7 +28,7 @@ Podrán existir adaptadores futuros como:
 - `GeminiEvaluatorAdapter`.
 - `HuggingFaceEvaluatorAdapter`.
 
-Estos nombres son ejemplos arquitectónicos y no implican que el proveedor correspondiente esté seleccionado para el MVP.
+El único adaptador MVP es `OpenAiEvaluatorAdapter`; los demás permanecen como evolución futura.
 
 ## Responsabilidades del evaluador
 
@@ -36,7 +36,7 @@ El evaluador podrá:
 
 - Interpretar semánticamente respuestas del target.
 - Detectar comportamientos que no puedan resolverse solo con reglas.
-- Proponer una categoría de riesgo.
+- Interpretar la categoría y los criterios fijados por el backend sin modificarlos.
 - Generar una explicación técnica.
 - Generar una recomendación o remediation.
 - Devolver un nivel de confianza.
@@ -57,29 +57,22 @@ El veredicto del LLM no será, por sí solo, una prueba suficiente de vulnerabil
 
 ## Contrato conceptual
 
-El puerto podrá representar una operación similar a:
+El contrato aprobado e implementado es:
 
 ```text
-evaluate(
-    securityTest,
-    targetRequest,
-    targetResponse,
-    deterministicResults
-) → EvaluationResult
+evaluate(EvaluatorInput, EvaluationCallBudget) → EvaluatorOutcome
 ```
 
-`EvaluationResult` podrá contemplar:
+El outcome contiene assessment validado o fallo tipado; no contiene el verdict híbrido ni tipos HTTP/SDK. El assessment conserva:
 
 - `verdict`.
 - `confidence`.
 - `reasoningSummary`.
 - `suggestedSeverity`.
 - `recommendation`.
-- `evaluatorProvider`.
-- `evaluatorModel`.
-- `evaluatedAt`.
+- `evidenceReferences` verificadas contra la evidencia proyectada.
 
-Este ADR no define clases Java ni el contrato definitivo de la API interna.
+`EvaluationResult` conserva separadamente señales, assessment sanitizado, decisión final, proveedor/modelo solicitado y resuelto, versiones, fechas, tamaños y uso/coste conocido. El engine decide Finding, confidence y severity. No se almacena chain-of-thought.
 
 ## Seguridad, coste y límites
 
@@ -90,7 +83,9 @@ Este ADR no define clases Java ni el contrato definitivo de la API interna.
 - Los fallos del proveedor se diferenciarán de las vulnerabilidades del target.
 - El comportamiento de fallback será controlado y no se asumirá automáticamente.
 
-Los valores concretos y la estrategia de fallback quedan **Pendientes de decisión**.
+Límites: cuatro intentos por Scan, evidencia 16 KiB, input completo 24 KiB, respuesta HTTP 16 KiB, 1024 output tokens por defecto, timeout 20 s incluyendo espera, concurrencia global uno e intervalo mínimo 1 s; deadline compartido de Scan 300 s. Exportación deshabilitada por defecto, solo corpus sintético completo autorizado para proveedor/escenario. API key únicamente en transporte desde `EVALUATOR_API_KEY`; `EVALUATOR_PROVIDER` y `EVALUATOR_MODEL` son externos. Destino fijo, TLS/hostname, cero redirects/retries/proxy/tools.
+
+Timeout/5xx/formato inválido son fallos individuales del componente; 429/auth/cupo suprimen llamadas posteriores de ese Scan. La consolidación coherente termina COMPLETED, con `errorReason=null` y `llmErrorReason` separado: señal fuerte permite VULNERABLE; sin ella INCONCLUSIVE. No se repite la llamada ni se cambia proveedor. El control monetario estimado es opcional y exige tarifa/perfil versionados compatibles; desconocido es null, no cero.
 
 ## Fuera del MVP / Evolución futura
 

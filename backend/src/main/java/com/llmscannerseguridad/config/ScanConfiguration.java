@@ -44,9 +44,10 @@ public class ScanConfiguration {
     @Bean
     ScanLifecyclePort scanLifecyclePort(ProjectRepositoryPort projects, TargetConfigurationRepositoryPort targets,
             ScanRepositoryPort scans, PlatformTransactionManager manager, ScanExecutionGate gate,
-            TestExecutionRepositoryPort executions) {
+            TestExecutionRepositoryPort executions,
+            com.llmscannerseguridad.application.evaluation.EvaluationRepositoryPort evaluations) {
         return new TransactionalScanLifecycle(new ScanLifecycleService(projects, targets, scans,
-                Clock.systemUTC(), UUID::randomUUID), manager, gate, executions);
+                Clock.systemUTC(), UUID::randomUUID), manager, gate, executions, evaluations);
     }
 
     @Bean
@@ -79,8 +80,9 @@ public class ScanConfiguration {
     }
 
     @Bean
-    ScanWorkPort scanWorkPort(TestExecutionRepositoryPort executions, TargetInvocationPort invocation, ExecutionLimits limits) {
-        return new ExecuteSecurityTestsUseCase(executions, invocation, limits.scanBudgetMs(), Clock.systemUTC(), System::nanoTime);
+    ScanWorkPort scanWorkPort(TestExecutionRepositoryPort executions, TargetInvocationPort invocation, ExecutionLimits limits,
+            com.llmscannerseguridad.application.evaluation.EvaluateExecutionUseCase evaluations) {
+        return new ExecuteSecurityTestsUseCase(executions, invocation, limits.scanBudgetMs(), Clock.systemUTC(), System::nanoTime, evaluations);
     }
 
     @Bean

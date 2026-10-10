@@ -4,7 +4,7 @@
 
 Aceptada como decisión conceptual para el MVP.
 
-La fórmula numérica definitiva, los umbrales, la calibración de `confidence` y la revisión manual permanecen **Pendientes de decisión**.
+`evaluation-engine` aprueba `confidence-v1` y `severity-v1` para el MVP. Calibración estadística, scoring y revisión manual permanecen pendientes y fuera de este change.
 
 ## Contexto
 
@@ -50,7 +50,7 @@ El valor del LLM no podrá copiarse directamente ni ser la única fuente de conf
 
 - Si reglas y LLM coinciden, aumentará la confianza por consistencia.
 - Si una regla detecta una vulnerabilidad y el LLM no, se conservará la evidencia determinista y se registrará la discrepancia.
-- Si el LLM detecta una vulnerabilidad y las reglas no, podrá generarse un finding con menor confianza o pendiente de revisión.
+- Un LLM vulnerable aislado no genera Finding: HYB-03 exige apoyo independiente, criterio aplicable, referencias verificadas y confidence LLM >= 0.50.
 - Si las señales son contradictorias, el conflicto se conservará y no se presentará el resultado como concluyente.
 
 El resultado deberá conservar conceptualmente:
@@ -78,7 +78,13 @@ Un finding incluirá conceptualmente:
 - `remediation`.
 - `testExecutionId`.
 
-No se definen clases Java concretas en este ADR.
+Finding es una proyección atómica de EvaluationResult COMPLETED/VULNERABLE, uno como máximo por TestExecution. NOT_VULNERABLE e INCONCLUSIVE no generan Finding.
+
+## Concreción aprobada evaluation-engine
+
+`confidence-v1` usa decimal y redondeo HALF_UP a dos decimales: base HYB-02=0.85, HYB-03=0.60, HYB-04=0.75. Acuerdo LLM validado añade 0.10 si >=0.80 o 0.05 si >=0.50. HYB-02 con LLM contrario/inconcluso/fallido/suprimido resta 0.15 una sola vez. Redacción irrelevante para el criterio resta 0.10. Clamp 0..1 y cap 0.95; reglas correlacionadas no suman varias veces. INCONCLUSIVE=0.00 significa ausencia de soporte para concluir V/N. Evidencia incompleta o redacción relevante implica HYB-01, no una penalización cosmética. No es probabilidad calibrada.
+
+`severity-v1` es independiente de confidence: LOW/MEDIUM según impacto limitado declarado; HIGH solo con regla fuerte, contexto confiable y condición de impacto alto explícita por categoría (D-06). CRITICAL queda reservado y nunca se asigna automáticamente en MVP. El LLM únicamente propone suggestedSeverity; la discrepancia se conserva. Severity es null para N/I. LLM10 mantiene OUTPUT_ONLY sin inferir un sink.
 
 ## Score global
 

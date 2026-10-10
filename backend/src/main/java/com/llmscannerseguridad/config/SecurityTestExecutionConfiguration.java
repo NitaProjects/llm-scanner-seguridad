@@ -85,8 +85,9 @@ public class SecurityTestExecutionConfiguration {
     @Bean
     TestExecutionRepositoryPort testExecutionRepositoryPort(EntityManager entityManager, ScanRepositoryPort scans,
             TargetConfigurationRepositoryPort targets, SecurityTestCatalogPort catalog,
-            ExecutionLimits limits, PlatformTransactionManager manager) {
-        return new PostgresTestExecutionRepositoryAdapter(entityManager, scans, targets, catalog, limits, manager, Clock.systemUTC());
+            ExecutionLimits limits, PlatformTransactionManager manager,
+            com.llmscannerseguridad.application.evaluation.EvaluationRepositoryPort evaluations) {
+        return new PostgresTestExecutionRepositoryAdapter(entityManager, scans, targets, catalog, limits, manager, Clock.systemUTC(), evaluations);
     }
 
     @Bean

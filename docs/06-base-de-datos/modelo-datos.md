@@ -48,7 +48,7 @@ El material cifrado separa la credencial de la configuración pública. Formato 
 
 ### Scan
 
-Recurso de ejecución asociado a Project, definido por `scan-execution` (SE-01 a SE-10). `security-test-execution` mantiene los siete campos y añade trabajo técnico real: COMPLETED exige cuatro ejecuciones técnicamente correctas. Cualquier fallo produce FAILED conservando éxitos. Los históricos no-op no se recalculan y su listado de ejecuciones permanece vacío; COMPLETED no acredita seguridad ni vulnerabilidad.
+Recurso de ejecución asociado a Project, definido por `scan-execution` (SE-01 a SE-10). `security-test-execution` mantiene los siete campos y añade trabajo técnico real. V5/evaluation-engine extiende COMPLETED para nuevos scans: cuatro ejecuciones y cuatro evaluaciones COMPLETED, sin recalcular históricos. Cualquier fallo produce FAILED conservando éxitos. Los históricos no-op no se recalculan y su listado de ejecuciones permanece vacío; COMPLETED no acredita seguridad ni vulnerabilidad.
 
 | Campo | Columna | Tipo PostgreSQL | Restricciones |
 | --- | --- | --- | --- |
@@ -66,7 +66,7 @@ PENDING exige inicio/fin/error null; RUNNING exige inicio y fin/error null; COMP
 
 Tras reiniciar una única instancia se confirma PENDING/RUNNING → FAILED/SCAN_INTERRUPTED antes de admitir nuevos scans, sin relanzar ni alterar terminales. V3 debe fallar transaccionalmente ante históricos incompatibles o activos duplicados; no inventa fechas/motivos ni borra datos. Recuperación no sustituye esa validación. No se ha ejecutado Flyway durante la implementación.
 
-La admisión mantiene la comprobación de existencia del target mediante proyección sin blob. Scan no añade FK directa ni snapshot. El worker real lee target una sola vez al preparar el plan y conserva id/updatedAt en TestExecution; su configuración completa/cifrado solo permanece en memoria. El progreso se deriva de GET executions sin añadir totalTests/completedTests a Scan. Scoring/evaluación y cancelación siguen fuera del incremento; no hay PARTIAL.
+La admisión mantiene la comprobación de existencia del target mediante proyección sin blob. Scan no añade FK directa ni snapshot. El worker real lee target una sola vez al preparar el plan y conserva id/updatedAt en TestExecution; su configuración completa/cifrado solo permanece en memoria. El progreso se deriva de GET executions sin añadir totalTests/completedTests a Scan. Scoring y cancelación siguen fuera del incremento; evaluación se incorpora prospectivamente mediante V5. No hay PARTIAL.
 
 ### SecurityTest
 
@@ -80,32 +80,53 @@ Estados PENDING/RUNNING/COMPLETED/FAILED. PENDING no tiene inicio ni datos técn
 
 request_payload TEXT contiene JSON preparado/redactado; response_payload TEXT contiene una cadena JSON serializada con comillas y escapes, decodificada una sola vez al leer internamente. U+0000 queda como escape recuperable, nunca NUL literal; no se usa JSONB para ese texto. Flags de redacción exacta de credencial conocida con marcador [REDACTED_CREDENTIAL]. No se guarda body bruto de respuesta. Caps DB: request 65536 bytes y evidencia combinada 524288 bytes; la configuración aplica además defaults 131072 por ejecución/524288 por Scan y límite de texto antes de redactar. La cuenta incluye escapes y redacción antes de cada escritura.
 
-evaluator_result/confidence se conservan sin mapeo ni escrituras, null en nuevas filas. Findings/global_score permanecen intactos. No se introducen reglas, veredictos, severidad o evaluación. El GET executions usa una proyección sin evidencia ni target; el repositorio permite lectura interna para un evaluador futuro.
+evaluator_result/confidence se conservan sin mapeo ni escrituras, null en nuevas filas. global_score permanece intacto. V4 conserva su alcance técnico; V5 incorpora resultados/Findings separados sin reutilizar los campos semánticos heredados. El GET executions usa una proyección sin evidencia ni target; el repositorio permite lectura interna para un evaluador futuro.
 
 V4 falla transaccionalmente si test_cases o test_executions contienen históricos incompatibles; no inventa identidades/estados ni borra datos. V1/V2/V3 quedan intactas. Preparación completa, inicio y resultado usan transacciones nuevas cortas; HTTP/cuota quedan fuera. Cierre de Scan y ejecuciones activas, y recuperación conjunta, son atómicos. Recuperación marca EXECUTION_INTERRUPTED/SCAN_INTERRUPTED sin reenvíos, preservando éxitos confirmados. Migración y tests preparados, sin ejecución automática.
 
+### EvaluationResult
+
+V5 `V5__incorporar_motor_evaluacion.sql` introduce resultados independientes de la evidencia técnica. V1–V4 permanecen intactas; no hay dual writes en evaluator_result/confidence heredados ni cambios en test_cases/global_score.
+
+| Grupo / columnas | Tipos y contrato |
+| --- | --- |
+| id, test_execution_id, scan_id, test_case_id, category | UUID y VARCHAR(10); PK, UNIQUE por ejecución, FK compuesta a identidad de TestExecution; categoría validada contra catálogo al preparar/reclamar. |
+| status, created_at, started_at, finished_at | PENDING/RUNNING/COMPLETED/FAILED; TIMESTAMPTZ(6) UTC y fechas no regresivas. Claim semántico exige padre COMPLETED. |
+| error_reason, outcome_reason | Motivos cerrados globales y de abstención, distintos de errores LLM. COMPLETED exige error_reason null. |
+| final_verdict, deterministic_verdict, decision_code, strategy | Tres verdicts, HYB-01..07 y HYBRID; decisión null antes de terminal. |
+| severity, confidence, confidence_components | VARCHAR(10), NUMERIC(3,2) 0..1 y JSONB; severity solo V; I=0.00. Componentes/versiones reproducibles. |
+| degraded, verdict_discrepancy, severity_discrepancy | BOOLEAN; conservan fallback y desacuerdos sin sustituir señales. |
+| deterministic_signals, llm_assessment | JSONB de esquema validado; assessment sanitizado separado, nunca output bruto ni chain-of-thought. |
+| llm_status, llm_error_reason, llm_attempt_count | NOT_REQUESTED/SUCCEEDED/FAILED/SKIPPED; error de componente cerrado; SMALLINT 0/1. |
+| reasoning_summary, recommendation, evidence_summary | TEXT controlado/inertizado para usuario/auditor, límites explícitos. |
+| criteria_id/version, scenario_id/version | Identidades de criterio/contexto; null solo donde falta contexto/configuración recuperable. |
+| engine/policy/confidence/severity/prompt/schema_version, llm_input_profile | Versiones; HYBRID_WITH_SIGNALS diferencia este input de un LLM-only experimental. |
+| configuration_snapshot, configuration_hash, sampling_parameters | JSONB seguro, SHA-256 canónico serializer-v1 y parámetros explícitos; sin corpus completo ni target. |
+| evidence_projection, evidence_complete, redacted, input_bytes, evidence_bytes, input_hash | TEXT JSON serializado con Unicode/NUL escapado, BOOLEAN, INTEGER y SHA-256 de proyección sintética; sin duplicar evidencia libre. |
+| requested_provider/model, resolved_model, latency_ms, input_tokens, output_tokens | Configuración externa y metadata realmente recibida; desconocido null, nunca inventado. |
+| reserved_cost_usd, estimated_cost_usd, pricing_version, estimate_version | NUMERIC(12,6) y versiones; control monetario opcional. Todo importe estimado persistido conserva pricing_version y estimate_version, también sin reserva/límite activo. Tarifa desconocida: importe/versiones ausentes. Reserva ambigua conservada; estimación distinta de factura. |
+| provider_request_id | Identificador sanitizado interno opcional, no público. |
+
+PENDING/RUNNING no admiten decisión terminal; COMPLETED requiere fechas/decisión y admite LLM FAILED/SKIPPED degradado con error de componente separado; FAILED exige motivo global, I/0.00/severity null. Checks explícitos de NULL, rangos, tipos JSON y cap adicional 64 KiB. Claim y reserva usan lock de Scan/resultado y commit antes de red. Resultado terminal inmutable; una tentativa máxima y sin reenvío tras recuperación.
+
+`scans.evaluation_profile_version VARCHAR(64)` es nullable: null histórico o evaluation-engine-v1. T1 nueva lo fija, sin exponer octavo campo. COMPLETED nuevo requiere cuatro ejecuciones y cuatro evaluaciones COMPLETED; los verdicts no hacen fallar el Scan. Recuperación conserva terminales/Findings y cierra activos en la misma transacción. Solo permite registros explícitos FAILED/EVALUATION_INTERRUPTED para evaluación ausente de una ejecución COMPLETED de un Scan nuevo que estaba activo.
+
+V5 falla íntegramente si existen findings heredados o evaluator_result/confidence no nulos, sin borrar ni convertir. Datos técnicos V4 válidos y sus fechas/relaciones permanecen. Las pruebas aplican V5 únicamente a esquemas aislados de llm_scanner_seguridad_test, nunca a producción.
+
 ### Finding
 
-Representa un riesgo detectado durante un Scan.
+Un Finding por EvaluationResult COMPLETED/VULNERABLE y por TestExecution, confirmado en la misma transacción corta. N/I no crean Finding. No duplica señales/assessment/snapshots: se consultan a través de evaluation_result_id.
 
-Datos previstos:
+| Campo | Columna / representación |
+| --- | --- |
+| id, evaluationResultId, testExecutionId, scanId, securityTestId | UUID obligatorios, relaciones coherentes. |
+| category, severity, confidence | owasp_category, risk_level y confidence heredadas, proyección de resultado final. |
+| verdict | final_verdict obligatorio VULNERABLE, derivado en dominio/API. |
+| title | VARCHAR(150), plantilla controlada. |
+| description, evidenceSummary, recommendation | explanation, evidence y recommendation TEXT, hasta 1000 puntos de código; sin respuesta bruta ni narrativa libre. |
+| createdAt | TIMESTAMPTZ(6) UTC, asignada al terminal, no anterior a finishedAt. |
 
-- Identificador.
-- Scan asociado.
-- TestExecution asociada.
-- Categoría.
-- Nivel de riesgo o severidad: `LOW`, `MEDIUM`, `HIGH` o `CRITICAL`.
-- `confidence`, conceptualmente entre `0.0` y `1.0`.
-- Evidencia.
-- Resultado determinista.
-- Evaluación del LLM.
-- Veredicto final.
-- Explicación.
-- Recomendación o remediación.
-- Referencia a `testExecutionId`.
-- Fecha de creación.
-
-La severidad y el `confidence` son conceptos diferentes: la primera representa la importancia del riesgo y el segundo la confianza en el veredicto. El score global del scan es un resumen y no debe ocultar findings individuales, especialmente los `CRITICAL`.
+UNIQUE(test_execution_id) y UNIQUE(evaluation_result_id). FK compuesta a EvaluationResult incluye resultado/ejecución/Scan/test/categoría/verdict/severity/confidence; ningún campo nullable puede omitir esa integridad. El resultado vulnerable solo puede estar COMPLETED por los checks de ciclo. No estados de revisión ni score.
 
 ### Report
 
@@ -120,7 +141,9 @@ TargetConfiguration: precondición de Scan a través de Project, sin FK/snapshot
 Scan 1 ------- N TestExecution
 SecurityTest 1 ---- N TestExecution
 Scan 1 ------- N Finding
-TestExecution 1 - N Finding
+TestExecution 1 - 0..1 EvaluationResult (MVP)
+EvaluationResult 1 - 0..1 Finding (solo VULNERABLE)
+TestExecution 1 - 0..1 Finding (MVP)
 Scan 1 ------- N Report
 ```
 
@@ -130,8 +153,8 @@ Scan 1 ------- N Report
 - Las credenciales o referencias de autenticación deben gestionarse de forma segura y solo durante la ejecución autorizada.
 - Las peticiones, respuestas y evidencias pueden contener información sensible.
 - Deben aplicarse minimización, redacción, control de acceso y retención limitada.
-- Project, TargetConfiguration, Scan, SecurityTest y TestExecution tienen esquema aprobado. Finding/Report y evaluación siguen fuera de este incremento. Retención temporal, borrado y autorización de usuarios requieren decisiones posteriores; los límites por Scan no acotan el crecimiento histórico.
+- Project, TargetConfiguration, Scan, SecurityTest y TestExecution tienen esquema aprobado. EvaluationResult/Finding se incorporan mediante V5; Report sigue fuera de este incremento. Retención temporal, borrado y autorización de usuarios requieren decisiones posteriores; los límites por Scan no acotan el crecimiento histórico.
 
 ## Persistencia
 
-PostgreSQL y Flyway gestionan los esquemas aprobados de Project, TargetConfiguration, Scan, SecurityTest y TestExecution descritos arriba. Finding/Report y los datos de evaluación conservan únicamente su alcance conceptual futuro.
+PostgreSQL y Flyway gestionan los esquemas aprobados de Project, TargetConfiguration, Scan, SecurityTest y TestExecution descritos arriba. EvaluationResult/Finding se incorporan mediante V5; Report permanece conceptual.

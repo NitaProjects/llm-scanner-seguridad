@@ -44,7 +44,7 @@ El incremento `scan-execution` implementa únicamente el ciclo de vida mediante 
 - `COMPLETED`: el procesamiento ha terminado.
 - `FAILED`: un error impide completar el procesamiento del scan.
 
-Para el worker real, un fallo individual seguro se persiste y permite continuar; cualquier TestExecution FAILED obliga a Scan FAILED/SCAN_PROCESSING_FAILED, conservando éxitos. Un fallo global de autorización/SSRF/configuración/credenciales/persistencia/presupuesto aborta pendientes como FAILED/EXECUTION_ABORTED. COMPLETED exige un plan no vacío con las cuatro pruebas técnicamente COMPLETED; no expresa seguridad ni vulnerabilidad. No se añade PARTIAL. Esta concreción aprobada sustituye la decisión anteriormente pendiente, sin recalcular históricos no-op.
+Un fallo técnico individual del target permite continuar, pero cualquier TestExecution FAILED obliga a Scan FAILED/SCAN_PROCESSING_FAILED conservando éxitos. Un fallo global aborta pendientes. `evaluation-engine` extiende prospectivamente el cierre mediante un perfil interno durable: nuevos scans exigen cuatro TestExecutions y cuatro EvaluationResults COMPLETED. VULNERABLE, INCONCLUSIVE y fallos LLM consolidados coherentemente no hacen fallar Scan. EvaluationResult FAILED o un fallo global de tiempo/persistencia/invariantes sí lo impiden. Históricos sin perfil mantienen su significado sin backfill. No se añade PARTIAL ni un octavo campo público.
 
 `CANCELLED` y `PARTIAL` no se incorporan al conjunto mínimo del MVP. Su necesidad se revisará al diseñar cancelación, recuperación y tratamiento de errores parciales.
 
@@ -66,7 +66,7 @@ Cada `TestExecution` debe conservar su resultado o su error, sin confundir un fa
 
 ## Límites y errores
 
-El worker real usa los límites técnicos de STE-09: cuatro pruebas, request 64 KiB, response 256 KiB, texto 64 KiB, evidencia 128 KiB por ejecución/512 KiB por Scan y presupuesto 300 s desde Scan.startedAt. Hay una invocación global y al menos 1 s entre inicios. DNS máximo 2 s, conexión/TLS 5 s y timeout del target 1..60 s, todos recortados por deadline monotónico; DNS tiene dos hilos/cola ocho y scheduler compartido. Son defaults externos con hard caps, no propiedades de la API. Los límites del futuro evaluador LLM siguen pendientes.
+El worker usa los límites técnicos de STE-09: cuatro pruebas, request 64 KiB, response 256 KiB, texto 64 KiB, evidencia 128 KiB por ejecución/512 KiB por Scan y presupuesto compartido 300 s. Hay una invocación target global y al menos 1 s entre inicios. DNS máximo 2 s, conexión/TLS 5 s y timeout del target 1..60 s, recortados por deadline monotónico. Los límites independientes del evaluador están aprobados por evaluation-engine D-15 y ADR-004 dentro de los mismos 300 s.
 
 El executor dedicado es `ThreadPoolTaskExecutor`, con `AbortPolicy` y configuración externa `SCAN_EXECUTOR_CORE_POOL_SIZE`, `SCAN_EXECUTOR_MAX_POOL_SIZE` y `SCAN_EXECUTOR_QUEUE_CAPACITY`. Defaults técnicos 1/1/10, ajustables y ajenos al contrato funcional. Se valida core positivo, max >= core y cola finita no negativa; no se ejecuta en el hilo HTTP al saturar. La exclusión por Project corresponde al índice único parcial `uq_scans_active_project` para PENDING/RUNNING; un exists previo no es garantía suficiente.
 
@@ -80,6 +80,10 @@ El rechazo de dispatch se compensa a FAILED/SCAN_DISPATCH_FAILED y devuelve 503 
 
 - Ejecución síncrona dentro de la petición HTTP: puede producir timeouts y una peor experiencia de usuario.
 - Cola y workers persistentes: aportan aislamiento y escalabilidad, pero introducen infraestructura adicional antes de que sea necesaria.
+
+## Extensión evaluation-engine
+
+La extensión `evaluation-engine` conserva las fronteras transaccionales: preparación de ocho filas; claim condicional de evaluación y reserva 0/1 confirmadas antes de red; resultado terminal y Finding en una transacción nueva corta. No se repiten llamadas ante commit ambiguo. ScanStartup recupera también evaluaciones activas a FAILED/EVALUATION_INTERRUPTED en la misma transacción antes de admisión/executor. Conserva terminales y Findings. Solo un Scan nuevo que estaba activo permite registrar una evaluación ausente como interrupción explícita; nunca se rellenan históricos ni se reconstruye una respuesta perdida.
 
 ## Fuera del MVP / Evolución futura
 

@@ -21,6 +21,7 @@ public final class TransactionalScanLifecycle implements ScanLifecyclePort {
     private final ScanExecutionGate gate;
     private final TransactionTemplate transaction;
     private final TestExecutionRepositoryPort executions;
+    private final com.llmscannerseguridad.application.evaluation.EvaluationRepositoryPort evaluations;
 
     public TransactionalScanLifecycle(ScanLifecyclePort delegate, PlatformTransactionManager manager,
             ScanExecutionGate gate) {
@@ -29,9 +30,16 @@ public final class TransactionalScanLifecycle implements ScanLifecyclePort {
 
     public TransactionalScanLifecycle(ScanLifecyclePort delegate, PlatformTransactionManager manager,
             ScanExecutionGate gate, TestExecutionRepositoryPort executions) {
+        this(delegate, manager, gate, executions, null);
+    }
+
+    public TransactionalScanLifecycle(ScanLifecyclePort delegate, PlatformTransactionManager manager,
+            ScanExecutionGate gate, TestExecutionRepositoryPort executions,
+            com.llmscannerseguridad.application.evaluation.EvaluationRepositoryPort evaluations) {
         this.delegate = delegate;
         this.gate = gate;
         this.executions = executions;
+        this.evaluations = evaluations;
         transaction = new TransactionTemplate(manager);
         transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
@@ -47,7 +55,11 @@ public final class TransactionalScanLifecycle implements ScanLifecyclePort {
 
     @Override
     public Scan create(UUID projectId) {
-        return gate.admit(() -> confirmed(() -> delegate.create(projectId)));
+        return gate.admit(() -> confirmed(() -> {
+            var scan = delegate.create(projectId);
+            if (evaluations != null) evaluations.setProfile(scan.id());
+            return scan;
+        }));
     }
 
     @Override
@@ -61,6 +73,7 @@ public final class TransactionalScanLifecycle implements ScanLifecyclePort {
             if (executions != null && !executions.allCompleted(scanId)) {
                 throw ScanOperationException.internal();
             }
+            if (evaluations != null && !evaluations.allCompleted(scanId)) throw ScanOperationException.internal();
             return delegate.complete(scanId);
         });
     }
@@ -69,6 +82,10 @@ public final class TransactionalScanLifecycle implements ScanLifecyclePort {
     public boolean fail(UUID scanId, ScanStatus expected, ScanFailureReason reason) {
         return confirmed(() -> {
             boolean changed = delegate.fail(scanId, expected, reason);
+            if (changed && evaluations != null) {
+                evaluations.closeActive(scanId, Clock.systemUTC().instant(),
+                        com.llmscannerseguridad.domain.evaluation.EvaluationError.EVALUATION_ABORTED);
+            }
             if (changed && executions != null) {
                 executions.closeActive(scanId, Clock.systemUTC().instant(), ExecutionError.EXECUTION_ABORTED);
             }
@@ -79,6 +96,7 @@ public final class TransactionalScanLifecycle implements ScanLifecyclePort {
     @Override
     public int recoverInterrupted() {
         return confirmed(() -> {
+            if (evaluations != null) evaluations.recoverActive(Clock.systemUTC().instant());
             if (executions != null) {
                 executions.recoverActive(Clock.systemUTC().instant());
             }

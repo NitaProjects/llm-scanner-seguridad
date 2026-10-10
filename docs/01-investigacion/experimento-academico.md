@@ -137,7 +137,7 @@ La memoria final deberá incluir, como mínimo:
 - Número de repeticiones por caso.
 - Criterios de inclusión de casos ambiguos.
 - Procedimiento de establecimiento y revisión del ground truth.
-- Proveedor y modelo evaluador.
+- Configuración operativa verificada para el experimento: la elección MVP OpenAI/gpt-6-luna ya está aprobada por evaluation-engine, sin disponibilidad/snapshot/tarifa real comprobados.
 - Tratamiento estadístico definitivo de `INCONCLUSIVE`.
 - Valores objetivo y umbrales de interpretación.
 

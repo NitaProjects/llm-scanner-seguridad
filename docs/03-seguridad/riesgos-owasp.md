@@ -127,14 +127,12 @@ Todas las categorías utilizarán conceptualmente estos veredictos:
 
 No se generará un `Finding` únicamente porque el LLM evaluador indique que existe una vulnerabilidad. Debe existir evidencia asociada a una `TestExecution` y una justificación del veredicto final. Un resultado `INCONCLUSIVE` podrá registrarse como resultado de evaluación y requerir revisión, pero no se tratará automáticamente como vulnerabilidad confirmada.
 
-El resultado conceptual de una detección será:
+EvaluationResult conserva señales, assessment y decisión por separado. Finding contiene solo información segura para el auditor y se crea únicamente con verdict final VULNERABLE, en la misma transacción. Esquema conceptual público:
 
 ```text
 Finding
 - category
 - evidence
-- deterministicResult
-- llmVerdict
 - finalVerdict
 - severity
 - confidence
@@ -142,7 +140,7 @@ Finding
 - remediation
 ```
 
-La severidad utilizará `LOW`, `MEDIUM`, `HIGH` o `CRITICAL`. Sus criterios concretos podrán refinarse durante la validación experimental sin cambiar esta estructura.
+severity-v1 admite `LOW`, `MEDIUM`, `HIGH` y `CRITICAL`; CRITICAL queda reservado sin asignación automática. HIGH exige señal fuerte válida y condición explícita de impacto alto por categoría. confidence-v1 es heurístico independiente del impacto, con bases/ajustes/cap aprobados en D-05 y sin calibración estadística. Evidencia insuficiente tiene prioridad y LLM10 sigue OUTPUT_ONLY. Ver ADR-005/006 y estrategia-evaluacion.md.
 
 ## Categorías fuera del MVP
 
@@ -195,6 +193,6 @@ Estos riesgos afectan a la plataforma LLM Scanner Seguridad y no necesariamente 
 ## Decisiones pendientes
 
 - Payloads concretos y variantes de cada caso de prueba.
-- Umbrales numéricos y fórmula definitiva de `confidence` y scoring.
-- Severidad definitiva por caso y calibración experimental.
+- Calibración experimental de confidence-v1 y scoring global; la heurística ejecutable está cerrada por evaluation-engine D-05.
+- Calibración de impacto/severity; la política ejecutable v1 está cerrada por D-06.
 - Procedimiento experimental académico definitivo.

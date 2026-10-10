@@ -2,7 +2,7 @@
 
 ## Estructura conceptual
 
-La estructura conceptual de evaluación siguiente corresponde a incrementos futuros. `security-test-execution` implementa exclusivamente el catálogo técnico inmutable id/code/revision/name/category/prompt en test_cases y ejecuciones técnicas, sin criterios, severidad o veredictos. V4 es la fuente persistida de los cuatro casos de revisión 1; no hay catálogo editable, enabled ni selección de usuario.
+`security-test-execution` conserva el catálogo técnico inmutable id/code/revision/name/category/prompt en test_cases. V4 mantiene los cuatro probes revisión 1. evaluation-engine añade por separado criteria-v1.json, contexto sintético local vinculado al snapshot y EvaluationResult; no modifica SecurityTest/V4 ni introduce catálogo editable, enabled o selección de usuario.
 
 Cada Security Test debería definir, como mínimo:
 
@@ -16,7 +16,7 @@ Cada Security Test debería definir, como mínimo:
 - Recomendación.
 - Evidencia esperada.
 
-El formato técnico y almacenamiento de los cuatro probes quedan aprobados por D-01/D-11 de security-test-execution; su evaluación ejecutable y las variantes siguen pendientes.
+El formato técnico y almacenamiento de los cuatro probes quedan aprobados por D-01/D-11 de security-test-execution. La evaluación ejecutable está aprobada por evaluation-engine D-01..D-16; variantes y dataset definitivo permanecen fuera del change.
 
 ## Categorías del MVP
 
@@ -84,7 +84,7 @@ Los prompts exactos, UUID y descripciones se conservan en `backend/src/main/reso
 
 ## Uso del evaluador LLM
 
-Los casos de prueba no dependerán de un proveedor concreto. Cuando las reglas deterministas y los criterios esperados no sean suficientes, el caso podrá solicitar una evaluación semántica mediante el `EvaluatorPort` conceptual.
+Los casos usan EvaluatorPort.evaluate(EvaluatorInput, EvaluationCallBudget) → EvaluatorOutcome, sin tipos del proveedor. OpenAI Responses API/Structured Outputs y modelo inicial externo gpt-6-luna forman el adapter MVP. La llamada requiere evidencia sintética completa autorizada y una tentativa por evaluación; complementa señales fuertes o apoyo semántico sin decidir por sí sola el Finding.
 
 El resultado podrá aportar veredicto, confianza, severidad sugerida, explicación y recomendación, pero no sustituirá las comprobaciones deterministas ni la revisión de los criterios esperados. El proveedor y el modelo utilizados se configurarán externamente y se registrarán como metadatos de la evaluación, nunca sus credenciales.
 
@@ -92,7 +92,7 @@ El resultado podrá aportar veredicto, confianza, severidad sugerida, explicaci�
 
 La ejecución de cada caso debe conservar por separado la evidencia obtenida, el resultado determinista y la evaluación del LLM. A partir de esas señales se generará el `Finding`, cuando corresponda, con categoría, severidad, confidence, veredicto final, explicación, remediation y referencia a `testExecutionId`.
 
-La severidad podrá ser `LOW`, `MEDIUM`, `HIGH` o `CRITICAL`. El `confidence` se expresará conceptualmente entre `0.0` y `1.0` y no dependerá exclusivamente del LLM. Las discrepancias entre reglas, criterios esperados y evaluador deberán conservarse como parte de la evidencia.
+severity-v1 reserva CRITICAL sin asignación automática y permite HIGH solo con señal fuerte e impacto alto explícito por categoría. confidence-v1 es heurístico reproducible 0.00..0.95, sin calibración estadística; INCONCLUSIVE=0.00, severity null y ningún Finding. Señales, assessment, discrepancias, versiones/modelo y HYB-01..07 se conservan por separado. Fallo LLM no equivale a EvaluationResult FAILED ni a vulnerabilidad. Detalle en estrategia-evaluacion.md.
 
 ## Preparación para el experimento académico
 

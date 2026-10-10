@@ -35,16 +35,25 @@ public class PostgresTestExecutionRepositoryAdapter implements TestExecutionRepo
     private final ExecutionLimits limits;
     private final Clock clock;
     private final TransactionTemplate transaction;
+    private final com.llmscannerseguridad.application.evaluation.EvaluationRepositoryPort evaluations;
 
     public PostgresTestExecutionRepositoryAdapter(EntityManager entityManager, ScanRepositoryPort scans,
             TargetConfigurationRepositoryPort targets, SecurityTestCatalogPort catalog, ExecutionLimits limits,
             PlatformTransactionManager manager, Clock clock) {
+        this(entityManager, scans, targets, catalog, limits, manager, clock, null);
+    }
+
+    public PostgresTestExecutionRepositoryAdapter(EntityManager entityManager, ScanRepositoryPort scans,
+            TargetConfigurationRepositoryPort targets, SecurityTestCatalogPort catalog, ExecutionLimits limits,
+            PlatformTransactionManager manager, Clock clock,
+            com.llmscannerseguridad.application.evaluation.EvaluationRepositoryPort evaluations) {
         this.entityManager = entityManager;
         this.scans = scans;
         this.targets = targets;
         this.catalog = catalog;
         this.limits = limits;
         this.clock = clock;
+        this.evaluations = evaluations;
         transaction = new TransactionTemplate(manager);
         transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
@@ -74,6 +83,13 @@ public class PostgresTestExecutionRepositoryAdapter implements TestExecutionRepo
             var plan = new ExecutionPlan(tests, rows, target, scan.startedAt());
             rows.forEach(row -> entityManager.persist(new TestExecutionJpaEntity(row)));
             entityManager.flush();
+            if (evaluations != null && evaluations.profile(scanId) != null) {
+                var evaluationItems = java.util.stream.IntStream.range(0, tests.size()).mapToObj(i ->
+                        new com.llmscannerseguridad.application.evaluation.EvaluationPlan.Item(rows.get(i).id(), tests.get(i).id(),
+                            tests.get(i).code(), tests.get(i).revision(), tests.get(i).category())).toList();
+                evaluations.prepare(new com.llmscannerseguridad.application.evaluation.EvaluationPlan(scan.projectId(), scan.id(),
+                        target.id(), target.updatedAt(), scan.startedAt(), evaluationItems));
+            }
             return plan;
         });
     }

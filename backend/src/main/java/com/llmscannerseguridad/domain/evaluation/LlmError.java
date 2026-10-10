@@ -1,0 +1,12 @@
+package com.llmscannerseguridad.domain.evaluation;
+
+public enum LlmError {
+    EVALUATOR_TIMEOUT, EVALUATOR_UNAVAILABLE, EVALUATOR_INVALID_OUTPUT,
+    EVALUATOR_RATE_LIMITED, EVALUATOR_CONFIGURATION_INVALID,
+    EVALUATOR_BUDGET_EXCEEDED, EVALUATOR_SUPPRESSED;
+
+    public boolean suppressesScan() {
+        return this == EVALUATOR_RATE_LIMITED || this == EVALUATOR_CONFIGURATION_INVALID
+                || this == EVALUATOR_BUDGET_EXCEEDED || this == EVALUATOR_SUPPRESSED;
+    }
+}

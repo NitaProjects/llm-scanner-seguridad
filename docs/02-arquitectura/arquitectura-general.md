@@ -69,7 +69,7 @@ T1 confirma PENDING antes de dispatch, T2 reclama RUNNING condicionalmente y T3 
 
 SecurityTestCatalogPort, TestExecutionRepositoryPort y TargetInvocationPort separan catálogo, persistencia e invocación. HttpClient 5 queda dentro del adaptador HTTP, con DNS acotado, validación de todas las IPs y conexión fijada a una sola, TLS del hostname original, cero redirects/retries/proxy/pooling entre intentos y lectura limitada. CredentialDecryptionPort reutiliza AES existente; el plaintext no sale del adaptador. Una compuerta global permite una invocación simultánea y separación mínima de un segundo. Defaults/márgenes y códigos están en STE-09/STE-10 del change.
 
-COMPLETED exige cuatro ejecuciones técnicamente COMPLETED, sin juicio de vulnerabilidad. Un fallo individual permite continuar pero produce Scan FAILED; uno global aborta pendientes. T3 confirma el fallo de Scan y el cierre de ejecuciones activas en una sola transacción. El listado GET executions solo devuelve metadatos; la evidencia JSON/texto redactada queda disponible internamente. No hay evaluador, Findings ni scoring en este incremento. LLM10 observa únicamente output y no valida downstream/sink.
+`evaluation-engine` fija `evaluation-engine-v1` en T1 de cada Scan nuevo. El plan confirma cuatro ejecuciones y cuatro evaluaciones PENDING atómicamente. Tras confirmar cada ejecución, EvaluateExecutionUseCase aplica reglas, solicita EvaluatorPort cuando la proyección sintética está autorizada y consolida antes del siguiente probe. COMPLETED exige cuatro ejecuciones y cuatro evaluaciones COMPLETED: VULNERABLE, INCONCLUSIVE y fallos LLM consolidados no son fallo técnico global. EvaluationResult FAILED, fallos del target o deadline global impiden ese cierre. T3 cierra hijos activos y Scan atómicamente. Históricos sin perfil permanecen intactos. GET executions conserva su contrato; evaluations/findings añaden proyecciones sin evidencia. No hay scoring; LLM10 conserva OUTPUT_ONLY sin validar downstream/sink.
 
 Los estados son `PENDING`, `RUNNING`, `COMPLETED` y `FAILED`. ScanStartup recupera ejecuciones activas a FAILED/EXECUTION_INTERRUPTED y scans activos a FAILED/SCAN_INTERRUPTED en la misma transacción antes de habilitar nuevos inicios y el executor; fallo de recuperación impide arrancar. Conserva terminales, también ejecuciones ya correctas, y cierra ejecuciones activas de scans terminales. Si durante ejecución no puede confirmarse tampoco FAILED, una compuerta local bloquea nuevos inicios/reclamaciones hasta reinicio, preservando consultas y permitiendo finalizar tareas ya RUNNING. Se soporta una sola instancia; no hay relanzamientos ni cola durable. No hay PARTIAL; cancelación y reintentos siguen fuera del incremento.
 
@@ -150,15 +150,10 @@ Durante el MVP se utilizará un único proveedor, configurable externamente. La 
 El puerto podrá representar conceptualmente una operación como:
 
 ```text
-evaluate(
-    securityTest,
-    targetRequest,
-    targetResponse,
-    deterministicResults
-) → EvaluationResult
+evaluate(EvaluatorInput, EvaluationCallBudget) → EvaluatorOutcome
 ```
 
-`EvaluationResult` podrá incluir `verdict`, `confidence`, `reasoningSummary`, `suggestedSeverity`, `recommendation`, `evaluatorProvider`, `evaluatorModel` y `evaluatedAt`. No se definen todavía clases Java concretas.
+El puerto devuelve assessment validado o fallo cerrado; HybridDecisionPolicy calcula el resultado final fuera del adaptador. EvaluationResult guarda estado técnico, fallo LLM separado, señales, assessment sanitizado, verdict/confidence/severity, snapshots sintéticos y metadata/versiones. Finding solo existe para COMPLETED/VULNERABLE y se confirma junto con el resultado. Catálogo JSON y manifiesto local se fijan una vez; no se modifica SecurityTest ni TargetConfiguration.
 
 La decisión final se basará en una estrategia híbrida formada por reglas deterministas, criterios esperados y evaluación mediante LLM. El evaluador no decidirá por sí solo la existencia de una vulnerabilidad.
 
@@ -200,9 +195,9 @@ D-CRYPTO queda cerrado para el MVP local: AES-256-GCM con clave externa de 256 b
 ## Decisiones todavía abiertas
 
 - Las alternativas y recomendaciones se recogen en `docs/02-arquitectura/decisiones/decisiones-abiertas.md`.
-- Proveedor y modelo concretos del evaluador.
-- Valores de coste, número máximo de evaluaciones, timeout, rate limits, longitud máxima y fallback del evaluador.
-- Fórmula numérica definitiva, normalización y calibración de severidad, confidence y scoring.
+- OpenAI y modelo inicial configurable gpt-6-luna están aprobados; cuenta/disponibilidad/retención operativa se comprueban antes de uso real autorizado.
+- Límites y fallback del evaluador cerrados en evaluation-engine D-09/D-15; coste monetario estimado opcional y externo.
+- confidence-v1/severity-v1 aprobadas; calibración estadística y scoring siguen pendientes.
 - Diseño del experimento académico definitivo.
 - Evolución del executor interno de instancia única hacia cola durable, AWS SQS o workers distribuidos.
 - Reintentos y cancelación; recuperación local y fallo agregado con éxitos conservados aprobados en ADR-003.
