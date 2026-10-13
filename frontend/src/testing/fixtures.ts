@@ -69,3 +69,27 @@ export function scenario(kind: 'negative' | 'inconclusive' | 'mixed' | 'degraded
   }
   return { evaluations, findings, score: summary, report: report(summary, evaluations, findings) };
 }
+
+// Caso visual exclusivamente sintético: los cuatro niveles, títulos largos y detalle completo.
+export function visualFindingsScenario() {
+  const levels = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] as const;
+  const findings = levels.map((severity, index) => finding(index, {
+    severity, confidence: severity === 'HIGH' ? .1 : .85,
+    title: 'Hallazgo sintético de revisión de límites y tratamiento de información en el asistente autorizado',
+    description: 'Descripción sintética para revisar la legibilidad del detalle. '.repeat(8),
+    evidenceSummary: 'Evidencia pública sintética de la prueba controlada. '.repeat(6),
+    recommendation: 'Revisar el límite de confianza y validar la salida antes de utilizarla. '.repeat(5)
+  }));
+  const evaluations = levels.map((severity, index) => evaluation(index, {
+    finalVerdict: 'VULNERABLE', severity, confidence: findings[index].confidence, findingId: findings[index].id
+  }));
+  const summary = score({
+    globalScore: 100, riskLevel: 'CRITICAL', findingCount: 4, notVulnerableCount: 0,
+    severityCounts: { LOW: 1, MEDIUM: 1, HIGH: 1, CRITICAL: 1 },
+    categories: score().categories.map((item, index) => ({
+      ...item, score: [14, 44, 71, 94][index], riskLevel: levels[index], findingCount: 1, notVulnerableCount: 0,
+      severityCounts: { LOW: index === 0 ? 1 : 0, MEDIUM: index === 1 ? 1 : 0, HIGH: index === 2 ? 1 : 0, CRITICAL: index === 3 ? 1 : 0 }
+    }))
+  });
+  return { evaluations, findings, score: summary, report: report(summary, evaluations, findings) };
+}

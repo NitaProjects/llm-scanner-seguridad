@@ -12,27 +12,28 @@ import { LoadState, loading, loaded, failed } from '../../../shared/models/load-
 import { ApiClientError } from '../../../core/api/api-error';
 import { FeedbackPanel } from '../../../shared/ui/feedback-panel';
 import { ProjectScanList } from '../components/project-scan-list';
-@Component({ selector: 'app-project-page', imports: [RouterLink, FeedbackPanel, ProjectScanList], styleUrl: '../../../shared/ui/page.css', template: `
+import { Icon } from '../../../shared/ui/icon';
+@Component({ selector: 'app-project-page', imports: [RouterLink, FeedbackPanel, ProjectScanList, Icon], styleUrl: '../../../shared/ui/page.css', template: `
   <nav aria-label="Ruta"><a routerLink="/projects">Proyectos</a></nav><h1 tabindex="-1">{{ project().data?.name ?? 'Proyecto' }}</h1>
   @if (project().status === 'loading') { <app-feedback-panel message="Cargando proyecto…" /> }
   @if (project().error; as error) { <app-feedback-panel kind="error" [message]="error.message" [retryable]="true" (retry)="reload()" /> }
   @if (project().data; as data) {
-    @if (data.description) { <p class="text">{{ data.description }}</p> }
+    @if (data.description) { <p class="text project-description">{{ data.description }}</p> }
     <p class="warning">Ejecuta pruebas únicamente sobre sistemas propios o autorizados. Guardar un target no autoriza su origen para la ejecución.</p>
-    <section class="card"><h2>Target</h2>
+    <section class="card"><h2><app-icon name="settings" /> Target</h2>
       @if (target().status === 'loading') { <p>Cargando configuración…</p> }
       @if (target().error; as error) { <app-feedback-panel kind="error" [message]="error.message" [retryable]="true" (retry)="loadTarget()" /> }
       @if (target().status === 'loaded') {
-        @if (target().data; as config) { <p>{{ config.name ?? 'Target configurado' }}</p><p class="text">{{ config.url }}</p><p>Autenticación: {{ config.authType }} · {{ config.hasCredentials ? 'Credencial configurada' : 'Sin credencial configurada' }}</p><a [routerLink]="['/projects', projectId(), 'target']">Editar target</a> }
-        @else { <p>No hay un target configurado.</p><a class="button" [routerLink]="['/projects', projectId(), 'target']">Configurar target</a> }
+        @if (target().data; as config) { <p><strong>{{ config.name ?? 'Target configurado' }}</strong></p><p class="text">{{ config.url }}</p><p class="meta">Autenticación: {{ config.authType }} · {{ config.hasCredentials ? 'Credencial configurada' : 'Sin credencial configurada' }}</p><a class="button secondary" [routerLink]="['/projects', projectId(), 'target']"><app-icon name="settings" />Editar target</a> }
+        @else { <p>No hay un target configurado.</p><a class="button" [routerLink]="['/projects', projectId(), 'target']"><app-icon name="settings" />Configurar target</a> }
       }
+    <div class="actions">@if (active(); as scan) { <a class="button" [routerLink]="['/projects', projectId(), 'scans', scan.id]"><app-icon name="play" />Ver análisis en curso</a> }
+      @else if (target().data && target().status === 'loaded') { <button (click)="start()" [disabled]="starting() || ambiguous() || scans().status !== 'loaded'"><app-icon name="play" />{{ starting() ? 'Solicitando análisis…' : 'Ejecutar análisis' }}</button> }</div>
     </section>
-    <div class="actions">@if (active(); as scan) { <a class="button" [routerLink]="['/projects', projectId(), 'scans', scan.id]">Ver análisis en curso</a> }
-      @else if (target().data && target().status === 'loaded') { <button (click)="start()" [disabled]="starting() || ambiguous() || scans().status !== 'loaded'">{{ starting() ? 'Solicitando análisis…' : 'Ejecutar análisis' }}</button> }</div>
     @if (startError(); as error) { <app-feedback-panel kind="error" [message]="error.message" /> }
     @if (attemptId(); as id) { <p><a [routerLink]="['/projects',projectId(),'scans',id]">Consultar intento registrado</a></p> }
     @if (ambiguous()) { <app-feedback-panel message="El inicio no pudo confirmarse. Consulta el histórico antes de volver a iniciar."><button (click)="reconcile()">Consultar histórico</button></app-feedback-panel> }
-    <section class="card"><div class="page-heading"><h2>Histórico de análisis</h2><button class="secondary" (click)="loadScans()" [disabled]="scans().status === 'loading'">Actualizar histórico</button></div>
+    <section><div class="page-heading"><h2>Histórico de análisis</h2><button class="secondary" (click)="loadScans()" [disabled]="scans().status === 'loading'">Actualizar histórico</button></div>
       @if (scans().status === 'loading') { <p>Cargando análisis…</p> }
       @if (scans().error; as error) { <app-feedback-panel kind="error" [message]="error.message" [retryable]="true" (retry)="loadScans()" /> }
       @if (scans().data; as items) { <app-project-scan-list [projectId]="projectId()" [scans]="items" /> }

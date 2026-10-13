@@ -1,0 +1,4 @@
+.scan-title{display:inline-block;margin-right:var(--space-3)}
+.scan-status{display:inline-block;vertical-align:middle;margin-bottom:var(--space-3)}
+#risk{box-shadow:var(--shadow-panel)}
+#executions,#evaluations,#report{border-top:1px solid var(--border);padding-top:var(--space-5)}

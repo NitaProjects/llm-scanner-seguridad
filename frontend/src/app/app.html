@@ -1,7 +1,9 @@
 <a class="skip-link" [routerLink]="[]" fragment="content" (click)="skipToContent(content)">Saltar al contenido</a>
 <header class="shell-header">
-  <a class="brand" routerLink="/projects">LLM Scanner <span>Seguridad</span></a>
-  <nav aria-label="Navegación principal"><a routerLink="/projects">Proyectos</a></nav>
+  <div class="shell-inner">
+    <a class="brand" routerLink="/projects"><app-icon name="shield" class="brand-icon" />LLM Scanner Seguridad</a>
+    <nav aria-label="Navegación principal"><a routerLink="/projects" routerLinkActive="" #projectsNavigation="routerLinkActive" [class.active]="projectsNavigation.isActive && contentOutlet.isActivated && contentOutlet.activatedRoute.snapshot.routeConfig?.path !== '**'" [attr.aria-current]="projectsNavigation.isActive && contentOutlet.isActivated && contentOutlet.activatedRoute.snapshot.routeConfig?.path !== '**' ? 'location' : null"><app-icon name="folder" />Proyectos</a></nav>
+  </div>
 </header>
-<main #content id="content" class="shell-content" tabindex="-1"><router-outlet /></main>
+<main #content id="content" class="shell-content" tabindex="-1"><router-outlet #contentOutlet="outlet" /></main>
 <footer class="shell-footer">Análisis controlado de aplicaciones LLM · Solo sistemas propios o autorizados</footer>

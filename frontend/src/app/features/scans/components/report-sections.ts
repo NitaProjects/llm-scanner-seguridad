@@ -5,7 +5,7 @@ import { SecurityReportDto } from '../models/report';
 import { ScanScoreDto } from '../models/scan';
 import { sameScore } from '../models/scan.decoder';
 import { riskLabels } from '../../../shared/presentation/labels';
-@Component({ selector: 'app-report-sections', imports: [DatePipe, RouterLink], styleUrl: '../../../shared/ui/page.css', template: `
+@Component({ selector: 'app-report-sections', imports: [DatePipe, RouterLink], styleUrls: ['../../../shared/ui/page.css', './report-sections.css'], template: `
   <h3>Resumen del informe</h3>
   @if (matches()) { <p>El resumen del informe coincide con el <a [routerLink]="[]" fragment="risk">resultado de riesgo mostrado arriba</a>.</p> }
   @else { <p>Resumen propio del informe: {{ report().summary.globalScore }}/100 · {{ riskLabels[report().summary.riskLevel] }} · {{ report().summary.findingCount }} hallazgos · {{ report().summary.inconclusiveCount }} inconclusos.</p> }

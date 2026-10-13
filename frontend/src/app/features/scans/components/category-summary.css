@@ -1,0 +1,7 @@
+.categories{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--space-3)}
+.card{margin:0;padding:var(--space-4)}
+.number{font-size:1.5rem;line-height:1.2;font-weight:700;font-variant-numeric:tabular-nums}
+.card p{font-size:var(--text-small);margin-block:var(--space-3)}
+.card .number{font-size:1.5rem}
+@media(max-width:1050px){.categories{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:550px){.categories{grid-template-columns:1fr}}

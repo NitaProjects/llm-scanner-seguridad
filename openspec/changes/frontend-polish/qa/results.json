@@ -1,0 +1,1115 @@
+{
+  "date": "2026-10-11 00:49:46",
+  "browser": "155.0.8059.39",
+  "rows": [
+    {
+      "scenario": "projects-empty",
+      "viewport": "1440x900",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "CTA inline, teclado, cancelación y retorno de foco PASS"
+      ],
+      "geometry": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "projects-data",
+      "viewport": "1440x900",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [],
+      "geometry": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "project",
+      "viewport": "1440x900",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "Configurado, ausente, activo y error parcial PASS"
+      ],
+      "geometry": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "target",
+      "viewport": "1440x900",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "NONE/Bearer/API key, password vacío, labels, errores, disabled y guardado PASS"
+      ],
+      "geometry": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "running",
+      "viewport": "1440x900",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "RUNNING, PENDING y pausa tras tres errores de lectura PASS; sin score ficticio"
+      ],
+      "geometry": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "completed",
+      "viewport": "1440x900",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "4 severidades, categorías 4/2/1, details teclado y 9 limitaciones PASS"
+      ],
+      "geometry": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "score-zero",
+      "viewport": "1440x900",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "Advertencia de cero y NO_FINDINGS neutro PASS"
+      ],
+      "geometry": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "inconclusive",
+      "viewport": "1440x900",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "Advertencia de cero y NO_FINDINGS neutro PASS; cuatro I y mixto PASS"
+      ],
+      "geometry": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "failed",
+      "viewport": "1440x900",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "Motivo público, datos conservados, sin 0/informe ficticios PASS"
+      ],
+      "geometry": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "historical",
+      "viewport": "1440x900",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "Ambos NOT_APPLICABLE sin plan y score AVAILABLE/report NOT_APPLICABLE PASS"
+      ],
+      "geometry": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "projects-empty",
+      "viewport": "1280x900",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "CTA inline, teclado, cancelación y retorno de foco PASS"
+      ],
+      "geometry": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "projects-data",
+      "viewport": "1280x900",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [],
+      "geometry": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "project",
+      "viewport": "1280x900",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "Configurado, ausente, activo y error parcial PASS"
+      ],
+      "geometry": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "target",
+      "viewport": "1280x900",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "NONE/Bearer/API key, password vacío, labels, errores, disabled y guardado PASS"
+      ],
+      "geometry": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "running",
+      "viewport": "1280x900",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "RUNNING, PENDING y pausa tras tres errores de lectura PASS; sin score ficticio"
+      ],
+      "geometry": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "completed",
+      "viewport": "1280x900",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "4 severidades, categorías 4/2/1, details teclado y 9 limitaciones PASS"
+      ],
+      "geometry": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "score-zero",
+      "viewport": "1280x900",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "Advertencia de cero y NO_FINDINGS neutro PASS"
+      ],
+      "geometry": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "inconclusive",
+      "viewport": "1280x900",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "Advertencia de cero y NO_FINDINGS neutro PASS; cuatro I y mixto PASS"
+      ],
+      "geometry": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "failed",
+      "viewport": "1280x900",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "Motivo público, datos conservados, sin 0/informe ficticios PASS"
+      ],
+      "geometry": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "historical",
+      "viewport": "1280x900",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "Ambos NOT_APPLICABLE sin plan y score AVAILABLE/report NOT_APPLICABLE PASS"
+      ],
+      "geometry": {
+        "width": 1280,
+        "height": 900,
+        "scrollWidth": 1280,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "projects-empty",
+      "viewport": "1024x900",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "CTA inline, teclado, cancelación y retorno de foco PASS"
+      ],
+      "geometry": {
+        "width": 1024,
+        "height": 900,
+        "scrollWidth": 1024,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "projects-data",
+      "viewport": "1024x900",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [],
+      "geometry": {
+        "width": 1024,
+        "height": 900,
+        "scrollWidth": 1024,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "project",
+      "viewport": "1024x900",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "Configurado, ausente, activo y error parcial PASS"
+      ],
+      "geometry": {
+        "width": 1024,
+        "height": 900,
+        "scrollWidth": 1024,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "target",
+      "viewport": "1024x900",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "NONE/Bearer/API key, password vacío, labels, errores, disabled y guardado PASS"
+      ],
+      "geometry": {
+        "width": 1024,
+        "height": 900,
+        "scrollWidth": 1024,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "running",
+      "viewport": "1024x900",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "RUNNING, PENDING y pausa tras tres errores de lectura PASS; sin score ficticio"
+      ],
+      "geometry": {
+        "width": 1024,
+        "height": 900,
+        "scrollWidth": 1024,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "completed",
+      "viewport": "1024x900",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "4 severidades, categorías 4/2/1, details teclado y 9 limitaciones PASS"
+      ],
+      "geometry": {
+        "width": 1024,
+        "height": 900,
+        "scrollWidth": 1024,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "score-zero",
+      "viewport": "1024x900",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "Advertencia de cero y NO_FINDINGS neutro PASS"
+      ],
+      "geometry": {
+        "width": 1024,
+        "height": 900,
+        "scrollWidth": 1024,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "inconclusive",
+      "viewport": "1024x900",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "Advertencia de cero y NO_FINDINGS neutro PASS; cuatro I y mixto PASS"
+      ],
+      "geometry": {
+        "width": 1024,
+        "height": 900,
+        "scrollWidth": 1024,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "failed",
+      "viewport": "1024x900",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "Motivo público, datos conservados, sin 0/informe ficticios PASS"
+      ],
+      "geometry": {
+        "width": 1024,
+        "height": 900,
+        "scrollWidth": 1024,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "historical",
+      "viewport": "1024x900",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "Ambos NOT_APPLICABLE sin plan y score AVAILABLE/report NOT_APPLICABLE PASS"
+      ],
+      "geometry": {
+        "width": 1024,
+        "height": 900,
+        "scrollWidth": 1024,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "projects-empty",
+      "viewport": "768x1024",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "CTA inline, teclado, cancelación y retorno de foco PASS"
+      ],
+      "geometry": {
+        "width": 768,
+        "height": 1024,
+        "scrollWidth": 768,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "projects-data",
+      "viewport": "768x1024",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [],
+      "geometry": {
+        "width": 768,
+        "height": 1024,
+        "scrollWidth": 768,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "project",
+      "viewport": "768x1024",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "Configurado, ausente, activo y error parcial PASS"
+      ],
+      "geometry": {
+        "width": 768,
+        "height": 1024,
+        "scrollWidth": 768,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "target",
+      "viewport": "768x1024",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "NONE/Bearer/API key, password vacío, labels, errores, disabled y guardado PASS"
+      ],
+      "geometry": {
+        "width": 768,
+        "height": 1024,
+        "scrollWidth": 768,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "running",
+      "viewport": "768x1024",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "RUNNING, PENDING y pausa tras tres errores de lectura PASS; sin score ficticio"
+      ],
+      "geometry": {
+        "width": 768,
+        "height": 1024,
+        "scrollWidth": 768,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "completed",
+      "viewport": "768x1024",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "4 severidades, categorías 4/2/1, details teclado y 9 limitaciones PASS"
+      ],
+      "geometry": {
+        "width": 768,
+        "height": 1024,
+        "scrollWidth": 768,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "score-zero",
+      "viewport": "768x1024",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "Advertencia de cero y NO_FINDINGS neutro PASS"
+      ],
+      "geometry": {
+        "width": 768,
+        "height": 1024,
+        "scrollWidth": 768,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "inconclusive",
+      "viewport": "768x1024",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "Advertencia de cero y NO_FINDINGS neutro PASS; cuatro I y mixto PASS"
+      ],
+      "geometry": {
+        "width": 768,
+        "height": 1024,
+        "scrollWidth": 768,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "failed",
+      "viewport": "768x1024",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "Motivo público, datos conservados, sin 0/informe ficticios PASS"
+      ],
+      "geometry": {
+        "width": 768,
+        "height": 1024,
+        "scrollWidth": 768,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "historical",
+      "viewport": "768x1024",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "Ambos NOT_APPLICABLE sin plan y score AVAILABLE/report NOT_APPLICABLE PASS"
+      ],
+      "geometry": {
+        "width": 768,
+        "height": 1024,
+        "scrollWidth": 768,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "projects-empty",
+      "viewport": "360x800",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "CTA inline, teclado, cancelación y retorno de foco PASS"
+      ],
+      "geometry": {
+        "width": 360,
+        "height": 800,
+        "scrollWidth": 360,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "projects-data",
+      "viewport": "360x800",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [],
+      "geometry": {
+        "width": 360,
+        "height": 800,
+        "scrollWidth": 360,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "project",
+      "viewport": "360x800",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "Configurado, ausente, activo y error parcial PASS"
+      ],
+      "geometry": {
+        "width": 360,
+        "height": 800,
+        "scrollWidth": 360,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "target",
+      "viewport": "360x800",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "NONE/Bearer/API key, password vacío, labels, errores, disabled y guardado PASS"
+      ],
+      "geometry": {
+        "width": 360,
+        "height": 800,
+        "scrollWidth": 360,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "running",
+      "viewport": "360x800",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "RUNNING, PENDING y pausa tras tres errores de lectura PASS; sin score ficticio"
+      ],
+      "geometry": {
+        "width": 360,
+        "height": 800,
+        "scrollWidth": 360,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "completed",
+      "viewport": "360x800",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "4 severidades, categorías 4/2/1, details teclado y 9 limitaciones PASS"
+      ],
+      "geometry": {
+        "width": 360,
+        "height": 800,
+        "scrollWidth": 360,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "score-zero",
+      "viewport": "360x800",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "Advertencia de cero y NO_FINDINGS neutro PASS"
+      ],
+      "geometry": {
+        "width": 360,
+        "height": 800,
+        "scrollWidth": 360,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "inconclusive",
+      "viewport": "360x800",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "Advertencia de cero y NO_FINDINGS neutro PASS; cuatro I y mixto PASS"
+      ],
+      "geometry": {
+        "width": 360,
+        "height": 800,
+        "scrollWidth": 360,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "failed",
+      "viewport": "360x800",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "Motivo público, datos conservados, sin 0/informe ficticios PASS"
+      ],
+      "geometry": {
+        "width": 360,
+        "height": 800,
+        "scrollWidth": 360,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    },
+    {
+      "scenario": "historical",
+      "viewport": "360x800",
+      "zoom": "100%",
+      "scale": 1,
+      "result": "PASS",
+      "notes": [
+        "Ambos NOT_APPLICABLE sin plan y score AVAILABLE/report NOT_APPLICABLE PASS"
+      ],
+      "geometry": {
+        "width": 360,
+        "height": 800,
+        "scrollWidth": 360,
+        "headings": 1,
+        "unlabelled": [],
+        "shortControls": [],
+        "badSvg": 0,
+        "overflowing": []
+      }
+    }
+  ],
+  "cross": [
+    {
+      "viewport": "1440x900",
+      "result": "PASS",
+      "checks": "NotFound, ubicación inactiva, teclado y foco 3px"
+    },
+    {
+      "viewport": "1280x900",
+      "result": "PASS",
+      "checks": "NotFound, ubicación inactiva, teclado y foco 3px"
+    },
+    {
+      "viewport": "1024x900",
+      "result": "PASS",
+      "checks": "NotFound, ubicación inactiva, teclado y foco 3px"
+    },
+    {
+      "viewport": "768x1024",
+      "result": "PASS",
+      "checks": "NotFound, ubicación inactiva, teclado y foco 3px"
+    },
+    {
+      "viewport": "360x800",
+      "result": "PASS",
+      "checks": "NotFound, ubicación inactiva, teclado y foco 3px"
+    },
+    {
+      "result": "PASS",
+      "checks": "Zoom CSS 200%: shell y seis superficies, sin overflow ni pérdida de controles"
+    },
+    {
+      "result": "PASS",
+      "checks": "Hover primary, disabled opaco, reduced-motion sin transiciones ni scroll suave"
+    }
+  ],
+  "contrast": [
+    {
+      "foreground": "text-primary",
+      "background": "surface",
+      "ratio": 14.305989156120077
+    },
+    {
+      "foreground": "text-secondary",
+      "background": "surface",
+      "ratio": 6.436836414909053
+    },
+    {
+      "foreground": "text-secondary",
+      "background": "background",
+      "ratio": 5.949277231547753
+    },
+    {
+      "foreground": "surface",
+      "background": "accent",
+      "ratio": 7.199774967689635
+    },
+    {
+      "foreground": "surface",
+      "background": "accent-hover",
+      "ratio": 9.61789653162817
+    },
+    {
+      "foreground": "accent",
+      "background": "surface",
+      "ratio": 7.199774967689635
+    },
+    {
+      "foreground": "accent",
+      "background": "accent-soft",
+      "ratio": 6.615719397633932
+    },
+    {
+      "foreground": "success",
+      "background": "success-soft",
+      "ratio": 6.811651629293788
+    },
+    {
+      "foreground": "warning",
+      "background": "warning-soft",
+      "ratio": 7.601382343318038
+    },
+    {
+      "foreground": "danger",
+      "background": "danger-soft",
+      "ratio": 7.5646309387171655
+    },
+    {
+      "foreground": "risk-none",
+      "background": "risk-none-soft",
+      "ratio": 9.451924418631656
+    },
+    {
+      "foreground": "risk-low",
+      "background": "risk-low-soft",
+      "ratio": 6.354065331465754
+    },
+    {
+      "foreground": "risk-medium",
+      "background": "risk-medium-soft",
+      "ratio": 7.601382343318038
+    },
+    {
+      "foreground": "risk-high",
+      "background": "risk-high-soft",
+      "ratio": 7.54005019166464
+    },
+    {
+      "foreground": "risk-critical",
+      "background": "risk-critical-soft",
+      "ratio": 7.5646309387171655
+    },
+    {
+      "foreground": "text-secondary",
+      "background": "surface-subtle",
+      "ratio": 5.725523363088536
+    }
+  ],
+  "errors": [],
+  "external": []
+}

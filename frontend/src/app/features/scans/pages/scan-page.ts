@@ -14,7 +14,7 @@ import { StatusBadge } from '../../../shared/ui/status-badge';
 import { Availability } from '../../../shared/models/contracts';
 import { publicReason } from '../../../shared/presentation/labels';
 import { sameScore } from '../models/scan.decoder';
-@Component({ selector: 'app-scan-page', imports: [RouterLink, DatePipe, RiskSummary, CategorySummary, FindingList, EvaluationList, ScanProgress, ReportSections, FeedbackPanel, StatusBadge], providers: [ScanDetailState], templateUrl: './scan-page.html', styleUrl: '../../../shared/ui/page.css' })
+@Component({ selector: 'app-scan-page', imports: [RouterLink, DatePipe, RiskSummary, CategorySummary, FindingList, EvaluationList, ScanProgress, ReportSections, FeedbackPanel, StatusBadge], providers: [ScanDetailState], templateUrl: './scan-page.html', styleUrls: ['../../../shared/ui/page.css', './scan-page.css'] })
 export class ScanPage {
   readonly state = inject(ScanDetailState); readonly projectId = signal(''); readonly reason = publicReason;
   readonly terminal = computed(() => this.state.scan().data?.status === 'COMPLETED' || this.state.scan().data?.status === 'FAILED');

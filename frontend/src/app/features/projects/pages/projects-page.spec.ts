@@ -60,6 +60,27 @@ describe('ProjectsPage ambiguous creation reconciliation', () => {
     http.expectNone(post);
   });
 
+  it('opens the existing inline form from empty CTA and returns focus to the original opener on cancel', async () => {
+    http.expectOne(get).flush([]); harness.detectChanges();
+    const node = harness.routeNativeElement!;
+    const original = node.querySelector<HTMLButtonElement>('#new-project')!;
+    const empty = node.querySelector<HTMLButtonElement>('.empty-state button')!;
+    expect(empty.textContent?.trim()).toBe('Nuevo proyecto');
+    expect(empty.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
+    empty.click(); harness.detectChanges();
+    expect(node.querySelector('.empty-state')).toBeNull();
+    expect(node.querySelector('#new-project')).toBe(original);
+    expect(original.disabled).toBe(true);
+    expect(document.activeElement).toBe(node.querySelector('#project-name'));
+    node.querySelector<HTMLButtonElement>('form button.secondary')!.click();
+    harness.detectChanges();
+    await new Promise(resolve => setTimeout(resolve));
+    expect(page.showForm()).toBe(false);
+    expect(document.activeElement).toBe(original);
+    expect(node.querySelector('.empty-state')).not.toBeNull();
+    http.expectNone(post);
+  });
+
   it('allows a successful later reconciliation without automatically repeating POST', () => {
     http.expectOne(get).flush([]);
     page.create(input);

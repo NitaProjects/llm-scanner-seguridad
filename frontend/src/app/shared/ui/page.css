@@ -1,1 +1,25 @@
-:host{display:block;min-width:0}.page-heading,.actions{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}.actions{justify-content:flex-start}.card{background:var(--surface);border:1px solid var(--border);border-radius:.8rem;padding:clamp(1rem,2.5vw,1.6rem);margin-block:1.2rem;min-width:0}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}.muted{color:var(--muted)}.warning{border-left:4px solid #946000;background:#fff8e6;padding:1rem;color:#654100}.error-text{color:#991b1b}.field{display:grid;gap:.4rem;margin-block:1rem}.field-error{color:#991b1b;font-size:.9rem}.plain-list{list-style:none;padding:0}.plain-list>li{padding-block:1rem;border-bottom:1px solid var(--border)}.text{white-space:pre-wrap;overflow-wrap:anywhere}.meta{font-size:.9rem;color:var(--muted)}.anchors{display:flex;gap:1rem;flex-wrap:wrap}dl{display:grid;grid-template-columns:minmax(8rem,1fr) minmax(0,2fr);gap:.6rem}dt{font-weight:600}dd{margin:0;overflow-wrap:anywhere}section{scroll-margin-top:1rem}@media(max-width:700px){.grid{grid-template-columns:1fr}dl{grid-template-columns:1fr;gap:.3rem}dd{margin-bottom:.7rem}}
+:host{display:block;min-width:0}
+.page-heading,.actions{display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);flex-wrap:wrap}
+.page-heading{margin-bottom:var(--space-5)}.page-heading p,.page-heading h2{margin:0}.page-heading>div{min-width:0}
+.actions{justify-content:flex-start}.card>.actions{margin-top:var(--space-3)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-panel);padding:var(--space-4);min-width:0}
+section,.card,app-feedback-panel{margin-bottom:var(--space-5)}.card>:last-child{margin-bottom:0}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-4)}
+.muted,.meta{color:var(--muted)}
+.warning{border-left:3px solid var(--warning);background:var(--warning-soft);padding:var(--space-3) var(--space-4);color:var(--warning);border-radius:var(--radius-control)}
+.error-text,.field-error{color:var(--danger)}
+.field{display:grid;gap:var(--space-2);margin-block:var(--space-4)}.field-error{font-size:var(--text-small)}.field-error:empty{display:none}
+.plain-list{list-style:none;padding:0;margin:0}.plain-list>li{padding-block:var(--space-4);border-bottom:1px solid var(--border);min-width:0}.plain-list>li:last-child{border-bottom:0}.plain-list .page-heading{margin:0}
+.text{white-space:pre-wrap;overflow-wrap:anywhere}.meta{font-size:var(--text-small);font-variant-numeric:tabular-nums}
+.anchors{display:flex;gap:var(--space-3);flex-wrap:wrap;margin-bottom:var(--space-5);border-bottom:1px solid var(--border)}
+.anchors a,nav[aria-label=Ruta] a,.row-link{display:inline-flex;align-items:center;min-height:44px}
+.row-link{flex-wrap:wrap;gap:var(--space-1)}
+nav[aria-label=Ruta]{font-size:var(--text-small);margin-bottom:var(--space-3)}
+dl{display:grid;grid-template-columns:minmax(8rem,1fr) minmax(0,2fr);gap:var(--space-2) var(--space-4);margin:var(--space-4) 0}dt{font-weight:600}dd{margin:0;overflow-wrap:anywhere}
+section{scroll-margin-top:var(--space-4)}
+.empty-state{border:1px solid var(--border);border-radius:var(--radius-panel);background:var(--surface);padding:var(--space-4)}.empty-state p{max-width:56ch;color:var(--muted)}.empty-state>app-icon{color:var(--muted);margin-bottom:var(--space-3)}
+.project-list{display:grid;gap:var(--space-3)}.project-list>li{border:1px solid var(--border);padding:var(--space-4)}.project-list>li:last-child{border-bottom:1px solid var(--border)}.project-list h2{font-size:1.125rem}.project-list .meta{margin:0}
+.project-description{max-width:var(--reading-max);color:var(--muted)}
+.availability{padding:var(--space-3);background:var(--surface-subtle);border-radius:var(--radius-control);color:var(--muted)}.availability[data-tone=PENDING]{color:var(--warning);background:var(--warning-soft)}
+@media(min-width:768px){.card{padding:calc(var(--space-4) + var(--space-1))}.empty-state{padding:var(--space-5)}}
+@media(max-width:767px){.grid,dl{grid-template-columns:1fr}dl{gap:var(--space-1)}dd{margin-bottom:var(--space-3)}}

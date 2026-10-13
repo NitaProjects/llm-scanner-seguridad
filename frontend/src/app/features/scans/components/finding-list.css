@@ -1,0 +1,11 @@
+.finding{border-left:3px solid var(--risk-low);margin-bottom:var(--space-3);padding:0 var(--space-4)}
+.finding[data-severity=MEDIUM]{border-left-color:var(--risk-medium)}
+.finding[data-severity=HIGH]{border-left-color:var(--risk-high)}
+.finding[data-severity=CRITICAL]{border-left-color:var(--risk-critical)}
+summary{padding-block:var(--space-4)}
+.finding-summary{display:inline-flex;align-items:center;flex-wrap:wrap;gap:var(--space-2) var(--space-3);width:calc(100% - 1.5rem);vertical-align:top}
+.finding-summary strong{flex:1 1 20ch;min-width:0}
+.finding-summary .meta{flex-basis:100%;padding-top:var(--space-1)}
+.finding-detail{padding-block:var(--space-4);border-top:1px solid var(--border)}
+.finding-detail p{max-width:var(--reading-max)}
+.recommendation{padding:var(--space-3);background:var(--surface-subtle);border-radius:var(--radius-control)}

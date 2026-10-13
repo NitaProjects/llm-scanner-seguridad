@@ -1,0 +1,166 @@
+{
+  "date": "2026-10-13 02:00:38",
+  "browser": "155.0.8059.39",
+  "rows": [],
+  "cross": [
+    {
+      "viewport": "1440x900",
+      "result": "PASS",
+      "checks": "Shell final en Projects/Project/Target/Scan, NotFound y wildcard descendiente; ubicación activa/inactiva, geometría y foco 3px"
+    },
+    {
+      "viewport": "1280x900",
+      "result": "PASS",
+      "checks": "Shell final en Projects/Project/Target/Scan, NotFound y wildcard descendiente; ubicación activa/inactiva, geometría y foco 3px"
+    },
+    {
+      "viewport": "1024x900",
+      "result": "PASS",
+      "checks": "Shell final en Projects/Project/Target/Scan, NotFound y wildcard descendiente; ubicación activa/inactiva, geometría y foco 3px"
+    },
+    {
+      "viewport": "768x1024",
+      "result": "PASS",
+      "checks": "Shell final en Projects/Project/Target/Scan, NotFound y wildcard descendiente; ubicación activa/inactiva, geometría y foco 3px"
+    },
+    {
+      "viewport": "360x800",
+      "result": "PASS",
+      "checks": "Shell final en Projects/Project/Target/Scan, NotFound y wildcard descendiente; ubicación activa/inactiva, geometría y foco 3px"
+    },
+    {
+      "result": "PASS",
+      "checks": "Recorrido Tab completo en shell, Projects vacío/con datos, Project, Target, Scan y NotFound; orden DOM y foco visible"
+    },
+    {
+      "result": "PASS",
+      "checks": "Loading explícito, error seguro local con Reintentar; hover secondary"
+    },
+    {
+      "result": "PASS",
+      "checks": "Zoom CSS 200%: shell y seis superficies, sin overflow ni pérdida de controles"
+    },
+    {
+      "result": "PASS",
+      "checks": "Hover primary, disabled opaco, reduced-motion sin transiciones ni scroll suave"
+    }
+  ],
+  "contrast": [
+    {
+      "foreground": "text-primary",
+      "background": "surface",
+      "minimum": 4.5,
+      "ratio": 14.305989156120077
+    },
+    {
+      "foreground": "text-secondary",
+      "background": "surface",
+      "minimum": 4.5,
+      "ratio": 6.436836414909053
+    },
+    {
+      "foreground": "text-secondary",
+      "background": "background",
+      "minimum": 4.5,
+      "ratio": 5.949277231547753
+    },
+    {
+      "foreground": "surface",
+      "background": "accent",
+      "minimum": 4.5,
+      "ratio": 7.199774967689635
+    },
+    {
+      "foreground": "surface",
+      "background": "accent-hover",
+      "minimum": 4.5,
+      "ratio": 9.61789653162817
+    },
+    {
+      "foreground": "accent",
+      "background": "surface",
+      "minimum": 4.5,
+      "ratio": 7.199774967689635
+    },
+    {
+      "foreground": "accent",
+      "background": "accent-soft",
+      "minimum": 4.5,
+      "ratio": 6.615719397633932
+    },
+    {
+      "foreground": "success",
+      "background": "success-soft",
+      "minimum": 4.5,
+      "ratio": 6.811651629293788
+    },
+    {
+      "foreground": "warning",
+      "background": "warning-soft",
+      "minimum": 4.5,
+      "ratio": 7.601382343318038
+    },
+    {
+      "foreground": "danger",
+      "background": "danger-soft",
+      "minimum": 4.5,
+      "ratio": 7.5646309387171655
+    },
+    {
+      "foreground": "risk-none",
+      "background": "risk-none-soft",
+      "minimum": 4.5,
+      "ratio": 9.451924418631656
+    },
+    {
+      "foreground": "risk-low",
+      "background": "risk-low-soft",
+      "minimum": 4.5,
+      "ratio": 6.354065331465754
+    },
+    {
+      "foreground": "risk-medium",
+      "background": "risk-medium-soft",
+      "minimum": 4.5,
+      "ratio": 7.601382343318038
+    },
+    {
+      "foreground": "risk-high",
+      "background": "risk-high-soft",
+      "minimum": 4.5,
+      "ratio": 7.54005019166464
+    },
+    {
+      "foreground": "risk-critical",
+      "background": "risk-critical-soft",
+      "minimum": 4.5,
+      "ratio": 7.5646309387171655
+    },
+    {
+      "foreground": "text-secondary",
+      "background": "surface-subtle",
+      "minimum": 4.5,
+      "ratio": 5.725523363088536
+    },
+    {
+      "foreground": "control-border",
+      "background": "surface",
+      "minimum": 3,
+      "ratio": 3.877915293692602
+    },
+    {
+      "foreground": "focus",
+      "background": "surface",
+      "minimum": 3,
+      "ratio": 8.550252247372692
+    },
+    {
+      "foreground": "focus",
+      "background": "background",
+      "minimum": 3,
+      "ratio": 7.902612050457566
+    }
+  ],
+  "errors": [],
+  "external": []
+}

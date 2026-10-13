@@ -1,6 +1,6 @@
-# Frontend MVP
+# Frontend
 
-Interfaz Angular 21 standalone para LLM Scanner Seguridad. Implementa exclusivamente el change [frontend-mvp](../openspec/changes/frontend-mvp/), con RxJS, formularios reactivos tipados, HttpClient, Vitest y CSS propio. El backend determina estados, hallazgos, veredictos, score e informe.
+Interfaz Angular 21 standalone para LLM Scanner Seguridad. Implementa [frontend-mvp](../openspec/changes/frontend-mvp/) y su acabado visual [frontend-polish](../openspec/changes/frontend-polish/), con RxJS, formularios reactivos tipados, HttpClient, Vitest y CSS propio. El backend determina estados, hallazgos, veredictos, score e informe.
 
 ## Navegación y componentes
 
@@ -57,6 +57,18 @@ Los hallazgos se ordenan sobre copia por severidad, categoría e id y conservan 
 
 ReportSections consume exclusivamente report-v1/es: resumen propio o referencia al score coincidente, alcance histórico, cuatro interpretaciones, nueve limitaciones literales y trazabilidad secundaria. No repite narrativas/listas principales, no atribuye URL actual al pasado ni reconstruye un informe ausente. Todos los textos se interpolan como texto inerte; no hay innerHTML, Markdown ni bypass de sanitización.
 
+## Sistema visual
+
+El [diseño aprobado](../openspec/changes/frontend-polish/design.md) define una interfaz técnica sobria con fuentes del sistema. [styles.css](src/styles.css) centraliza colores, estados, riesgo, spacing, radios, sombra, tipografía y anchos; `--text`/`--muted` conservan los alias existentes. [page.css](src/app/shared/ui/page.css) reúne patrones compartidos de encabezados, acciones, cards, listas, vacíos y avisos. Los estilos particulares permanecen junto al componente.
+
+El contenedor común tiene un máximo de 1200px, formularios de 960px y documentos de 72ch. Los gutters pasan de 16px a 24px y 32px; grids y acciones se apilan según espacio disponible, con revisión a 1440/1280/1024/768/360px. Las cards usan borde de 1px, radio de 10px y sombra mínima. El resumen del análisis destaca score/riesgo/hallazgos/inconclusos; categorías, detalles y documento tienen jerarquía secundaria.
+
+Primary es `#1857a1`. LOW usa texto `#365b7a` sobre `#edf2f7`, distinguible del CTA; NONE permanece neutro, MEDIUM usa warning, HIGH terracota y CRITICAL danger. La paleta exacta vive en los tokens `--risk-*`. RiskLevel y Severity conservan conceptos y etiquetas separados; los acentos se limitan a badges, bordes e indicadores con texto, sin grandes fondos según severidad. COMPLETED no certifica seguridad.
+
+[Icon](src/app/shared/ui/icon.ts) centraliza diez SVG propios en un vocabulario TypeScript cerrado mediante el input requerido `name`. Usa `currentColor`, tamaño base de 18px y clases visuales `badge-icon`, `empty-icon` y `brand-icon`; se integra junto a texto, siempre decorativo con `aria-hidden="true"` y `focusable="false"`. No carga librerías ni recursos externos.
+
+Botones primary/secondary, enlaces, estados disabled y foco visible comparten estilos; controles y summaries mantienen al menos 44px. Empty states combinan icono, título, explicación y la acción existente cuando corresponde. Loading/error conservan mensajes, roles y reintentos locales. Solo hay transiciones de interacción de 140ms, desactivadas con `prefers-reduced-motion`; también se elimina el desplazamiento suave.
+
 ## Validación
 
 ```powershell
@@ -66,6 +78,6 @@ npm run build
 
 No existe script de lint. Vitest/TestBed, HttpTestingController y RouterTestingHarness verifican servicios/contratos, formularios, secretos, polling con timers virtuales, rutas y flujos, resultados, históricos, errores y XSS. `src/testing/fixtures.ts` contiene únicamente datos sintéticos; no se importa desde producción. No se requieren backend, OpenAI ni target reales. No se añaden dependencias ni un framework E2E.
 
-La evidencia de comandos y revisión responsive está en [tasks.md](../openspec/changes/frontend-mvp/tasks.md). La revisión de layout usa 1280/1024/768/360 px, textos extensos y API simulada; también comprueba labels, foco, teclado y contraste de la paleta. No acredita una auditoría WCAG completa ni una integración real.
+La evidencia funcional histórica permanece en [frontend-mvp/tasks.md](../openspec/changes/frontend-mvp/tasks.md). La validación visual actual se registra en [frontend-polish/tasks.md](../openspec/changes/frontend-polish/tasks.md), con la matriz de 50 combinaciones, variantes, capturas representativas y comparativas antes/después. Usa el build de producción, Chrome instalado y respuestas API interceptadas con fixtures sintéticas; nunca backend, target ni OpenAI reales. Para repetir QA, recorrer esa matriz y sus variantes en los cinco anchos, comprobar overflow, headings/labels, Tab/foco, details, hover/disabled, contraste, zoom 200% y reduced-motion, registrando fecha, navegador, viewport y resultado. Las capturas no requieren una imagen por celda. No acredita una auditoría WCAG completa ni una integración real.
 
 Recorrido manual pendiente, únicamente con entorno/endpoints autorizados: abrir proyecto → consultar target preparado → comprobar manifiesto ligado a target.updatedAt → ejecutar análisis → observar estados confirmados → revisar score/hallazgos/inconclusos → abrir Finding → leer alcance/interpretación/limitaciones. La preparación de demo-vulnerable, uso real de OpenAI, vídeo y despliegue quedan fuera de este change.

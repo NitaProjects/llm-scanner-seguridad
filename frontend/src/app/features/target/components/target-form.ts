@@ -4,7 +4,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ApiClientError, FieldName } from '../../../core/api/api-error';
 import { AuthType, TargetConfigurationDto, UpdateTargetRequest } from '../models/target';
 import { authHeaderError, canConserve, headersError, secretError, targetRequest, templateValidator, textValidator, timeoutValidator, urlValidator } from '../forms/validators';
-@Component({ selector: 'app-target-form', imports: [ReactiveFormsModule], templateUrl: './target-form.html', styleUrl: '../../../shared/ui/page.css' })
+import { Icon } from '../../../shared/ui/icon';
+@Component({ selector: 'app-target-form', imports: [ReactiveFormsModule, Icon], templateUrl: './target-form.html', styleUrls: ['../../../shared/ui/page.css', './target-form.css'] })
 export class TargetForm {
   readonly original = input<TargetConfigurationDto | null>(null); readonly busy = input(false); readonly blocked = input(false); readonly error = input<ApiClientError | null>(null);
   readonly save = output<UpdateTargetRequest>(); readonly cancel = output<void>();

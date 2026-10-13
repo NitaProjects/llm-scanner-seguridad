@@ -5,14 +5,14 @@
     <div class="field"><label for="target-timeout">Tiempo de espera (ms)</label><input id="target-timeout" data-field="timeoutMs" type="number" min="1000" max="60000" step="1" formControlName="timeoutMs" aria-describedby="target-timeout-error" /><small id="target-timeout-error" class="field-error">{{ fieldError('timeoutMs') }}</small></div>
   </fieldset>
   <fieldset [disabled]="busy() || blocked()"><legend>Petición</legend>
-    <p>Método: <strong>POST</strong> · Content-Type: <strong>application/json</strong> · Placeholder: <code [textContent]="'{{PROMPT}}'"></code></p>
+    <p class="request-constants">Método: <strong>POST</strong> · Content-Type: <strong>application/json</strong> · Placeholder: <code [textContent]="'{{PROMPT}}'"></code></p>
     <div class="field"><label for="target-template">Plantilla de petición JSON</label><textarea id="target-template" data-field="requestTemplate" rows="7" formControlName="requestTemplate" spellcheck="false" aria-describedby="template-help template-error"></textarea><small id="template-help">Un objeto JSON con el placeholder como valor completo de una cadena. El backend comprueba también claves duplicadas. No incluyas secretos.</small><small id="template-error" class="field-error">{{ fieldError('requestTemplate') }}</small></div>
     <h3>Cabeceras ordinarias (opcionales)</h3><p id="headers-help" class="muted">No incluyas cookies ni credenciales. Configura las credenciales en Autenticación.</p>
     <div formArrayName="headers" data-field="headers" tabindex="-1" aria-describedby="headers-help headers-error">
       @for (header of form.controls.headers.controls; track header; let index = $index) {
-        <div [formGroupName]="index" class="grid"><div class="field"><label [for]="'header-name-' + index">Nombre de cabecera {{ index + 1 }}</label><input [id]="'header-name-' + index" formControlName="name" /></div><div class="field"><label [for]="'header-value-' + index">Valor de cabecera {{ index + 1 }}</label><input [id]="'header-value-' + index" formControlName="value" /><button type="button" class="secondary" (click)="removeHeader(index)">Quitar cabecera {{ index + 1 }}</button></div></div>
+        <div [formGroupName]="index" class="grid header-row"><div class="field"><label [for]="'header-name-' + index">Nombre de cabecera {{ index + 1 }}</label><input [id]="'header-name-' + index" formControlName="name" /></div><div class="field"><label [for]="'header-value-' + index">Valor de cabecera {{ index + 1 }}</label><input [id]="'header-value-' + index" formControlName="value" /><button type="button" class="secondary" (click)="removeHeader(index)">Quitar cabecera {{ index + 1 }}</button></div></div>
       }
-    </div><small id="headers-error" class="field-error">{{ fieldError('headers') }}</small><button type="button" class="secondary" [disabled]="form.controls.headers.length >= 20" (click)="addHeader()">Añadir cabecera</button>
+    </div><small id="headers-error" class="field-error">{{ fieldError('headers') }}</small><button type="button" class="secondary add-header" [disabled]="form.controls.headers.length >= 20" (click)="addHeader()"><app-icon name="plus" />Añadir cabecera</button>
   </fieldset>
   <fieldset [disabled]="busy() || blocked()"><legend>Respuesta</legend>
     <div class="field"><label for="target-response-path">Ruta de respuesta (responsePath)</label><input id="target-response-path" data-field="responsePath" formControlName="responsePath" aria-describedby="response-help response-error" /><small id="response-help">Ejemplos: $.response.text · $.choices[0].message.content · $["response-text"]. El backend valida la gramática admitida.</small><small id="response-error" class="field-error">{{ fieldError('responsePath') }}</small></div>
@@ -28,5 +28,5 @@
     } @else if (original()?.hasCredentials) { <p class="warning">Guardar sin autenticación eliminará la credencial anterior. Cambiar este selector no modifica todavía la configuración guardada.</p> }
     <small data-field="authConfig" tabindex="-1" class="field-error">{{ fieldError('authConfig') }}</small>
   </fieldset>
-  <div class="actions"><button type="submit" [disabled]="busy() || blocked()">{{ busy() ? 'Guardando…' : 'Guardar configuración' }}</button><button type="button" class="secondary" [disabled]="busy()" (click)="cancelForm()">Cancelar</button></div>
+  <div class="actions"><button type="submit" [disabled]="busy() || blocked()"><app-icon name="check" />{{ busy() ? 'Guardando…' : 'Guardar configuración' }}</button><button type="button" class="secondary" [disabled]="busy()" (click)="cancelForm()">Cancelar</button></div>
 </form>

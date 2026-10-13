@@ -1,0 +1,12 @@
+:host{max-width:var(--form-max)}
+form{box-shadow:var(--shadow-panel)}
+fieldset{margin:0 0 var(--space-5);padding:var(--space-5) 0 0;border-top:1px solid var(--border)}
+legend{padding-right:var(--space-3);font-weight:650}
+.field{margin-block:var(--space-3)}
+.request-constants{font-size:var(--text-small);background:var(--surface-subtle);padding:var(--space-3);border-radius:var(--radius-control)}
+#target-template,#target-response-path{font-family:var(--font-mono)}
+.header-row{padding-block:var(--space-3);border-bottom:1px solid var(--border);align-items:start}
+.header-row .field{margin:0}
+.header-row button{justify-self:start}
+.add-header{margin-top:var(--space-3)}
+.actions{padding-top:var(--space-4);border-top:1px solid var(--border)}

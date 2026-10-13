@@ -1,7 +1,7 @@
 <nav aria-label="Ruta"><a routerLink="/projects">Proyectos</a> / <a [routerLink]="['/projects',projectId()]">Volver al proyecto</a></nav>
-<h1 tabindex="-1">Resultado del análisis</h1>
+<h1 class="scan-title" tabindex="-1">Resultado del análisis</h1>
 @if (state.scan().data; as scan) {
-  <p role="status" aria-live="polite"><app-status-badge [badge]="{kind:'status',value:scan.status}" /></p><p class="meta">Creado {{ scan.createdAt | date:'medium':'UTC' }} UTC · Duración de ejecución: {{ duration() }}</p>
+  <p class="scan-status" role="status" aria-live="polite"><app-status-badge [badge]="{kind:'status',value:scan.status}" /></p><p class="meta">Creado {{ scan.createdAt | date:'medium':'UTC' }} UTC · Duración de ejecución: {{ duration() }}</p>
   @if (scan.status === 'FAILED') { <app-feedback-panel kind="error" [message]="reason(scan.errorReason)" /><p class="warning">El análisis no pudo completarse. Los datos conservados no constituyen un informe de análisis completado.</p> }
 }
 @if (state.scan().status === 'loading') { <app-feedback-panel message="Consultando estado del análisis…" /> }
@@ -14,30 +14,30 @@
     @if (state.score().status === 'loading') { <p>Cargando puntuación…</p> }
     @if (state.score().error; as error) { <app-feedback-panel kind="error" [message]="error.message" [retryable]="true" (retry)="state.retryBlock('score')" /> }
     @if (score(); as summary) { <app-risk-summary [score]="summary" /> }
-    @else if (state.score().data; as response) { <p>{{ availabilityText(response.availability) }}</p>@if (response.availability === 'PENDING') { <button (click)="state.retryBlock('score')">Releer puntuación</button> } }
+    @else if (state.score().data; as response) { <p class="availability" [attr.data-tone]="response.availability">{{ availabilityText(response.availability) }}</p>@if (response.availability === 'PENDING') { <button (click)="state.retryBlock('score')">Releer puntuación</button> } }
   </section>
   @if (conflict()) { <app-feedback-panel kind="error" message="El resumen del informe y la puntuación no coinciden. Se conservan sus fuentes; requiere revisión."><div class="actions"><button (click)="state.retryBlock('score')">Releer puntuación</button><button (click)="state.retryBlock('report')">Releer informe</button></div></app-feedback-panel> }
   <nav class="anchors" aria-label="Secciones del resultado"><a [routerLink]="[]" fragment="categories">Categorías</a><a [routerLink]="[]" fragment="findings">Hallazgos</a><a [routerLink]="[]" fragment="evaluations">Evaluaciones</a><a [routerLink]="[]" fragment="report">Informe</a></nav>
   @if (score(); as summary) { <section id="categories"><h2>Categorías analizadas</h2><app-category-summary [categories]="summary.categories" /></section> }
-  <section id="findings" class="card"><h2>Hallazgos</h2>@if (state.findings().status === 'loading') { <p>Cargando hallazgos…</p> }@if (state.findings().error; as error) { <app-feedback-panel kind="error" [message]="error.message" [retryable]="true" (retry)="state.retryBlock('findings')" /> }@if (state.findings().data; as findings) { <app-finding-list [findings]="findings" /> }</section>
+  <section id="findings"><h2>Hallazgos</h2>@if (state.findings().status === 'loading') { <p>Cargando hallazgos…</p> }@if (state.findings().error; as error) { <app-feedback-panel kind="error" [message]="error.message" [retryable]="true" (retry)="state.retryBlock('findings')" /> }@if (state.findings().data; as findings) { <app-finding-list [findings]="findings" /> }</section>
 }
-<section id="executions" class="card"><h2>Estado técnico de las pruebas</h2>
+<section id="executions"><h2>Estado técnico de las pruebas</h2>
   @if (state.executions().status === 'loading') { <p>Consultando pruebas…</p> }
   @if (state.executions().error; as error) { <app-feedback-panel kind="error" [message]="error.message" [retryable]="terminal()" (retry)="state.retryBlock('executions')" /> }
   @if (state.executions().data; as executions) { <app-scan-progress [executions]="executions" [evaluations]="state.evaluations().data?.items ?? []" /> }
   @if (!terminal()) { <p>Los resultados consolidados se mostrarán al terminar el análisis.</p> }
   @if (state.lastUpdated(); as updated) { <p class="meta">Última lectura del estado, hora del navegador: {{ updated | date:'mediumTime' }}</p> }
 </section>
-<section id="evaluations" class="card"><h2>Evaluaciones</h2>
+<section id="evaluations"><h2>Evaluaciones</h2>
   @if (state.evaluations().status === 'loading') { <p>Consultando evaluaciones…</p> }
   @if (state.evaluations().error; as error) { <app-feedback-panel kind="error" [message]="error.message" [retryable]="terminal()" (retry)="state.retryBlock('evaluations')" /> }
   @if (state.evaluations().data; as evaluations) { <app-evaluation-list [evaluations]="evaluations.items" /> }
 </section>
 @if (terminal()) {
-  <section id="report" class="card"><h2>Informe</h2>
+  <section id="report"><h2>Informe</h2>
     @if (state.report().status === 'loading') { <p>Cargando informe…</p> }
     @if (state.report().error; as error) { <app-feedback-panel kind="error" [message]="error.message" [retryable]="true" (retry)="state.retryBlock('report')" /> }
     @if (report(); as data) { <app-report-sections [report]="data" [score]="score()" /> }
-    @else if (state.report().data; as response) { <p>{{ availabilityText(response.availability) }}</p>@if (response.availability === 'PENDING') { <button (click)="state.retryBlock('report')">Releer informe</button> } }
+    @else if (state.report().data; as response) { <p class="availability" [attr.data-tone]="response.availability">{{ availabilityText(response.availability) }}</p>@if (response.availability === 'PENDING') { <button (click)="state.retryBlock('report')">Releer informe</button> } }
   </section>
 }
