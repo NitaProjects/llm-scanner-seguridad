@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: demo-vulnerable
+  main:
+    banner-mode: off
+    log-startup-info: false
+  mvc:
+    log-request-details: false
+  web:
+    resources:
+      add-mappings: false
+server:
+  address: ${DEMO_BIND_ADDRESS:127.0.0.1}
+  port: ${DEMO_PORT:8081}
+  compression:
+    enabled: false
+  tomcat:
+    accesslog:
+      enabled: false
+logging:
+  level:
+    root: OFF
+    com.llmscannerseguridad.demo: INFO

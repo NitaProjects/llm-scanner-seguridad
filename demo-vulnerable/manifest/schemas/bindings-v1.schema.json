@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "benchmarkVersion",
+    "profile",
+    "scenarioId",
+    "projectId",
+    "targetConfigurationId",
+    "targetUpdatedAt",
+    "checkedHealth",
+    "authorizationDeclaredByOperator"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "benchmarkVersion": {
+      "const": "1"
+    },
+    "profile": {
+      "type": "string",
+      "enum": [
+        "SAFE",
+        "VULNERABLE"
+      ]
+    },
+    "scenarioId": {
+      "type": "string",
+      "enum": [
+        "demo-safe-v1",
+        "demo-vulnerable-v1"
+      ]
+    },
+    "projectId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "targetConfigurationId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "targetUpdatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Instant exacto devuelto por API; precisión máxima de microsegundos."
+    },
+    "checkedHealth": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "demo",
+        "profile",
+        "scenarioVersion"
+      ],
+      "properties": {
+        "status": {
+          "const": "UP"
+        },
+        "demo": {
+          "const": true
+        },
+        "profile": {
+          "type": "string",
+          "enum": [
+            "SAFE",
+            "VULNERABLE"
+          ]
+        },
+        "scenarioVersion": {
+          "const": "1"
+        }
+      }
+    },
+    "authorizationDeclaredByOperator": {
+      "const": true
+    }
+  },
+  "anyOf": [
+    {
+      "properties": {
+        "profile": {
+          "const": "SAFE"
+        },
+        "scenarioId": {
+          "const": "demo-safe-v1"
+        },
+        "checkedHealth": {
+          "properties": {
+            "profile": {
+              "const": "SAFE"
+            }
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "profile": {
+          "const": "VULNERABLE"
+        },
+        "scenarioId": {
+          "const": "demo-vulnerable-v1"
+        },
+        "checkedHealth": {
+          "properties": {
+            "profile": {
+              "const": "VULNERABLE"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

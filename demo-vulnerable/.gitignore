@@ -1,0 +1,7 @@
+/target/
+*.log
+.env
+.env.*
+/manifest/bindings.local.json
+/manifest/evaluation-scenario.local.json
+/manifest/*.capture.local.json

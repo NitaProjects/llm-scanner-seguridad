@@ -1,0 +1,250 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Comprobación local del contrato público existente del scanner; no amplía ni sustituye su validador. Plantillas sin binding no son instancias válidas.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "scenarios"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "scenarios": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "scenarioId",
+          "revision",
+          "projectId",
+          "targetConfigurationId",
+          "targetUpdatedAt",
+          "entries",
+          "exportPolicy"
+        ],
+        "properties": {
+          "scenarioId": {
+            "type": "string",
+            "enum": [
+              "demo-safe-v1",
+              "demo-vulnerable-v1"
+            ]
+          },
+          "revision": {
+            "const": "1"
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "targetConfigurationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "targetUpdatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Instant exacto devuelto por API; precisión máxima de microsegundos."
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "securityTestCode",
+                "securityTestRevision",
+                "context",
+                "exportableResponses"
+              ],
+              "properties": {
+                "securityTestCode": {
+                  "type": "string",
+                  "enum": [
+                    "LLM01-INSTRUCTION-001",
+                    "LLM02-CANARY-001",
+                    "LLM08-CONTEXT-001",
+                    "LLM10-MARKUP-001"
+                  ]
+                },
+                "securityTestRevision": {
+                  "const": 1
+                },
+                "context": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "reservedValue",
+                    "hiddenContext",
+                    "hiddenAnchors",
+                    "publicValues",
+                    "restriction",
+                    "actionMarker",
+                    "markerViolationConfirmed",
+                    "expectedSafeResponses",
+                    "outputContract",
+                    "highImpact",
+                    "impactDescription",
+                    "limitedImpact"
+                  ],
+                  "properties": {
+                    "reservedValue": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "hiddenContext": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "hiddenAnchors": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "minItems": 0,
+                      "maxItems": 2
+                    },
+                    "publicValues": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "restriction": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "actionMarker": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "markerViolationConfirmed": {
+                      "type": "boolean"
+                    },
+                    "expectedSafeResponses": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "minItems": 1,
+                      "maxItems": 1
+                    },
+                    "outputContract": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "forbiddenLiterals",
+                            "requiredKeys",
+                            "allowedKeys",
+                            "propertyTypes",
+                            "securityRelevant"
+                          ],
+                          "properties": {
+                            "forbiddenLiterals": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "minItems": 0,
+                              "maxItems": 0
+                            },
+                            "requiredKeys": {
+                              "const": [
+                                "text"
+                              ]
+                            },
+                            "allowedKeys": {
+                              "const": [
+                                "text"
+                              ]
+                            },
+                            "propertyTypes": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "text"
+                              ],
+                              "properties": {
+                                "text": {
+                                  "const": "STRING"
+                                }
+                              }
+                            },
+                            "securityRelevant": {
+                              "const": true
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "highImpact": {
+                      "const": false
+                    },
+                    "impactDescription": {
+                      "const": null
+                    },
+                    "limitedImpact": {
+                      "enum": [
+                        null,
+                        "LOW"
+                      ]
+                    }
+                  }
+                },
+                "exportableResponses": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "minItems": 1,
+                  "maxItems": 1
+                }
+              }
+            },
+            "minItems": 4,
+            "maxItems": 4
+          },
+          "exportPolicy": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "enabled",
+              "provider"
+            ],
+            "properties": {
+              "enabled": {
+                "const": false
+              },
+              "provider": {
+                "const": "OPENAI"
+              }
+            }
+          }
+        }
+      },
+      "minItems": 1,
+      "maxItems": 1
+    }
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "scenarioVersion",
+    "scenarios"
+  ],
+  "properties": {
+    "scenarioVersion": {
+      "const": "1"
+    },
+    "scenarios": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "revision",
+          "category",
+          "prompt",
+          "responses"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "LLM01-INSTRUCTION-001",
+              "LLM02-CANARY-001",
+              "LLM08-CONTEXT-001",
+              "LLM10-MARKUP-001"
+            ]
+          },
+          "revision": {
+            "const": 1
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "LLM01",
+              "LLM02",
+              "LLM08",
+              "LLM10"
+            ]
+          },
+          "prompt": {
+            "type": "string",
+            "minLength": 1
+          },
+          "responses": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "SAFE",
+              "VULNERABLE"
+            ],
+            "properties": {
+              "SAFE": {
+                "type": "string",
+                "minLength": 1
+              },
+              "VULNERABLE": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      },
+      "minItems": 4,
+      "maxItems": 4
+    }
+  }
+}

@@ -76,7 +76,9 @@ En desarrollo. El backend core está aprobado e implementado mediante los change
 
 Los contratos aprobados están actualmente en `openspec/changes/<cambio>/specs/<capacidad>/spec.md`, junto con sus diseños y tareas. `openspec/specs/` todavía no contiene las specs consolidadas; su sincronización y el archivo de changes podrán realizarse posteriormente según el workflow OpenSpec.
 
-Frontend, demo vulnerable, procedimientos completos de instalación/ejecución, experimento académico, operación real de OpenAI, despliegue AWS y entregables finales del TFM siguen en progreso o pendientes. Las validaciones técnicas registradas no completan esos trabajos.
+La [demo sintética local](demo-vulnerable/README.md) implementa un target independiente y determinista con cuatro escenarios y sus controles seguros, sin LLM real ni BD. Su integración E2E, Docker y la comprobación de safety con aislamiento externo siguen pendientes.
+
+Frontend, procedimientos completos de instalación/ejecución, experimento académico, operación real de OpenAI, despliegue AWS y entregables finales del TFM siguen en progreso o pendientes. Las validaciones técnicas registradas no completan esos trabajos.
 
 ## Funcionalidades
 
@@ -88,7 +90,7 @@ Para confirmar `COMPLETED`, los scans nuevos requieren cuatro ejecuciones y cuat
 
 El score es heurístico, no una probabilidad ni un porcentaje de seguridad. Score 0 significa ningún Finding detectado en las pruebas completadas; no demuestra que la aplicación sea segura. `INCONCLUSIVE` se conserva por separado y no equivale a `NOT_VULNERABLE`.
 
-El dashboard/frontend y la aplicación vulnerable de demostración siguen en progreso. Las exportaciones HTML/Markdown/PDF permanecen como evolución futura.
+El dashboard/frontend y la integración real con la demo siguen en progreso. Las exportaciones HTML/Markdown/PDF permanecen como evolución futura.
 
 ## Arquitectura
 

@@ -108,6 +108,6 @@ ExperimentCase
 - targetScenario
 ```
 
-El dataset futuro deberá incluir casos vulnerables, no vulnerables y, si procede, ambiguos para las cuatro categorías del MVP. No se definen todavía casos ni payloads concretos.
+El dataset futuro deberá incluir casos vulnerables, no vulnerables y, si procede, ambiguos para las cuatro categorías del MVP. La [demo sintética](../../demo-vulnerable/README.md) aporta una semilla funcional versionada de ocho casos (cuatro categorías por dos perfiles), con [ground truth independiente](../../demo-vulnerable/manifest/ground-truth-v1.json); no fija el dataset académico definitivo ni acredita experimentos ejecutados. El evaluador híbrido puede conocer referencias técnicas, mientras las etiquetas/justificación y comparación TP/TN/FP/FN permanecen externas; INCONCLUSIVE se contabiliza aparte. La limitación metodológica y las tres capas se explican en el README de la demo.
 
 La evaluación académica comparará reglas deterministas, LLM evaluador y estrategia híbrida. Las ejecuciones deberán registrar resultado esperado, resultado obtenido, estrategia, confidence, severidad, tiempo, coste y modelo evaluador para permitir el análisis de true positives, true negatives, false positives, false negatives y reproducibilidad.

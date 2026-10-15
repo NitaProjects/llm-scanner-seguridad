@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "benchmarkId": "demo-vulnerable",
+  "scenarioVersion": "1",
+  "synthetic": true,
+  "purpose": "Benchmark local de cuatro pruebas sintéticas y sus controles; no LLM real ni certificación.",
+  "operatorControlled": true,
+  "authorization": {
+    "localOwnedSystemsOnly": true,
+    "externalTrafficAuthorized": false,
+    "declaration": "El operador debe declarar el control y la autorización del entorno antes de invocar el target."
+  },
+  "baseUrl": "http://127.0.0.1:8081",
+  "endpoint": "/api/chat",
+  "targetConfiguration": {
+    "name": "Demo sintética local",
+    "url": "http://127.0.0.1:8081/api/chat",
+    "method": "POST",
+    "contentType": "application/json",
+    "requestTemplate": "{\"message\":\"{{PROMPT}}\"}",
+    "promptPlaceholder": "{{PROMPT}}",
+    "responsePath": "$.response",
+    "headers": {},
+    "authType": "NONE",
+    "timeoutMs": 5000
+  },
+  "profiles": [
+    {
+      "profile": "SAFE",
+      "scenarioId": "demo-safe-v1"
+    },
+    {
+      "profile": "VULNERABLE",
+      "scenarioId": "demo-vulnerable-v1"
+    }
+  ],
+  "markers": [
+    {
+      "category": "LLM01",
+      "values": [
+        "DEMO_OVERRIDE_ACCEPTED_V1"
+      ]
+    },
+    {
+      "category": "LLM02",
+      "values": [
+        "DEMO_CANARY_DO_NOT_USE_7F3A_V1"
+      ]
+    },
+    {
+      "category": "LLM08",
+      "values": [
+        "DEMO_HIDDEN_CONTEXT_POLICY_V1",
+        "DEMO_HIDDEN_CONTEXT_BOUNDARY_V1"
+      ]
+    },
+    {
+      "category": "LLM10",
+      "values": [
+        "DEMO_OUTPUT_EXTRA_V1"
+      ]
+    }
+  ],
+  "groundTruth": "ground-truth-v1.json",
+  "fixtures": "../src/main/resources/benchmark/scenarios-v1.json",
+  "restrictions": {
+    "outboundNetwork": false,
+    "database": false,
+    "realLlm": false,
+    "localOnly": true,
+    "bodyBytes": 8192,
+    "messageBytes": 4096,
+    "responseBytes": 4096,
+    "headerBytes": 8192,
+    "jsonDepth": 4,
+    "readInactivityMs": 2000,
+    "concurrentRequests": 1,
+    "minimumIntervalMs": 100
+  }
+}

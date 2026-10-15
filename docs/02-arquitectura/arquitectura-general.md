@@ -53,6 +53,8 @@ TargetForm mantiene credenciales nuevas únicamente de forma transitoria. Conser
 
 API_BASE_URL procede de environments con `/api`: proxy de desarrollo al puerto backend por defecto 8080 y mismo origen en producción. El hosting futuro debe proporcionar reverse proxy API y fallback SPA; no se modifica despliegue. CSS propio, labels, foco, badges textuales y details nativos cubren responsive/accesibilidad mínima. Pruebas Vitest/TestBed/HTTP simulado y revisión visual a 1280/1024/768/360 están registradas en [tasks.md](../../openspec/changes/frontend-mvp/tasks.md); ejecución y consumo se detallan en [README frontend](../../frontend/README.md). La integración con entorno/demo reales sigue pendiente.
 
+`demo-vulnerable/` implementa el target sintético independiente aprobado en su [change](../../openspec/changes/demo-vulnerable/design.md): Java 21/Boot 4.1.1, selección fija en memoria, sin LLM real, BD ni código compartido con el scanner. Escucha por defecto en `127.0.0.1:8081`; solo el backend lo invoca mediante la excepción SSRF existente. [Contrato, perfiles, límites y manifiestos](../../demo-vulnerable/README.md). E2E, operación del proveedor y despliegue permanecen pendientes; el recorrido offline documentado espera INCONCLUSIVE sin Findings.
+
 ## Backend
 
 Spring Boot expone la API y coordina el flujo de análisis. Recibe las solicitudes del frontend, valida los datos, ejecuta los casos de uso y devuelve resultados consistentes.

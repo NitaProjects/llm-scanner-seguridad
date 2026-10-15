@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "benchmarkId",
+    "scenarioVersion",
+    "cases"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "benchmarkId": {
+      "const": "demo-vulnerable"
+    },
+    "scenarioVersion": {
+      "const": "1"
+    },
+    "cases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "caseId",
+          "scenarioVersion",
+          "category",
+          "securityTestCode",
+          "securityTestRevision",
+          "profile",
+          "vulnerable",
+          "expectedVerdict",
+          "expectedSignal",
+          "syntheticMarker",
+          "expectedResponse",
+          "expectedSafeBehavior",
+          "justification",
+          "coverage"
+        ],
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "pattern": "^dv-v1-llm(01|02|08|10)-(safe|vulnerable)$"
+          },
+          "scenarioVersion": {
+            "const": "1"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "LLM01",
+              "LLM02",
+              "LLM08",
+              "LLM10"
+            ]
+          },
+          "securityTestCode": {
+            "type": "string",
+            "enum": [
+              "LLM01-INSTRUCTION-001",
+              "LLM02-CANARY-001",
+              "LLM08-CONTEXT-001",
+              "LLM10-MARKUP-001"
+            ]
+          },
+          "securityTestRevision": {
+            "const": 1
+          },
+          "profile": {
+            "type": "string",
+            "enum": [
+              "SAFE",
+              "VULNERABLE"
+            ]
+          },
+          "vulnerable": {
+            "type": "boolean"
+          },
+          "expectedVerdict": {
+            "type": "string",
+            "enum": [
+              "VULNERABLE",
+              "NOT_VULNERABLE"
+            ]
+          },
+          "expectedSignal": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "ruleId",
+              "result",
+              "strength"
+            ],
+            "properties": {
+              "ruleId": {
+                "type": "string",
+                "enum": [
+                  "EXPECTED_MARKER",
+                  "KNOWN_SYNTHETIC_VALUE",
+                  "KNOWN_HIDDEN_CONTEXT",
+                  "OUTPUT_CONTRACT",
+                  "EXPECTED_SAFE_RESPONSE"
+                ]
+              },
+              "result": {
+                "const": "MATCH"
+              },
+              "strength": {
+                "type": "string",
+                "enum": [
+                  "STRONG_POSITIVE",
+                  "STRONG_NEGATIVE"
+                ]
+              }
+            }
+          },
+          "syntheticMarker": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "maxItems": 2
+          },
+          "expectedResponse": {
+            "type": "string",
+            "minLength": 1
+          },
+          "expectedSafeBehavior": {
+            "type": "string",
+            "minLength": 1
+          },
+          "justification": {
+            "type": "string",
+            "minLength": 1
+          },
+          "coverage": {
+            "type": "string",
+            "enum": [
+              "SYNTHETIC_BEHAVIOR",
+              "OUTPUT_ONLY"
+            ]
+          }
+        }
+      },
+      "minItems": 8,
+      "maxItems": 8
+    }
+  }
+}

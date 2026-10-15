@@ -1,0 +1,240 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "benchmarkId",
+    "scenarioVersion",
+    "synthetic",
+    "purpose",
+    "operatorControlled",
+    "baseUrl",
+    "endpoint",
+    "groundTruth",
+    "fixtures",
+    "authorization",
+    "targetConfiguration",
+    "profiles",
+    "markers",
+    "restrictions"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "benchmarkId": {
+      "const": "demo-vulnerable"
+    },
+    "scenarioVersion": {
+      "const": "1"
+    },
+    "synthetic": {
+      "const": true
+    },
+    "purpose": {
+      "const": "Benchmark local de cuatro pruebas sintéticas y sus controles; no LLM real ni certificación."
+    },
+    "operatorControlled": {
+      "const": true
+    },
+    "baseUrl": {
+      "const": "http://127.0.0.1:8081"
+    },
+    "endpoint": {
+      "const": "/api/chat"
+    },
+    "groundTruth": {
+      "const": "ground-truth-v1.json"
+    },
+    "fixtures": {
+      "const": "../src/main/resources/benchmark/scenarios-v1.json"
+    },
+    "authorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "localOwnedSystemsOnly",
+        "externalTrafficAuthorized",
+        "declaration"
+      ],
+      "properties": {
+        "localOwnedSystemsOnly": {
+          "const": true
+        },
+        "externalTrafficAuthorized": {
+          "const": false
+        },
+        "declaration": {
+          "const": "El operador debe declarar el control y la autorización del entorno antes de invocar el target."
+        }
+      }
+    },
+    "targetConfiguration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "url",
+        "method",
+        "contentType",
+        "requestTemplate",
+        "promptPlaceholder",
+        "responsePath",
+        "headers",
+        "authType",
+        "timeoutMs"
+      ],
+      "properties": {
+        "name": {
+          "const": "Demo sintética local"
+        },
+        "url": {
+          "const": "http://127.0.0.1:8081/api/chat"
+        },
+        "method": {
+          "const": "POST"
+        },
+        "contentType": {
+          "const": "application/json"
+        },
+        "requestTemplate": {
+          "const": "{\"message\":\"{{PROMPT}}\"}"
+        },
+        "promptPlaceholder": {
+          "const": "{{PROMPT}}"
+        },
+        "responsePath": {
+          "const": "$.response"
+        },
+        "headers": {
+          "const": {}
+        },
+        "authType": {
+          "const": "NONE"
+        },
+        "timeoutMs": {
+          "const": 5000
+        }
+      }
+    },
+    "profiles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "profile",
+          "scenarioId"
+        ],
+        "properties": {
+          "profile": {
+            "type": "string",
+            "enum": [
+              "SAFE",
+              "VULNERABLE"
+            ]
+          },
+          "scenarioId": {
+            "type": "string",
+            "enum": [
+              "demo-safe-v1",
+              "demo-vulnerable-v1"
+            ]
+          }
+        }
+      },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "markers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "category",
+          "values"
+        ],
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": [
+              "LLM01",
+              "LLM02",
+              "LLM08",
+              "LLM10"
+            ]
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "maxItems": 2
+          }
+        }
+      },
+      "minItems": 4,
+      "maxItems": 4
+    },
+    "restrictions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "outboundNetwork",
+        "database",
+        "realLlm",
+        "localOnly",
+        "bodyBytes",
+        "messageBytes",
+        "responseBytes",
+        "headerBytes",
+        "jsonDepth",
+        "readInactivityMs",
+        "concurrentRequests",
+        "minimumIntervalMs"
+      ],
+      "properties": {
+        "outboundNetwork": {
+          "const": false
+        },
+        "database": {
+          "const": false
+        },
+        "realLlm": {
+          "const": false
+        },
+        "localOnly": {
+          "const": true
+        },
+        "bodyBytes": {
+          "const": 8192
+        },
+        "messageBytes": {
+          "const": 4096
+        },
+        "responseBytes": {
+          "const": 4096
+        },
+        "headerBytes": {
+          "const": 8192
+        },
+        "jsonDepth": {
+          "const": 4
+        },
+        "readInactivityMs": {
+          "const": 2000
+        },
+        "concurrentRequests": {
+          "const": 1
+        },
+        "minimumIntervalMs": {
+          "const": 100
+        }
+      }
+    }
+  }
+}
