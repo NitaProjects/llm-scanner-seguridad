@@ -2,6 +2,8 @@
 
 Estado actual: **READY FOR RE-REVIEW — F3/F4 PASS**. La confirmación manual complementaria recibida después del bloqueo está en la última sección; el registro de la limitación inicial se conserva como histórico. Complementa la evidencia de 2026-10-16-005150; no reemplaza sus IDs ni atribuye al Scan anterior la cabecera capturada en este nuevo lanzamiento. Sin cambios de arquitectura, backend/frontend/demo ni dependencias. Solo JSON operacionales ignorados, datos sintéticos por API/UI y documentación del change.
 
+Actualización operacional posterior: **entorno QA cerrado**, tarea6.4 completada; PostgreSQL y datos conservados. Ver la sección final y operational-close.json. Los estados anteriores de servicios/cierre pendiente corresponden al momento de la revisión F3/F4.
+
 ## F3 — respuesta HTTP real
 
 Se revalidaron proceso scanner PID35456/local/8080, BD de desarrollo, gate export=false, excepción local exacta, demo UP/VULNERABLE/version1, binding real y ausencia de activo. Un POST sin body al scanner real produjo la respuesta conservada en f3-launch-http.json:
@@ -68,3 +70,15 @@ El operador confirmó explícitamente en esta conversación:
 La confirmación no incluye UUID ni timestamps exactos. Se conserva literalmente con esa limitación de procedencia, sin inventar una correlación a un Scan concreto. Como comprobación independiente, el histórico del mismo Project QA muestra los Scans complementarios 738c599b-1c4d-4db5-bbad-cbff6f2588c1 y b15b9301-5d46-4a34-b452-11e58da38416. Se recogieron sus seis respuestas públicas sin mutaciones: ambos COMPLETED en 3.106125/3.111577 s, cuatro ejecuciones HTTP200 y cuatro evaluaciones inconclusas completadas, SKIPPED/EXPORT_NOT_AUTHORIZED/confidence0; cero Findings, score0/NO_FINDINGS/cuatro I y report AVAILABLE/report-v1/es, resumen concordante y binding correcto. qa-complementary-checks.json registra este contraste separado.
 
 F3 conserva su Location real y PASS; F4 formularios, abandono/reentrada/estado remoto y Network quedan cubiertos por las evidencias complementarias identificadas. 4.3/4.4/5.1/6.3 completas; 22/29 tareas completas, cinco opcionales no aplicables, cierre operacional6.4 y revisión6.6 pendientes. 9.4 continúa pendiente por falta de Finding real que abrir. Sin regresiones observadas ni cambios de código, por lo que no se ejecutaron tests afectados. SQL NOT_INSPECTED, proveedor real/AWS/Docker/benchmark sin ejecutar. No se generaron nuevos Scans ni capturas durante este cierre. Strict final ejecutado el 2026-10-16: `OPENSPEC_TELEMETRY=0; openspec validate e2e-integration --strict` → `Change 'e2e-integration' is valid`, exit0, registrado también en tasks.md sección11. Estado **READY FOR RE-REVIEW**.
+
+## Cierre operacional posterior — 2026-10-16 19:06:51 Europe/Madrid
+
+Autorizado explícitamente por el usuario y acreditado en operational-close.json. Identidad/fecha/argumentos de los procesos propios verificados; cuatro Projects consultados por GET, cero Scans activos antes de apagar.
+
+Detenidos Angular PID3880, scanner PID35456 y demo PID16904; esbuild PID12444 salió con Angular. Tras el cierre: ninguno de esos procesos presente y puertos4200/8080/8081 sin listener. PostgreSQL permanece accesible por TCP127.0.0.1:5432 y se mantienen sus listeners/forwarders PID30876/33500. No se detuvieron procesos Docker/WSL/PostgreSQL ni se borraron datos/históricos.
+
+Evaluator export=false verificado antes de terminar el scanner; después no existe evaluador ni excepción SSRF local activos en ese proceso. No se modificó entorno persistente de usuario/sistema ni se habilitó proveedor. No se ejecutaron Scans, migraciones, suites, deploy, commit/push o SQL de escritura.
+
+evaluation-scenario.local.json y bindings.local.json: conservados ignorados, SHA-256 idéntico antes/después y **fuera de uso** al estar apagado su único scanner lector. No se tocaron plantillas ni manifests versionados. Se sigue la política de conservación; una futura reutilización requiere preflight y binding vigente, no reactivación automática.
+
+Tarea6.4 completada; 23/29 tareas completas, cinco opcionales no aplicables, revisión6.6 pendiente. Frontend9.4 conserva su pendiente. Solo se actualizan evidencia de cierre y tarea6.4/estado derivado en tasks.md; no se modifica código ni runbook. **Entorno QA cerrado; READY FOR RE-REVIEW**.

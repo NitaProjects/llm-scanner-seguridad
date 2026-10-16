@@ -1,0 +1,99 @@
+{
+  "status": "CLOSED",
+  "dateLocal": "2026-10-16T19:06:52.4024100+02:00",
+  "stopped": [
+    {
+      "stoppedAtUtc": "2026-10-16T17:06:51.7105659+00:00",
+      "pid": 3880,
+      "identityVerified": true,
+      "component": "Angular"
+    },
+    {
+      "stoppedAtUtc": "2026-10-16T17:06:51.8340442+00:00",
+      "pid": 35456,
+      "identityVerified": true,
+      "component": "Scanner E2E"
+    },
+    {
+      "stoppedAtUtc": "2026-10-16T17:06:51.9258769+00:00",
+      "pid": 16904,
+      "identityVerified": true,
+      "component": "demo-vulnerable"
+    },
+    {
+      "pid": 12444,
+      "exitedWithParent": true,
+      "component": "Angular esbuild auxiliary"
+    }
+  ],
+  "globalProjectsChecked": [
+    {
+      "scanCount": 3,
+      "projectId": "65f132db-20c5-40b8-a3ee-6ee7d2cb2d76",
+      "activeScans": 0
+    },
+    {
+      "scanCount": 2,
+      "projectId": "47006cf8-421d-406c-ab7e-c496e3a67fe5",
+      "activeScans": 0
+    },
+    {
+      "scanCount": 0,
+      "projectId": "2ab6cb32-e24f-4632-b1c3-e85aa8111210",
+      "activeScans": 0
+    },
+    {
+      "scanCount": 0,
+      "projectId": "72e7a4e3-b2a4-4ad4-a5b6-5eeb53613052",
+      "activeScans": 0
+    }
+  ],
+  "qaListenersRemaining": [],
+  "qaProcessesRemaining": [],
+  "postgresqlBefore": [
+    {
+      "LocalAddress": "::1",
+      "LocalPort": 5432,
+      "OwningProcess": 33500
+    },
+    {
+      "LocalAddress": "::",
+      "LocalPort": 5432,
+      "OwningProcess": 30876
+    }
+  ],
+  "postgresqlAfter": [
+    {
+      "LocalAddress": "::1",
+      "LocalPort": 5432,
+      "OwningProcess": 33500
+    },
+    {
+      "LocalAddress": "::",
+      "LocalPort": 5432,
+      "OwningProcess": 30876
+    }
+  ],
+  "postgresqlConnectivity": "TCP_OPEN",
+  "evaluatorExportBeforeShutdown": false,
+  "evaluatorAfterShutdown": "NO_RUNNING_SCANNER_EVALUATOR",
+  "exportOrProviderEnabledDuringClosure": false,
+  "localDemoException": "NO_RUNNING_SCANNER; process-scoped configuration ceased with shutdown",
+  "localFiles": [
+    {
+      "path": "demo-vulnerable\\manifest\\evaluation-scenario.local.json",
+      "sha256": "c603784a8599201d7c82914147382c0471676fe34e02f76cd5bead0dd32f8334",
+      "state": "RETAINED_IGNORED_OFFLINE_NOT_IN_USE"
+    },
+    {
+      "path": "demo-vulnerable\\manifest\\bindings.local.json",
+      "sha256": "61095d59ee3f5ca710afb314c77d39d0e9f380479984cdd63389fbf7ecf0c53d",
+      "state": "RETAINED_IGNORED_OFFLINE_NOT_IN_USE"
+    }
+  ],
+  "localFilesModified": false,
+  "localFilesDeleted": false,
+  "databaseWritesOrDeletesPerformed": false,
+  "codeModified": false,
+  "persistentUserOrMachineEnvironmentChanged": false
+}

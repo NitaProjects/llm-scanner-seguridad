@@ -1,6 +1,6 @@
 # e2e-integration
 
-Estado de corrección: **READY FOR RE-REVIEW — F3/F4 resueltos** (2026-10-16). 22/29 tareas completas; cinco opcionales no aplicables y 6.4/6.6 pendientes. 4.3/4.4/5.1/6.3 completadas con evidencia real. La confirmación manual de Network y la comprobación API complementaria están en la sección 11 y evidence/2026-10-16-f3-f4/; las secciones 9/10 conservan los estados históricos.
+Estado de corrección: **READY FOR RE-REVIEW — F3/F4 resueltos** (2026-10-16). 23/29 tareas completas; cinco opcionales no aplicables y 6.6 pendiente de revisión. Cierre operacional 6.4 completado y documentado en sección 12. 4.3/4.4/5.1/6.3 completadas con evidencia real. La confirmación manual de Network y la comprobación API complementaria están en la sección 11 y evidence/2026-10-16-f3-f4/; las secciones 9/10 conservan los estados históricos.
 
 ## 1. Aprobación y procedimiento operativo
 
@@ -45,7 +45,7 @@ Estado de corrección: **READY FOR RE-REVIEW — F3/F4 resueltos** (2026-10-16).
 - [x] 6.1 Registrar defectos reales, si aparecen, mediante reproducir→localizar→corrección mínima autorizada→regresión no cubierta→reejecutar→evidencia; verificar que cambios de producto requieren autorización específica y que no se modifican expectativas para esconder fallos. Si no hay defectos, registrar «ninguno observado» sin inventar tests (E2E-20/E2E-22).
 - [x] 6.2 Si un defecto exige tests nuevos, proponer/añadir solo la regresión necesaria y ejecutar comprobaciones únicamente ante solicitud explícita; verificar que cualquier test con BD valida llm_scanner_seguridad_test antes de escribir y nunca usa la BD manual. Sin defecto, registrar no aplicable (E2E-03/E2E-20).
 - [x] 6.3 Consolidar paquete mínimo con comandos/configuración no secreta/ids/estados/matriz/capturas y resultado PASS/FAIL/PENDING; verificar ausencia de dumps/logs extensos/secrets, cobertura funcional API/UI completa para aceptar OFFLINE sin exigir SQL ni script, y limitaciones F-01/LLM10/cero/I visibles (E2E-18/E2E-21).
-- [ ] 6.4 Aplicar política de conservación/reutilización y cierre operacional por el operador; verificar ningún borrado BD ni API nueva, Project/Scans históricos conservados y revocación de flags locales cuando ya no se necesiten, sin que el script mate procesos (E2E-23).
+- [x] 6.4 Aplicar política de conservación/reutilización y cierre operacional por el operador; verificar ningún borrado BD ni API nueva, Project/Scans históricos conservados y revocación de flags locales cuando ya no se necesiten, sin que el script mate procesos (E2E-23).
 - [x] 6.5 Revisar runbook futuro de evaluador sin ejecutarlo; verificar autorización independiente, clave solo EVALUATOR_API_KEY del scanner, gates/corpus/límites/presupuesto/modelo aprobados, comparación externa y SAFE opcional, sin convertirlo en tarea operativa obligatoria (E2E-24).
 - [ ] 6.6 Entregar a review-agent el diff acotado y paquete de evidencia; verificar alineación proposal/spec/design/tasks/implementación, estado real de OFFLINE, pendientes 9.4/proveedor y strict solo si se solicita; no marcar requisitos TFM ni cerrar 9.4 sin evidencia suficiente (E2E-01/E2E-16/E2E-21/E2E-22).
 
@@ -120,3 +120,17 @@ GET del histórico QA identifica dos Scans posteriores al recorrido del navegado
 F3 mantiene PASS por HTTP202 y Location literal recibida del Scan eb0c960f-dfa6-4968-8b8a-2f3c9d2f3793. F4 PASS por formularios reales, binding exacto, abandono en activo/reentrada/estado remoto ya documentados y confirmación manual Network complementaria. Se completan 5.1 y, solo después de conservar toda la evidencia funcional API/UI, 6.3. 4.3/4.4 ya completas. 22/29 tareas completas, cinco opcionales NO APLICABLE y 6.4/6.6 pendientes. 9.4 de frontend-mvp permanece pendiente por ausencia de Finding real que abrir.
 
 Ninguna regresión observada. Tests afectados NO APLICABLE: sin cambios de código, no se ejecutan suites preventivas. SQL continúa NOT_INSPECTED. Sin proveedor real, AWS, Docker, benchmark, deploy, commit/push ni borrados. Runbook actualizado solo con el resultado real. Strict final de este cierre ejecutado el 2026-10-16: `OPENSPEC_TELEMETRY=0; openspec validate e2e-integration --strict` → `Change 'e2e-integration' is valid`, exit0; fuera del sandbox para cargar el esquema local. Estado **READY FOR RE-REVIEW**, sin autodeclarar revisión aprobada.
+
+## 12. Cierre operacional autorizado — tarea 6.4, 2026-10-16
+
+Solicitud explícita del usuario: detener únicamente demo-vulnerable, scanner E2E y Angular de QA, conservar PostgreSQL y datos/históricos, mantener exportación false y revisar los dos JSON ignorados. Evidencia: [operational-close.json](evidence/2026-10-16-f3-f4/operational-close.json). Operación finalizada a las 19:06:51 Europe/Madrid.
+
+Antes de detener se comprobaron identidad, argumentos no secretos y fecha de creación de los procesos propios, y por GET se verificaron los cuatro Projects existentes: ningún Scan PENDING/RUNNING. Scanner PID35456 tenía EVALUATOR_EXPORT_ENABLED=false por argumento explícito. No se inició ni canceló ningún Scan.
+
+Detenidos por PID verificado: Angular3880, scanner35456 y demo16904. Auxiliar esbuild12444 salió con su padre. Comprobación posterior: ninguno de esos PIDs presente y ningún listener en4200/8080/8081. La excepción local y el evaluador dejan de estar operativos al terminar su proceso; no se habilitó exportación/proveedor ni se cambió configuración persistente de usuario/sistema. Último valor efectivo del scanner antes del cierre: export=false.
+
+PostgreSQL conservado: listeners5432 y propietarios de forwarding30876/33500 permanecen; conexión TCP a127.0.0.1:5432 satisfactoria después del cierre. No se detuvo Docker/WSL/PostgreSQL. Solo GET antes de apagar; ninguna escritura/borrado SQL, migración o limpieza. Project/Target/Scans, Findings/score/report y evidencias conservados.
+
+Los archivos demo-vulnerable/manifest/evaluation-scenario.local.json y bindings.local.json se conservan ignorados, sin cambios y fuera de uso: el scanner lector está apagado. SHA-256 antes/después idénticos en operational-close.json. La política aprobada conserva copias/históricos y no exige borrarlos; no se eliminaron ni modificaron plantillas/manifests versionados. Una reutilización futura necesita nuevo preflight y verificación/renovación explícita del binding, nunca reutilización automática.
+
+6.4 completada con cierre real. 23/29 tareas completas, cinco opcionales NO APLICABLE, 6.6/revisión pendiente. 9.4 permanece pendiente por falta de Finding real. Sin cambios de código, nuevas suites, proveedor real, AWS, deploy, commit/push o cambios al runbook/normativa. Estado: **entorno QA cerrado; READY FOR RE-REVIEW**.
