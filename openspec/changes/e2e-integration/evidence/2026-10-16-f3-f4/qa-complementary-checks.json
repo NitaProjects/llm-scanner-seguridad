@@ -1,0 +1,40 @@
+[
+  {
+    "scanId": "738c599b-1c4d-4db5-bbad-cbff6f2588c1",
+    "projectId": "65f132db-20c5-40b8-a3ee-6ee7d2cb2d76",
+    "createdAt": "2026-10-16T16:39:57.680816Z",
+    "finishedAt": "2026-10-16T16:40:00.794724Z",
+    "durationSeconds": 3.106125,
+    "status": "COMPLETED",
+    "executions": 4,
+    "evaluations": 4,
+    "verdict": "INCONCLUSIVE",
+    "confidence": 0,
+    "llmStatus": "SKIPPED",
+    "outcomeReason": "EXPORT_NOT_AUTHORIZED",
+    "findings": 0,
+    "score": 0,
+    "riskLevel": "NO_FINDINGS",
+    "report": "AVAILABLE/report-v1/es",
+    "regression": "PASS"
+  },
+  {
+    "scanId": "b15b9301-5d46-4a34-b452-11e58da38416",
+    "projectId": "65f132db-20c5-40b8-a3ee-6ee7d2cb2d76",
+    "createdAt": "2026-10-16T16:46:06.386077Z",
+    "finishedAt": "2026-10-16T16:46:09.504385Z",
+    "durationSeconds": 3.111577,
+    "status": "COMPLETED",
+    "executions": 4,
+    "evaluations": 4,
+    "verdict": "INCONCLUSIVE",
+    "confidence": 0,
+    "llmStatus": "SKIPPED",
+    "outcomeReason": "EXPORT_NOT_AUTHORIZED",
+    "findings": 0,
+    "score": 0,
+    "riskLevel": "NO_FINDINGS",
+    "report": "AVAILABLE/report-v1/es",
+    "regression": "PASS"
+  }
+]

@@ -1,0 +1,20 @@
+{
+  "attemptStartedAt": "2026-10-16T16:23:43.9233435+00:00",
+  "httpVersion": "1.1",
+  "status": 202,
+  "reason": "",
+  "location": "/api/projects/47006cf8-421d-406c-ab7e-c496e3a67fe5/scans/eb0c960f-dfa6-4968-8b8a-2f3c9d2f3793",
+  "scanId": "eb0c960f-dfa6-4968-8b8a-2f3c9d2f3793",
+  "projectId": "47006cf8-421d-406c-ab7e-c496e3a67fe5",
+  "responseBody": {
+    "id": "eb0c960f-dfa6-4968-8b8a-2f3c9d2f3793",
+    "projectId": "47006cf8-421d-406c-ab7e-c496e3a67fe5",
+    "status": "PENDING",
+    "createdAt": "2026-10-16T16:23:43.933810Z",
+    "startedAt": null,
+    "finishedAt": null,
+    "errorReason": null
+  },
+  "locationEqualsExpectedResource": true,
+  "origin": "Direct scanner HTTP response, no reconstruction"
+}

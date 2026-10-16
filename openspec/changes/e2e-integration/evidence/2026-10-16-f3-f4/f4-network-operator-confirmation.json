@@ -1,0 +1,20 @@
+{
+  "status": "PASS",
+  "source": "Confirmación explícita del operador en esta conversación",
+  "dateLocal": "2026-10-16",
+  "timezone": "Europe/Madrid",
+  "browser": "Chrome",
+  "sameTab": true,
+  "keepLog": true,
+  "leftWhileScanActive": true,
+  "outsideDuration": ">12 s",
+  "newPeriodicIndividualScanGets": 0,
+  "previousRequestsAndNormalProjectLoadsExcluded": true,
+  "statement": "Confirmado en la misma pestaña de Chrome con Keep log activo: salí del Scan mientras estaba activo y, durante más de 12 s en la página del Project, no aparecieron nuevos GET periódicos del scan individual. Las peticiones visibles restantes pertenecen al recorrido previo y a la carga normal del Project. Polling detenido correctamente.",
+  "observationScanIdProvidedByOperator": null,
+  "apiVerifiedComplementaryScanIds": [
+    "738c599b-1c4d-4db5-bbad-cbff6f2588c1",
+    "b15b9301-5d46-4a34-b452-11e58da38416"
+  ],
+  "attribution": "La confirmación manual no proporciona UUID ni timestamps exactos; no se atribuye artificialmente a uno de los Scans ni al recorrido previo del navegador integrado. Las respuestas API se conservan separadamente."
+}

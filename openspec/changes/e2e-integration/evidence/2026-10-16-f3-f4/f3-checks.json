@@ -1,0 +1,18 @@
+{
+  "F3": "PASS",
+  "httpStatus": 202,
+  "capturedLocation": "/api/projects/47006cf8-421d-406c-ab7e-c496e3a67fe5/scans/eb0c960f-dfa6-4968-8b8a-2f3c9d2f3793",
+  "scanId": "eb0c960f-dfa6-4968-8b8a-2f3c9d2f3793",
+  "locationMatchesResource": true,
+  "scanStatus": "COMPLETED",
+  "executions": 4,
+  "evaluations": 4,
+  "verdicts": "INCONCLUSIVE",
+  "llmStatus": "SKIPPED",
+  "outcomeReason": "EXPORT_NOT_AUTHORIZED",
+  "findings": 0,
+  "score": 0,
+  "riskLevel": "NO_FINDINGS",
+  "report": "AVAILABLE/report-v1/es",
+  "regressions": "NONE_OBSERVED"
+}

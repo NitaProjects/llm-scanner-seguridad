@@ -1,0 +1,30 @@
+[
+  {
+    "path": "backend\\target\\llm-scanner-seguridad-0.0.1-SNAPSHOT.jar",
+    "sha256": "123e8d8069c1fb844ca9a28ffe83f65fb269738cd493b131c4df26e94b791956"
+  },
+  {
+    "path": "demo-vulnerable\\target\\demo-vulnerable-0.0.1-SNAPSHOT.jar",
+    "sha256": "be1a9fb5891aa7785906a8a55a556da6ae7f15698a1852649ffc9e0445f0c454"
+  },
+  {
+    "path": "demo-vulnerable\\manifest\\benchmark-v1.json",
+    "sha256": "593d027ef59164e1a0ec0c44ea34b95980da90c53a3617456a25f703bc987ebe"
+  },
+  {
+    "path": "demo-vulnerable\\manifest\\evaluation-vulnerable.template.json",
+    "sha256": "22c931a5595984007ab106fea807cf82f9bdf072be0da88086cfe2a5ae4ea078"
+  },
+  {
+    "path": "demo-vulnerable\\manifest\\evaluation-scenario.local.json",
+    "sha256": "dfd7e016ca695732f09dfc7d9519bc02bbbadb78898930223e5916dc39779e45"
+  },
+  {
+    "path": "demo-vulnerable\\manifest\\bindings.local.json",
+    "sha256": "a75d92fe986b486b3e3aa41891f9935c42ec288f507c71aa9b2dde06f4472b65"
+  },
+  {
+    "path": "demo-vulnerable\\manifest\\ground-truth-v1.json",
+    "sha256": "ce9f4336b11d9df462c2322cd550f1463a85eb03fae524c3912e61ab60f11d7d"
+  }
+]

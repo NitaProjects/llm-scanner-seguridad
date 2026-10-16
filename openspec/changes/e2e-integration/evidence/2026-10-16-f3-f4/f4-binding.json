@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "benchmarkVersion": "1",
+  "profile": "VULNERABLE",
+  "scenarioId": "demo-vulnerable-v1",
+  "projectId": "65f132db-20c5-40b8-a3ee-6ee7d2cb2d76",
+  "targetConfigurationId": "3ae92e44-4e81-427f-93ce-021a6a751643",
+  "targetUpdatedAt": "2026-10-16T16:25:10.710151Z",
+  "checkedHealth": {
+    "status": "UP",
+    "profile": "VULNERABLE",
+    "scenarioVersion": "1",
+    "demo": true
+  },
+  "authorizationDeclaredByOperator": true
+}
