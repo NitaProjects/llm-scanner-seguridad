@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-20",
+  "backend": {
+    "command": "mvnw.cmd -o -DskipTests package",
+    "java": "21.0.12.1",
+    "mavenWrapper": "3.9.16",
+    "status": "PASS",
+    "imageId": "sha256:b91262363a63719d127fb4f26d0a4d5c5d4e803651c402b04f035339b964952a"
+  },
+  "frontend": {
+    "command": "npm ci --no-audit --no-fund && npm run build -- --configuration production",
+    "context": "Clean Docker build stage; no inherited node_modules; existing package-lock.json",
+    "node": "22.23.3",
+    "npm": "10.8.2",
+    "status": "PASS",
+    "imageId": "sha256:fe9f79f80cc003726d96384574c17c8489e0bc3c4959d8456497f739866fbc2e"
+  },
+  "backendTests": {
+    "command": "mvnw.cmd -o -Dtest=TargetDestinationPolicyTest,TargetConfigurationTest,JsonTargetConfigurationValidatorTest test",
+    "executedClasses": ["TargetDestinationPolicyTest", "TargetConfigurationTest"],
+    "note": "The third requested pattern matched no test class; totals refer only to executed tests.",
+    "passed": 35,
+    "failed": 0,
+    "status": "PASS"
+  },
+  "frontendTests": {
+    "command": "npm test -- --watch=false",
+    "context": "Frontend builder container; network disabled",
+    "files": 10,
+    "passed": 161,
+    "failed": 0,
+    "status": "PASS"
+  },
+  "productionChecks": {"command": "python docker/production/tests/verify.py", "passed": 51, "status": "PASS"},
+  "cloudFormation": {"command": "python docker/production/tests/check_infrastructure.py", "status": "PASS", "scope": "Offline YAML and structural invariants only"},
+  "awsAccess": "NOT_EXECUTED",
+  "openAiCalls": 0,
+  "scansLaunched": 0
+}

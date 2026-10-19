@@ -1,0 +1,21 @@
+{
+  "status": "PASS",
+  "checks": [
+    "YAML parsed",
+    "443 only",
+    "optional IP restriction off",
+    "IMDSv2 hop1",
+    "EBS encrypted retained",
+    "no SSH/UserData",
+    "SSM parameter scope restricted",
+    "initial stack needs no image digest",
+    "generated repository URI outputs preserved",
+    "ECR pull restricted to created repositories",
+    "post-publish digests reach Compose services",
+    "Compose rejects either missing image reference",
+    "POSIX Maven documentation uses sh",
+    "wrapper Git modes unchanged 100644"
+  ],
+  "awsServiceValidation": "NOT_EXECUTED",
+  "deployment": "NOT_EXECUTED"
+}

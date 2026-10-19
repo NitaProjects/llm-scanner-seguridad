@@ -96,8 +96,15 @@ La actualización conserva el blob únicamente con el mismo origen URL, tipo de 
 
 ## Decisiones pendientes fuera de este change
 
-- Provisión operativa y custodia de la clave en PRE/PRO y AWS.
-- Uso de un gestor de secretos en PRE/PRO y AWS.
+El entorno académico de una EC2 queda concretado por
+[ADR-009](ADR-009-despliegue-academico-ec2.md) y aws-production-readiness: Parameter Store
+SecureString/KMS, rol de host con lectura de prefijo restringida, bootstrap a tmpfs y
+ficheros por servicio; el backend recibe la misma AES existente por entorno. Esta selección
+aprobada no cambia AES-GCM, no regenera la clave y no acredita operación AWS. Las alternativas
+Secrets Manager/KMS anteriores permanecen como evolución para otros entornos.
+
+- Operación y custodia efectiva AWS, y provisión de otros entornos PRE/PRO.
+- Selección de un gestor de secretos para otros entornos PRE/PRO.
 - Rotación, revocación y ciclo de vida de credenciales.
 - Retención/borrado de evidencia y redacción avanzada de secretos arbitrarios; la redacción exacta de credenciales conocidas queda cerrada por security-test-execution.
 

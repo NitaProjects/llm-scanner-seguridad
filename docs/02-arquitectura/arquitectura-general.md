@@ -212,9 +212,15 @@ Ejemplo conceptual de request:
 
 La autenticación del target es `NONE`, `BEARER_TOKEN` o `API_KEY_HEADER`. El change `target-configuration` define un recurso único POST/GET/PUT en `/api/projects/{projectId}/target`, casos de uso explícitos, puertos de validación/cifrado/persistencia y adaptadores separados. Cada Project admite cero o un target en el MVP. Las operaciones de configuración no ejecutan requests ni extracción de respuestas; ese trabajo corresponde al worker implementado por `security-test-execution`.
 
-D-CRYPTO queda cerrado para el MVP local: AES-256-GCM con clave externa de 256 bits y envelope versionado (ADR-002). GET y conservación en PUT no descifran. Históricamente los controles SSRF de ejecución quedaron fuera de `target-configuration`; `security-test-execution` ya los incorpora, según la [política de autorización](../03-seguridad/politica-de-autorizacion.md). La provisión AWS Secrets Manager/KMS, custodia y rotación avanzada siguen pendientes.
+D-CRYPTO queda cerrado para el MVP local: AES-256-GCM con clave externa de 256 bits y envelope versionado (ADR-002). GET y conservación en PUT no descifran. Históricamente los controles SSRF de ejecución quedaron fuera de `target-configuration`; `security-test-execution` ya los incorpora, según la [política de autorización](../03-seguridad/politica-de-autorizacion.md). ADR-009 concreta Parameter Store SecureString/KMS para la preparación académica; operación/custodia AWS y rotación avanzada permanecen pendientes.
 
 ## Decisiones todavía abiertas
+
+La preparación del despliegue académico está definida en
+[ADR-009](decisiones/ADR-009-despliegue-academico-ec2.md): una EC2, Nginx/Angular estático,
+backend pro y PostgreSQL16 privado; Basic Auth/TLS, secretos externos y sin demo/evaluator
+activos. Su Compose es independiente del local. La URL pública y validación AWS permanecen
+pendientes; los tests locales no acreditan despliegue.
 
 - Las alternativas y recomendaciones se recogen en `docs/02-arquitectura/decisiones/decisiones-abiertas.md`.
 - OpenAI y modelo inicial configurable gpt-6-luna están aprobados y el acceso efectivo está acreditado en la revalidación citada; retención operativa y tarifa siguen sin acreditarse.

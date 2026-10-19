@@ -1,0 +1,131 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Academic single-instance scanner; prepare only, no secrets or automatic deployment.
+Parameters:
+  AmiId: {Type: AWS::EC2::Image::Id, Description: Verified Linux x86_64 AMI with SSM agent; operator must supply}
+  InstanceType: {Type: String, Default: t3.medium, AllowedValues: [t3.medium]}
+  RootDeviceName: {Type: String, Default: /dev/xvda, AllowedValues: [/dev/xvda, /dev/sda1], Description: Must match the verified AMI root device}
+  PublicHostname: {Type: String, AllowedPattern: '[a-z0-9][a-z0-9.-]*[a-z0-9]'}
+  SecretPrefix: {Type: String, Default: /llm-scanner/pro, AllowedPattern: '/[A-Za-z0-9/_-]+'}
+  RestrictIngressIp: {Type: String, Default: 'false', AllowedValues: ['true', 'false']}
+  ReviewerCidr: {Type: String, Default: '', Description: Only required when RestrictIngressIp is true}
+Rules:
+  OptionalCidr:
+    RuleCondition: {Fn::Equals: [{Ref: RestrictIngressIp}, 'true']}
+    Assertions:
+      - Assert: {Fn::Not: [{Fn::Equals: [{Ref: ReviewerCidr}, '']}]}
+        AssertDescription: CIDR required only for explicitly restricted mode.
+Conditions:
+  Restricted: {Fn::Equals: [{Ref: RestrictIngressIp}, 'true']}
+Resources:
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties: {CidrBlock: 10.60.0.0/16, EnableDnsSupport: true, EnableDnsHostnames: true}
+  Gateway: {Type: AWS::EC2::InternetGateway}
+  GatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties: {VpcId: {Ref: Vpc}, InternetGatewayId: {Ref: Gateway}}
+  Subnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: {Ref: Vpc}
+      CidrBlock: 10.60.1.0/24
+      AvailabilityZone: {Fn::Select: [0, {Fn::GetAZs: ''}]}
+      MapPublicIpOnLaunch: false
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties: {VpcId: {Ref: Vpc}}
+  Route:
+    Type: AWS::EC2::Route
+    DependsOn: GatewayAttachment
+    Properties: {RouteTableId: {Ref: RouteTable}, DestinationCidrBlock: 0.0.0.0/0, GatewayId: {Ref: Gateway}}
+  RouteAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: {SubnetId: {Ref: Subnet}, RouteTableId: {Ref: RouteTable}}
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: {Ref: Vpc}
+      GroupDescription: HTTPS only; administration through Session Manager; no IPv6 ingress.
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: {Fn::If: [Restricted, {Ref: ReviewerCidr}, 0.0.0.0/0]}
+      SecurityGroupEgress:
+        - {IpProtocol: tcp, FromPort: 443, ToPort: 443, CidrIp: 0.0.0.0/0}
+        - {IpProtocol: udp, FromPort: 53, ToPort: 53, CidrIp: 10.60.0.0/16}
+        - {IpProtocol: tcp, FromPort: 53, ToPort: 53, CidrIp: 10.60.0.0/16}
+  BackendRepository:
+    Type: AWS::ECR::Repository
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties: {ImageTagMutability: IMMUTABLE, ImageScanningConfiguration: {ScanOnPush: true}, EncryptionConfiguration: {EncryptionType: AES256}}
+  IngressRepository:
+    Type: AWS::ECR::Repository
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties: {ImageTagMutability: IMMUTABLE, ImageScanningConfiguration: {ScanOnPush: true}, EncryptionConfiguration: {EncryptionType: AES256}}
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement: [{Effect: Allow, Principal: {Service: ec2.amazonaws.com}, Action: 'sts:AssumeRole'}]
+      Policies:
+        - PolicyName: HostBootstrapOnly
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: ['ssm:UpdateInstanceInformation', 'ssmmessages:CreateControlChannel', 'ssmmessages:CreateDataChannel', 'ssmmessages:OpenControlChannel', 'ssmmessages:OpenDataChannel']
+                Resource: '*'
+              - Effect: Allow
+                Action: ['ssm:GetParameter', 'ssm:GetParameters']
+                Resource: {Fn::Sub: 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${SecretPrefix}/*'}
+              - Effect: Allow
+                Action: 'kms:Decrypt'
+                Resource: {Fn::Sub: 'arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:key/*'}
+                Condition:
+                  StringEquals: {'kms:ViaService': {Fn::Sub: 'ssm.${AWS::Region}.amazonaws.com'}}
+                  StringLike: {'kms:EncryptionContext:PARAMETER_ARN': {Fn::Sub: 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${SecretPrefix}/*'}}
+              - {Effect: Allow, Action: 'ecr:GetAuthorizationToken', Resource: '*'}
+              - Effect: Allow
+                Action: ['ecr:BatchGetImage', 'ecr:GetDownloadUrlForLayer', 'ecr:BatchCheckLayerAvailability']
+                Resource: [{Fn::GetAtt: [BackendRepository, Arn]}, {Fn::GetAtt: [IngressRepository, Arn]}]
+  Profile:
+    Type: AWS::IAM::InstanceProfile
+    Properties: {Roles: [{Ref: Role}]}
+  Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: {Ref: AmiId}
+      InstanceType: {Ref: InstanceType}
+      SubnetId: {Ref: Subnet}
+      SecurityGroupIds: [{Ref: SecurityGroup}]
+      IamInstanceProfile: {Ref: Profile}
+      MetadataOptions: {HttpTokens: required, HttpPutResponseHopLimit: 1, HttpProtocolIpv6: disabled}
+      BlockDeviceMappings:
+        - DeviceName: {Ref: RootDeviceName}
+          Ebs: {Encrypted: true, VolumeType: gp3, VolumeSize: 20, DeleteOnTermination: true}
+  DataVolume:
+    Type: AWS::EC2::Volume
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties: {AvailabilityZone: {Fn::GetAtt: [Instance, AvailabilityZone]}, Size: 30, VolumeType: gp3, Encrypted: true}
+  DataAttachment:
+    Type: AWS::EC2::VolumeAttachment
+    Properties: {Device: /dev/sdf, InstanceId: {Ref: Instance}, VolumeId: {Ref: DataVolume}}
+  PublicIp:
+    Type: AWS::EC2::EIP
+    DependsOn: GatewayAttachment
+    Properties: {Domain: vpc}
+  PublicIpAssociation:
+    Type: AWS::EC2::EIPAssociation
+    Properties: {InstanceId: {Ref: Instance}, AllocationId: {Fn::GetAtt: [PublicIp, AllocationId]}}
+Outputs:
+  PublicHostname: {Value: {Ref: PublicHostname}}
+  InstanceId: {Value: {Ref: Instance}}
+  PublicIp: {Value: {Ref: PublicIp}}
+  DataVolumeId: {Value: {Ref: DataVolume}}
+  BackendRepository: {Value: {Fn::GetAtt: [BackendRepository, RepositoryUri]}}
+  IngressRepository: {Value: {Fn::GetAtt: [IngressRepository, RepositoryUri]}}

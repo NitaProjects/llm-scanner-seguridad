@@ -1,0 +1,7 @@
+FROM eclipse-temurin:21-jre@sha256:227118764cccd3c3294617061aaa93a08309c63a395eefa83e6b35032992ea99
+WORKDIR /app
+COPY backend/target/llm-scanner-seguridad-0.0.1-SNAPSHOT.jar /app/scanner.jar
+COPY --chmod=555 docker/production/backend-entrypoint.sh /opt/backend-entrypoint.sh
+USER 10001:10001
+EXPOSE 8080
+ENTRYPOINT ["/opt/backend-entrypoint.sh"]

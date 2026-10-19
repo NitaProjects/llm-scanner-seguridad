@@ -1,0 +1,9 @@
+{
+  "sourceDirectory": "C:\\Users\\Develop\\AppData\\Local\\Temp\\apr-clean-backend-1600720d7d344676acc3cac5cd4efec9",
+  "source": "Working tree backend/src,pom,wrapper only; no target or ignored config copied",
+  "build": "PASS",
+  "java": "21.0.12.1",
+  "maven": "3.9.16",
+  "noPriorTarget": true,
+  "jarSha256": "FAD968604DBD71A257582C4E4AFA5C640C9C76A7F424D4D89999A0076C00C49D"
+}

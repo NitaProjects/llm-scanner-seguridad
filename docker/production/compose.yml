@@ -1,0 +1,119 @@
+name: llm-scanner-pro
+
+x-logging: &logging
+  driver: json-file
+  options: { max-size: "10m", max-file: "3" }
+
+services:
+  postgres:
+    image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: scanner_bootstrap
+      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD_FILE: /run/secrets/admin-password
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256 --auth-local=scram-sha-256
+    command: [postgres, -c, hba_file=/etc/postgresql/pg_hba.conf, -c, password_encryption=scram-sha-256, -c, shared_buffers=128MB, -c, max_connections=40]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ${SECRETS_DIR:?External tmpfs secrets directory required}/admin-password:/run/secrets/admin-password:ro
+      - ${SECRETS_DIR:?}/app-password-pg:/run/secrets/app-password:ro
+      - ./postgres/init.sh:/docker-entrypoint-initdb.d/10-scanner.sh:ro
+      - ./postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+    networks: [data]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U scanner_bootstrap -d postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    mem_limit: 768m
+    cpus: 0.75
+    shm_size: 128m
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]
+    security_opt: [no-new-privileges:true]
+    logging: *logging
+
+  backend:
+    image: ${BACKEND_IMAGE:?Explicit backend image digest required}
+    build:
+      context: ../..
+      dockerfile: docker/production/Dockerfile.backend
+    container_name: ${BACKEND_CONTAINER_NAME:-llm-scanner-pro-backend}
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+    environment:
+      SPRING_PROFILES_ACTIVE: pro
+      SERVER_PORT: "8080"
+      DB_URL: jdbc:postgresql://postgres:5432/llm_scanner_seguridad_pro
+      DB_USERNAME: scanner_app
+      CORS_ALLOWED_ORIGINS: ${PUBLIC_ORIGIN:?Canonical HTTPS origin required}
+      TARGET_ALLOWED_ORIGINS: ""
+      TARGET_LOCAL_DEMO_ENABLED: "false"
+      TARGET_LOCAL_DEMO_ORIGINS: ""
+      EVALUATOR_EXPORT_ENABLED: "false"
+      EVALUATOR_ALLOWED_SCENARIOS: ""
+      EVALUATOR_PROVIDER: OPENAI
+      EVALUATOR_MODEL: gpt-6-luna
+      EVALUATOR_MAX_CALLS: "4"
+      EVALUATOR_TIMEOUT_MS: "20000"
+      EVALUATOR_INTERVAL_MS: "1000"
+      EVALUATOR_MAX_OUTPUT_TOKENS: "1024"
+      TEST_EXECUTION_SCAN_BUDGET_MS: "300000"
+      SCAN_EXECUTOR_CORE_POOL_SIZE: "1"
+      SCAN_EXECUTOR_MAX_POOL_SIZE: "1"
+      SCAN_EXECUTOR_QUEUE_CAPACITY: "10"
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=65 -XX:+ExitOnOutOfMemoryError
+    volumes:
+      - ${SECRETS_DIR:?}/app-password-backend:/run/secrets/db-password:ro
+      - ${SECRETS_DIR:?}/target-aes:/run/secrets/target-aes:ro
+    networks: [app, data, egress]
+    read_only: true
+    tmpfs: ["/tmp:size=64m,mode=1777"]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 1536m
+    cpus: 1.0
+    deploy: { replicas: 1 }
+    logging: *logging
+
+  ingress:
+    image: ${INGRESS_IMAGE:?Explicit ingress image digest required}
+    build:
+      context: ../..
+      dockerfile: docker/production/Dockerfile.ingress
+    restart: unless-stopped
+    depends_on: [backend]
+    environment:
+      PUBLIC_HOSTNAME: ${PUBLIC_HOSTNAME:?Canonical hostname required}
+      PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:?}
+    ports: ["${INGRESS_BIND_ADDRESS:-0.0.0.0}:${INGRESS_HTTPS_PORT:-443}:8443"]
+    volumes:
+      - ${SECRETS_DIR:?}/htpasswd:/run/auth/htpasswd:ro
+      - ${TLS_DIR:?External certificate directory required}:/run/tls:ro
+    networks: [edge, app]
+    read_only: true
+    tmpfs: ["/tmp:size=4m,uid=101,gid=101,mode=0700", "/var/cache/nginx:size=64m,uid=101,gid=101,mode=0700"]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: [CMD, /opt/readiness.sh]
+      interval: 30s
+      timeout: 6s
+      start_period: 120s
+      retries: 3
+    mem_limit: 128m
+    cpus: 0.25
+    logging: *logging
+
+networks:
+  edge: {}
+  app: { internal: true }
+  data: { internal: true }
+  egress: {}
+
+volumes:
+  pgdata:
+    external: true
+    name: ${PGDATA_VOLUME:?Explicit persistent production volume required}

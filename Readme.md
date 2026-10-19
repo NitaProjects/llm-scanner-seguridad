@@ -78,7 +78,10 @@ Los contratos aprobados están actualmente en `openspec/changes/<cambio>/specs/<
 
 La [demo sintética local](demo-vulnerable/README.md) implementa un target independiente y determinista con cuatro escenarios y sus controles seguros, sin LLM real ni BD. Su integración E2E, Docker y la comprobación de safety con aislamiento externo siguen pendientes.
 
-Frontend, procedimientos completos de instalación/ejecución, experimento académico, operación real de OpenAI, despliegue AWS y entregables finales del TFM siguen en progreso o pendientes. Las validaciones técnicas registradas no completan esos trabajos.
+La instalación/ejecución y preparación de producción se documentan abajo, con validación local
+en aws-production-readiness. La operación real local de OpenAI está acreditada en
+[real-evaluator-validation](openspec/changes/real-evaluator-validation/tasks.md). Despliegue AWS,
+experimento académico y entregables finales siguen pendientes; no se atribuye a AWS evidencia local.
 
 ## Funcionalidades
 
@@ -137,15 +140,130 @@ javac -version
 .\mvnw.cmd -version
 ```
 
-**Pendiente de documentación y validación del procedimiento completo.** Se documentará el resto de la preparación de frontend, backend y PostgreSQL.
+Desde un checkout de la revisión aprobada (sin necesitar `target/`, `node_modules/` ni
+manifests locales previos), se requieren JDK21, Maven3.9.16 mediante el wrapper,
+Node22 LTS compatible con Angular21 y npm10.8.2, PostgreSQL16 y Docker/Compose si se usa
+el entorno contenerizado. Las versiones y digests comprobados están en
+[images.json](docker/production/images.json). No cambies package-lock.json ni instales
+versiones nuevas para reproducir. Las primeras descargas de dependencias/imágenes requieren red;
+las pruebas no requieren OpenAI ni AWS. En Windows usa `mvnw.cmd`; en Linux/macOS usa
+`sh ./mvnw`: los wrappers están versionados sin permiso ejecutable y no necesitan chmod.
+
+Builds desde la raíz (PowerShell):
+
+```powershell
+Set-Location frontend
+npm ci
+npm run build -- --configuration production
+Set-Location ../backend
+.\mvnw.cmd -DskipTests package
+Set-Location ../demo-vulnerable
+.\mvnw.cmd -DskipTests package
+Set-Location ..
+```
+
+Angular genera `frontend/dist/frontend/browser`; producción consume `/api` del mismo
+origen, sin dev-server. El backend genera su jar en `backend/target/`. La demo se construye
+solo para pruebas locales. Maven admite `-o` si la caché está completa. Los builds no
+sustituyen tests; su ejecución se registra en tasks.md del change correspondiente.
+
+Alternativa reproducible de frontend sin Node instalado en el host: el Dockerfile de ingress
+usa Node22 y npm10.8.2 exactos, ejecuta npm ci desde el lockfile en una capa limpia y copia
+únicamente el build estático a Nginx. Después de construir el jar del backend:
+
+```powershell
+docker build -f docker/production/Dockerfile.backend -t llm-scanner-backend:production .
+docker build -f docker/production/Dockerfile.ingress -t llm-scanner-ingress:production .
+```
+
+Las imágenes base se fijan por digest y los contextos excluyen secretos/artefactos ajenos.
+El jar es un artefacto explícito del build anterior: no reutilices un jar de otra revisión.
 
 ## Ejecución
 
-**Pendiente de documentación y validación del procedimiento completo.** Se documentará cómo ejecutar la aplicación y sus servicios locales.
+### Desarrollo local
+
+`docker/docker-compose.yml` es **exclusivamente local**, con sus propios datos y credenciales
+de desarrollo; no se convierte en producción ni se reutiliza su contraseña/dump. Un operador
+prepara la BD local `llm_scanner_seguridad` y suministra DB_USERNAME/DB_PASSWORD por entrada
+segura. No uses valores locales como secretos AWS.
+
+```powershell
+docker compose -f docker/docker-compose.yml up -d
+$env:SPRING_PROFILES_ACTIVE = 'local'
+$env:DB_URL = 'jdbc:postgresql://localhost:5432/llm_scanner_seguridad'
+# DB_USERNAME y DB_PASSWORD ya preparados de forma segura en esta terminal.
+java -jar backend/target/llm-scanner-seguridad-0.0.1-SNAPSHOT.jar
+```
+
+En otra terminal, desde frontend, `npm start` sirve localhost4200 y proxy `/api` hacia
+localhost8080. `GET http://localhost:8080/api/projects` debe devolver200/JSON. No existe
+Actuator; no usar su /health como comprobación. PostgreSQL usa pg_isready, complementado
+con Flyway. Al arrancar, Flyway aplica las migraciones oficiales
+`backend/src/main/resources/db/migration/` y JPA valida el esquema. No baseline para ocultar
+errores ni ddl-auto=create/update. Recovery y ejecución son single-instance.
+
+### Demo y evaluator: opt-in local
+
+Desde una terminal sin secretos del scanner, configurar DEMO_PROFILE=VULNERABLE y arrancar
+el jar demo en127.0.0.1:8081. Ver [demo-vulnerable/README.md](demo-vulnerable/README.md) para
+health, contrato, plantillas y binding. El scanner local requiere además
+TARGET_LOCAL_DEMO_ENABLED=true y TARGET_LOCAL_DEMO_ORIGINS=http://127.0.0.1:8081.
+
+Crear Project/Target reales por la API, releer IDs/updatedAt exactos y completar la plantilla
+del perfil elegido y bindings.local.json según sus schemas; nunca copiar UUIDs de evidencia
+ni usar placeholders como instancia válida. EVALUATION_SCENARIO_FILE apunta al JSON local
+completado. Mantener EVALUATOR_EXPORT_ENABLED=false por defecto: la demo funciona sin LLM real.
+
+OpenAI es otra autorización: manifest enabled=true/provider OPENAI, binding/corpus exactos,
+gate global true, EVALUATOR_ALLOWED_SCENARIOS con solo el escenario aprobado y
+EVALUATOR_API_KEY únicamente en el entorno del backend. Modelo aprobado gpt-6-luna, hasta4
+llamadas/Scan/20s/intervalo1s/output1024tokens; coste/tarifa deben aprobarse aparte. No pedir
+claves por chat, escribirlas en archivos ni copiarlas a demo/frontend. Tras operación,
+detener scanner o reiniciarlo sin clave/exportación, deshabilitar manifest y retirar la
+variable de su terminal. No repetir esta operación para validar instalación offline.
+
+### Producción preparada
+
+La [guía de producción](docker/production/README.md) detalla el Compose separado, secretos,
+volumen nuevo, TLS, Basic Auth, arranque, health y actualización. Se requieren PUBLIC_HOSTNAME,
+PUBLIC_ORIGIN, SECRETS_DIR, TLS_DIR, PGDATA_VOLUME e imágenes explícitas BACKEND_IMAGE/INGRESS_IMAGE.
+Localmente pueden usarse IDs de imágenes construidas; en AWS deben ser referencias privadas ECR@sha256.
+La primera instalación crea antes infraestructura/repositorios y después publica las imágenes;
+CloudFormation no recibe digests ni arranca Compose. El [bootstrap ECR de la guía](docker/production/README.md#bootstrap-inicial-ecr-y-configuración-por-digest)
+explica cómo obtener las URIs y exportar BACKEND_IMAGE/INGRESS_IMAGE en el host de Compose.
+Los ficheros secretos se obtienen mediante bootstrap de host, no valores en environment de Compose.
+
+```powershell
+# Solo configuración no secreta; suministrar también las rutas/volumen/hostname de la guía.
+$env:BACKEND_IMAGE = docker image inspect llm-scanner-backend:production --format '{{.Id}}'
+$env:INGRESS_IMAGE = docker image inspect llm-scanner-ingress:production --format '{{.Id}}'
+docker compose -f docker/production/compose.yml config --quiet
+docker compose -f docker/production/compose.yml up -d --no-build
+docker compose -f docker/production/compose.yml exec ingress /opt/readiness.sh
+```
+
+No activar pro con secretos ausentes: el entrypoint falla cerrado. Se crea BD de producción
+nueva `llm_scanner_seguridad_pro`, rol scanner_app sin privilegios globales y se aplica Flyway
+oficial. El volumen es externo, persistente y separado del local; AWS lo sitúa en EBS cifrado.
+Solo443 se publica;8080/5432 son internos. La sonda descarta el cuerpo y exige200/JSON.
+No usar `down -v`, limpiar datos ni ejecutar dos backends contra la misma BD.
 
 ## Configuración
 
-El contrato del target y sus controles están documentados en [target-contract.md](docs/05-api/target-contract.md), el executor en [ADR-003](docs/02-arquitectura/decisiones/ADR-003-ejecucion-asincrona-scans.md) y el evaluador en [prompts-evaluadores.md](docs/04-ia/prompts-evaluadores.md). La guía operativa completa sigue pendiente junto con los procedimientos de ejecución y despliegue. No se incluirán secretos, API keys ni credenciales en el repositorio.
+El contrato del target y sus controles están documentados en [target-contract.md](docs/05-api/target-contract.md), el executor en [ADR-003](docs/02-arquitectura/decisiones/ADR-003-ejecucion-asincrona-scans.md) y el evaluador en [prompts-evaluadores.md](docs/04-ia/prompts-evaluadores.md).
+
+**Spring Boot NO carga `.env` automáticamente.** La interpolación `.env` de Compose tampoco
+inyecta automáticamente variables al proceso Java; deben existir en environment explícito o
+en el bootstrap autorizado. No guardar secretos en .env. Un proceso abierto conserva su
+entorno anterior: cambiar otra terminal no cambia su configuración efectiva.
+
+Producción requiere DB_URL/DB_USERNAME y DB_PASSWORD nueva, TARGET_CREDENTIAL_ENCRYPTION_KEY
+Base64 de32bytes conservada, htpasswd bcrypt externo y certificados TLS externos.
+El entrypoint lee únicamente los ficheros segregados necesarios y exporta DB_PASSWORD/AES
+al Java, sin valores en YAML/argv/imagen. EVALUATOR_API_KEY es opcional y ausente en AWS,
+evaluator export false, scenario ausente y allowlists vacías. CORS_ALLOWED_ORIGINS es el
+origen HTTPS canónico. La demo no se despliega; no relajar SSRF ni activar local en AWS.
 
 ## Seguridad y uso autorizado
 
@@ -155,11 +273,27 @@ El scanner debe utilizarse únicamente contra aplicaciones propias, autorizadas 
 
 El backend dispone de pruebas de dominio, casos de uso, API, transporte con fixtures/fakes, persistencia y migraciones sobre PostgreSQL de test. Los registros de cada change conservan los comandos, resultados y límites de las validaciones ejecutadas. El [registro de reporting](openspec/changes/reporting/tasks.md#validaciones-ejecutadas) documenta una regresión de 400 pruebas, sin fallos, errores ni omisiones, el 2026-10-10; es evidencia técnica registrada, no una validación del proveedor real.
 
-La operación real de OpenAI y el benchmark académico siguen pendientes. El [experimento académico](docs/01-investigacion/experimento-academico.md) requiere dataset, ground truth, repeticiones y análisis propios; las pruebas técnicas no acreditan calibración estadística ni resultados científicos.
+La validación real local de OpenAI se registra en su change; no se ejecuta al instalar AWS.
+El [experimento académico](docs/01-investigacion/experimento-academico.md) requiere dataset,
+ground truth, repeticiones y análisis propios; las pruebas técnicas no acreditan calibración
+estadística ni resultados científicos.
 
 ## Despliegue
 
-El despliegue final está previsto en AWS. La URL real es **Pendiente de entrega**.
+Preparación en [docker/production](docker/production/README.md) y plantilla
+[aws.yml](docker/production/aws.yml), **sin despliegue AWS realizado**. Una EC2 y tres
+contenedores: Nginx/Angular→backend→PostgreSQL16.443 público con TLS y Basic Auth,
+22/80/8080/5432 cerrados; sin conocer IP del tribunal. Allowlist IP opcional, desactivada.
+
+TLS se emite fuera de contenedores con Let's Encrypt/Certbot **manual DNS-01**; A hacia EIP
+y control TXT del dominio. Sin ACME automático ni puerto80/cuarto contenedor. Certificados,
+private keys y estado ACME quedan fuera de Git. Instalar directorio TLS read-only, validar
+nginx -t y renovar manualmente con30días o menos, comprobando certificado servido tras reload.
+
+Secretos futuros en Parameter Store SecureString/KMS, rol IAM del host/SSM sin claves AWS
+estáticas; bootstrap en tmpfs y custodia AES separada de BD. No se ejecuta ese bootstrap en
+la validación local. Región/cuenta/AMI/dominio/coste/certificado y canal reservado de entrega
+requieren aprobación independiente. La URL real y entrega final permanecen **pendientes**.
 
 ## Documentación
 
@@ -179,7 +313,10 @@ La documentación específica de requisitos, trazabilidad y enlaces de entrega e
 
 ## Demo / credenciales
 
-La aplicación vulnerable de demostración está en `demo-vulnerable/`. No existe login documentado actualmente, por lo que no hay credenciales de prueba que publicar en esta fase.
+La demo está en `demo-vulnerable/` y se ejecuta solo localmente. La instalación académica
+preparada exige Basic Auth en Nginx para UI y API, sin usuarios/roles Spring. El operador
+entregará la credencial técnica por canal reservado; ninguna contraseña de evaluación se
+publica en este README. Esa entrega no se acredita hasta desplegar y verificar acceso real.
 
 ## Slides
 

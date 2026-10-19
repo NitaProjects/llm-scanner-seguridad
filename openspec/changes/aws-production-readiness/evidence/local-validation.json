@@ -1,0 +1,213 @@
+{
+  "project": "apr-cd1fe11a70",
+  "fixtureDirectory": "C:\\Users\\Develop\\AppData\\Local\\Temp\\apr-i0hvcth4",
+  "retainedVolume": "apr-data-cd1fe11a70",
+  "checks": [
+    {
+      "name": "exactly-three-services",
+      "pass": true
+    },
+    {
+      "name": "no-backend-or-database-published-port",
+      "pass": true
+    },
+    {
+      "name": "proxy-outside-data-network",
+      "pass": true
+    },
+    {
+      "name": "data-network-internal",
+      "pass": true
+    },
+    {
+      "name": "no-evaluator-or-demo",
+      "pass": true
+    },
+    {
+      "name": "ingress-fails-without-secrets",
+      "pass": true
+    },
+    {
+      "name": "backend-rejects-local-profile",
+      "pass": true
+    },
+    {
+      "name": "nginx-configuration-valid",
+      "pass": true
+    },
+    {
+      "name": "angular-static",
+      "pass": true
+    },
+    {
+      "name": "built-javascript-authenticated",
+      "pass": true
+    },
+    {
+      "name": "spa-deep-link",
+      "pass": true
+    },
+    {
+      "name": "auth-required-/",
+      "pass": true
+    },
+    {
+      "name": "auth-required-/api/projects",
+      "pass": true
+    },
+    {
+      "name": "auth-required-/projects/fixture",
+      "pass": true
+    },
+    {
+      "name": "auth-required-/favicon.ico",
+      "pass": true
+    },
+    {
+      "name": "bad-auth-denied",
+      "pass": true
+    },
+    {
+      "name": "canonical-host-only",
+      "pass": true
+    },
+    {
+      "name": "api-json-not-spa",
+      "pass": true
+    },
+    {
+      "name": "runtime-private-backend",
+      "pass": true
+    },
+    {
+      "name": "runtime-private-postgres",
+      "pass": true
+    },
+    {
+      "name": "ingress-cannot-reach-pg",
+      "pass": true
+    },
+    {
+      "name": "runtime-export-and-demo-disabled",
+      "pass": true
+    },
+    {
+      "name": "unknown-api-no-spa",
+      "pass": true
+    },
+    {
+      "name": "foreign-origin-denied",
+      "pass": true
+    },
+    {
+      "name": "missing-origin-denied",
+      "pass": true
+    },
+    {
+      "name": "authorized-write-and-location",
+      "pass": true
+    },
+    {
+      "name": "maximum-valid-target-accepted",
+      "pass": true
+    },
+    {
+      "name": "app-no-global-privileges",
+      "pass": true
+    },
+    {
+      "name": "clean-flyway-official-history",
+      "pass": true
+    },
+    {
+      "name": "fixed-test-catalog",
+      "pass": true
+    },
+    {
+      "name": "restart-retains-project",
+      "pass": true
+    },
+    {
+      "name": "restart-no-duplicate-migrations",
+      "pass": true
+    },
+    {
+      "name": "tls-reload-new-serial-and-expiry",
+      "pass": true
+    },
+    {
+      "name": "tls-reload-preserves-auth",
+      "pass": true
+    },
+    {
+      "name": "tls-reload-no-backend-or-pg-restart",
+      "pass": true
+    },
+    {
+      "name": "checksum-mismatch-fails-readiness",
+      "pass": true
+    },
+    {
+      "name": "counter-rejects-unauthenticated-write",
+      "pass": true
+    },
+    {
+      "name": "counter-rejects-foreign-origin",
+      "pass": true
+    },
+    {
+      "name": "denied-writes-never-reach-upstream",
+      "pass": true
+    },
+    {
+      "name": "oversized-content-length-413",
+      "pass": true
+    },
+    {
+      "name": "oversized-not-forwarded",
+      "pass": true
+    },
+    {
+      "name": "chunked-not-forwarded",
+      "pass": true
+    },
+    {
+      "name": "chunked-overflow-413",
+      "pass": true
+    },
+    {
+      "name": "compressed-rejected",
+      "pass": true
+    },
+    {
+      "name": "compressed-not-forwarded",
+      "pass": true
+    },
+    {
+      "name": "idle-body-timeout-15s",
+      "pass": true
+    },
+    {
+      "name": "idle-body-not-forwarded",
+      "pass": true
+    },
+    {
+      "name": "per-ip-connection-limit-eight",
+      "pass": true
+    },
+    {
+      "name": "large-legitimate-body-proxy-accepts",
+      "pass": true
+    },
+    {
+      "name": "proxy-strips-basic-authorization",
+      "pass": true
+    },
+    {
+      "name": "access-logs-no-markers-or-paths",
+      "pass": true
+    }
+  ],
+  "status": "PASS",
+  "fixtureSecretsRemoved": true
+}

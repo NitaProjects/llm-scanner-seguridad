@@ -1,0 +1,7 @@
+**
+!backend/
+!backend/target/
+!backend/target/llm-scanner-seguridad-0.0.1-SNAPSHOT.jar
+!docker/
+!docker/production/
+!docker/production/backend-entrypoint.sh

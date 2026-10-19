@@ -1,0 +1,7 @@
+fixtures/
+*.pem
+*.key
+*.p12
+htpasswd*
+certbot/
+secrets/
