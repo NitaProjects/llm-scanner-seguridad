@@ -1,0 +1,24 @@
+{
+  "closedAt": "2026-10-19T22:47:16.2666396+02:00",
+  "activeScans": 0,
+  "stoppedPids": [
+    35120,
+    2940,
+    35680
+  ],
+  "listenersAfter": [
+    {
+      "LocalPort": 5432,
+      "OwningProcess": 31736
+    },
+    {
+      "LocalPort": 5432,
+      "OwningProcess": 1116
+    }
+  ],
+  "manifestExportEnabled": false,
+  "scansStartedBySession": 0,
+  "providerCallsStartedBySession": 0,
+  "operatorTerminalKeyRemoval": "PENDING; agent cannot modify parent terminal environment",
+  "reason": "Browser automation stopped: unable to establish active browser URL with sufficient confidence"
+}

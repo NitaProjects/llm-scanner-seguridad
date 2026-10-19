@@ -1,0 +1,9 @@
+{
+  "jar": "C:\\Users\\Develop\\Desktop\\llm-scanner-seguridad\\backend\\target\\llm-scanner-seguridad-0.0.1-SNAPSHOT.jar",
+  "sha256": "515A644DC61986F9BA7C37447080F4FDD0FE07D2C4946B9DAB827A8C3FE8C2DA",
+  "adapterClassSha256": "444544031AD725530867BBC443CE224571C8AF843AF68A8E300DE6A9C1F5F89A",
+  "matchesCompiledClass": true,
+  "packagedAt": "2026-10-19T23:42:44.5795369+02:00",
+  "transport": "BasicHttpClientConnectionManager.create with non-null HTTPS TLS registry",
+  "build": "mvnw -o -DskipTests package; BUILD SUCCESS"
+}

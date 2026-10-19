@@ -1,0 +1,29 @@
+{
+  "closedAt": "2026-10-19T23:02:44.4776300+02:00",
+  "activeScans": 0,
+  "stoppedPids": [
+    32828,
+    34520
+  ],
+  "listenersAfter": [
+    {
+      "LocalPort": 5432,
+      "OwningProcess": 31736
+    },
+    {
+      "LocalPort": 5432,
+      "OwningProcess": 1116
+    },
+    {
+      "LocalPort": 4200,
+      "OwningProcess": 34076
+    }
+  ],
+  "manifestExportEnabled": false,
+  "scannerExportCapability": "INACTIVE_PROCESS_STOPPED",
+  "angular": "Retained for operator review of already loaded UI",
+  "operatorTerminalKeyRemoval": "PENDING; parent terminal environment not accessible",
+  "dataDeleted": false,
+  "scansStarted": 1,
+  "scanId": "fffb200e-8d9f-422d-be44-a06671afd48a"
+}

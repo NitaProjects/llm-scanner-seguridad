@@ -1,0 +1,22 @@
+{
+  "scanId": "fffb200e-8d9f-422d-be44-a06671afd48a",
+  "statesObserved": [
+    "PENDING",
+    "COMPLETED"
+  ],
+  "findingOpened": "01f76974-9d86-4ca7-be8f-9943dca30c78",
+  "fieldsVerified": [
+    "category LLM02",
+    "severity MEDIUM",
+    "confidence 0.70",
+    "description",
+    "evidenceSummary LLM02-CRITERIA HYB-02",
+    "recommendation"
+  ],
+  "reportVersion": "report-v1",
+  "locale": "es",
+  "limitationsCount": 9,
+  "evaluationRef": "83260746-e075-454e-b4e4-db8a1b646dfe",
+  "executionRef": "f2a783d5-c11a-439a-9340-08faa8575ec3",
+  "frontend94Coverage": "PASS; closure proposed, historical task not edited"
+}

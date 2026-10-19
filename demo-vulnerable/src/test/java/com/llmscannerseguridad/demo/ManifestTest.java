@@ -109,6 +109,37 @@ class ManifestTest {
         }
     }
 
+    @Test void exportPolicyRequiresExplicitBooleanAndTheExistingProviderWithoutChangingOfflineTemplates() throws Exception {
+        var schema = TestJson.read("manifest/schemas/evaluation-scenario-v1.schema.json");
+        for (var profile : DemoProfile.values()) {
+            var template = TestJson.object(TestJson.read("manifest/evaluation-" + profile.name().toLowerCase() + ".template.json"));
+            assertThat(template.get("schemaVersion")).isEqualTo(1);
+            var scenario = TestJson.object(((List<?>) template.get("scenarios")).getFirst());
+            var policy = TestJson.object(scenario.get("exportPolicy"));
+            assertThat(policy).containsEntry("enabled", false).containsEntry("provider", "OPENAI");
+            scenario.put("projectId", UUID.randomUUID().toString());
+            scenario.put("targetConfigurationId", UUID.randomUUID().toString());
+            scenario.put("targetUpdatedAt", "2026-10-15T12:34:56.123456Z");
+            for (boolean enabled : List.of(false, true)) {
+                policy.put("enabled", enabled);
+                JsonSchemaCheck.validate(template, schema);
+            }
+            policy.remove("enabled");
+            assertThatThrownBy(() -> JsonSchemaCheck.validate(template, schema)).isInstanceOf(AssertionError.class);
+            assertThat(policy).doesNotContainKey("enabled");
+            for (Object invalid : java.util.Arrays.asList(null, "true", "false", 0, 1, List.of(), Map.of())) {
+                policy.put("enabled", invalid);
+                assertThatThrownBy(() -> JsonSchemaCheck.validate(template, schema)).isInstanceOf(AssertionError.class);
+                assertThat(policy.get("enabled")).isEqualTo(invalid);
+            }
+            policy.put("enabled", true);
+            policy.put("provider", "OTHER");
+            assertThatThrownBy(() -> JsonSchemaCheck.validate(template, schema)).isInstanceOf(AssertionError.class);
+            policy.remove("provider");
+            assertThatThrownBy(() -> JsonSchemaCheck.validate(template, schema)).isInstanceOf(AssertionError.class);
+        }
+    }
+
     @Test void documentedTargetMatchesPublicScannerContractAndV4Probes() throws Exception {
         var benchmark = TestJson.object(TestJson.read("manifest/benchmark-v1.json"));
         var target = TestJson.object(benchmark.get("targetConfiguration"));

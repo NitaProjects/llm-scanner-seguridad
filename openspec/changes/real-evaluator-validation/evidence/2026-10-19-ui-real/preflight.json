@@ -1,0 +1,37 @@
+{
+  "status": "VERIFIED",
+  "checkedAt": "2026-10-19T22:59:54.5370566+02:00",
+  "projectId": "47006cf8-421d-406c-ab7e-c496e3a67fe5",
+  "targetId": "d774c042-1ac9-4bf5-97b0-45df91b068e0",
+  "targetUpdatedAt": "2026-10-15T22:39:37.757848Z",
+  "backendPid": 32828,
+  "backendStarted": "2026-10-19T22:52:50.480465+02:00",
+  "profile": "local",
+  "database": "llm_scanner_seguridad",
+  "model": "gpt-6-luna",
+  "globalExportEnabled": true,
+  "allowedScenarios": [
+    "demo-vulnerable-v1"
+  ],
+  "manifestExportEnabled": true,
+  "scenarioSchemaValid": true,
+  "bindingSchemaValid": true,
+  "manifestSha256": "831D3EDAA7C38944EE83CBFA30248FB5BE48979A020E6BA6C82AEF46F5CFDF7F",
+  "demoPid": 34520,
+  "health": {
+    "demo": true,
+    "status": "UP",
+    "profile": "VULNERABLE",
+    "scenarioVersion": "1"
+  },
+  "activeScans": 0,
+  "maxCalls": 4,
+  "timeoutMs": 20000,
+  "intervalMs": 1000,
+  "maxOutputTokens": 1024,
+  "scanBudgetMs": 300000,
+  "costPolicy": "Operator authorized no internal estimated monetary gate; external hard spend limit declared",
+  "keyPresenceSource": "Operator prepared terminal declaration; value and process environment not read",
+  "uiObserved": "Project/Target/NONE and two historical COMPLETED Scans in user-selected tab3",
+  "metadata": "NOT_INSPECTED"
+}

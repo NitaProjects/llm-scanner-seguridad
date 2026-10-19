@@ -1,0 +1,30 @@
+{
+  "closedAt": "2026-10-19T23:47:26.5463122+02:00",
+  "activeScans": 0,
+  "stoppedPids": [
+    34020,
+    18248
+  ],
+  "listenersAfter": [
+    {
+      "LocalPort": 5432,
+      "OwningProcess": 31736
+    },
+    {
+      "LocalPort": 5432,
+      "OwningProcess": 1116
+    },
+    {
+      "LocalPort": 4200,
+      "OwningProcess": 34076
+    }
+  ],
+  "manifestExportEnabled": false,
+  "scannerExportCapability": "INACTIVE_PROCESS_STOPPED",
+  "parentTerminalKeyRemoval": "COMPLETED",
+  "parentTerminalKeyRemovalEvidence": "Confirmación posterior del operador: EVALUATOR_API_KEY retirada de la terminal preparada; sin leer ni registrar su valor. No acredita otros procesos o shells no verificados.",
+  "dataDeleted": false,
+  "scanId": "7cb34443-f65d-4368-a4e4-61029ab03965",
+  "scansStartedThisRevalidation": 1,
+  "manualRetries": 0
+}

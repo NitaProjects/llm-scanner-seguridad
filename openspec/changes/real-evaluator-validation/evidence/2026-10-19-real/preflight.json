@@ -1,0 +1,40 @@
+{
+  "status": "BACKEND_DEMO_BINDING_VERIFIED_UI_PENDING",
+  "checkedAt": "2026-10-19T22:45:17.8102648+02:00",
+  "backendPid": 35120,
+  "backendStarted": "2026-10-19T22:43:20.267866+02:00",
+  "profile": "local",
+  "database": "llm_scanner_seguridad",
+  "model": "gpt-6-luna",
+  "provider": "OPENAI",
+  "keyPresenceSource": "Operator confirms backend inherited prepared-terminal environment; key not read",
+  "globalExportEnabled": true,
+  "allowedScenarios": [
+    "demo-vulnerable-v1"
+  ],
+  "localDemoOrigins": [
+    "http://127.0.0.1:8081"
+  ],
+  "scenarioFile": "C:\\Users\\Develop\\Desktop\\llm-scanner-seguridad\\demo-vulnerable\\manifest\\evaluation-scenario.local.json",
+  "manifestSha256": "2219C27C4E866EDD79845A663DC88844956A383EB4FDB0B6943AC905DC22F75C",
+  "manifestExportEnabled": true,
+  "bindingSchemaValid": true,
+  "scenarioSchemaValid": true,
+  "projectId": "65f132db-20c5-40b8-a3ee-6ee7d2cb2d76",
+  "targetId": "3ae92e44-4e81-427f-93ce-021a6a751643",
+  "targetUpdatedAt": "2026-10-16T16:25:10.710151Z",
+  "demo": {
+    "demo": true,
+    "scenarioVersion": "1",
+    "profile": "VULNERABLE",
+    "status": "UP"
+  },
+  "activeScans": 0,
+  "maxCalls": 4,
+  "timeoutMs": 20000,
+  "intervalMs": 1000,
+  "maxOutputTokens": 1024,
+  "scanBudgetMs": 300000,
+  "costPolicy": "Operator explicitly accepts no internal estimated monetary gate; OpenAI hard spend limit declared",
+  "metadata": "NOT_INSPECTED"
+}

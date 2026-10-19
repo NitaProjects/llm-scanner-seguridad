@@ -234,7 +234,7 @@
             ],
             "properties": {
               "enabled": {
-                "const": false
+                "type": "boolean"
               },
               "provider": {
                 "const": "OPENAI"

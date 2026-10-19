@@ -52,6 +52,51 @@ Se envían criterio, categoría/test, prompt de catálogo, contexto sintético m
 
 Timeout, conexión/5xx, salida inválida/incompleta, 429 y auth/cuenta se clasifican con LlmError cerrado. 429/auth/cupo/coste suprimen posteriores llamadas de ese Scan. Si se puede consolidar, EvaluationResult queda COMPLETED con errorReason null y llmStatus/llmErrorReason separados: señal fuerte permite VULNERABLE degradado; sin ella INCONCLUSIVE. Fallo global de criterios/invariantes/persistencia/deadline/interrupción produce FAILED y no inventa Finding.
 
+## Incidente de validación real del transporte OpenAI
+
+**Estado: integración real con OpenAI VALIDATED; transporte HTTPS corregido y validado offline y contra el proveedor.** La revalidación posterior acredita acceso efectivo a `gpt-6-luna`; no demuestra retrospectivamente la causa exacta del Scan histórico ni cierra el change. El registro histórico y la corrección offline se conservan a continuación.
+
+### Scan, síntoma y evidencia disponible
+
+Scan afectado: `fffb200e-8d9f-422d-be44-a06671afd48a`, ejecutado el 2026-10-19. El [registro del recorrido real desde UI](../../openspec/changes/real-evaluator-validation/evidence/2026-10-19-ui-real/result.md) conserva los resultados por categoría, referencias a las respuestas públicas y la separación entre proveedor y consolidación híbrida. El [registro anterior de preflight](../../openspec/changes/real-evaluator-validation/evidence/2026-10-19-real/result.md) corresponde a una sesión bloqueada antes de lanzar un Scan; no es evidencia de este fallo.
+
+Hechos confirmados:
+
+- Los cuatro componentes LLM terminaron en `FAILED / EVALUATOR_UNAVAILABLE`; no hubo assessment ni veredicto LLM válido, con cero componentes `SUCCEEDED`.
+- El sistema continuó mediante consolidación determinista degradada: cuatro `EvaluationResults COMPLETED`, `HYB-02 / VULNERABLE`, `degraded=true` y confianza consolidada `0.70`. El Scan terminó `COMPLETED`; sus Findings, score e informe no acreditan éxito del proveedor.
+- Se identificó posteriormente un defecto real en la construcción del transporte HTTPS del adaptador y una cobertura insuficiente de esa construcción real en los tests actuales.
+- La observabilidad del momento del Scan no conservó la causa técnica original de las excepciones genéricas convertidas en `EVALUATOR_UNAVAILABLE`.
+
+Como observación posterior comunicada por el operador, la consola de OpenAI mostró para la API key `Last used: Never` y coste `$0.00`. Se registra sin reproducir la clave y sin atribuir esta observación a las evidencias originales del Scan. Es compatible con un fallo previo al envío, pero no demuestra por sí sola la ausencia de requests ni valida usage/coste del Scan. La evidencia original deja esos metadatos como `NOT_INSPECTED`.
+
+### Defecto identificado e hipótesis causal
+
+Antes de la corrección, `backend/src/main/java/com/llmscannerseguridad/adapters/out/evaluation/OpenAiEvaluatorAdapter.java` construía `BasicHttpClientConnectionManager` con socket registry `null`. Con HttpClient 5.6.4, esto provoca un `NullPointerException` al seleccionar TLS, reproducido posteriormente offline. El adaptador convertía esa excepción genérica en `EVALUATOR_UNAVAILABLE` sin diagnóstico técnico suficiente.
+
+Los tests anteriores del adaptador utilizaban un transporte sustituido y no recorrían suficientemente la construcción real del transporte HTTPS; su cobertura no acreditaba esa ruta.
+
+**Hipótesis fuerte:** el defecto de `BasicHttpClientConnectionManager` es compatible con el comportamiento observado y constituye una causa probable de los cuatro fallos, pero no está demostrado retrospectivamente que fuese su causa exacta.
+
+### Limitaciones del diagnóstico
+
+No hay logs runtime conservados y la excepción original fue descartada. Por tanto, no se puede acreditar retrospectivamente si se llegó a ejecutar `client.execute`, si hubo conexión TCP ni si OpenAI recibió alguna request. Cuatro componentes LLM fallidos no equivalen a cuatro peticiones HTTP enviadas o recibidas. El diagnóstico posterior del defecto no reconstruye esas etapas ni permite descartar otras causas históricas.
+
+### Revalidación real y límites pendientes
+
+La [evidencia de revalidación TLS](../../openspec/changes/real-evaluator-validation/evidence/2026-10-19-tls-revalidation/result.md) acredita la integración real con OpenAI como `VALIDATED` en el Scan `7cb34443-f65d-4368-a4e4-61029ab03965`: cuatro respuestas reales estructuradas aceptadas, componentes LLM `SUCCEEDED`, modelo solicitado y resuelto `gpt-6-luna` y acceso efectivo acreditado. Las cuatro evaluaciones híbridas consolidaron `HYB-02 / VULNERABLE`, `degraded=false`, con confianza consolidada `0.95`. El recorrido backend hasta Findings, score e informe quedó comprobado; frontend 9.4 no fue revalidado en esta ejecución concreta.
+
+Usage observado: **3366 input / 2398 output tokens**, según la [metadata conservada](../../openspec/changes/real-evaluator-validation/evidence/2026-10-19-tls-revalidation/metadata.json). Coste monetario: **NOT_INSPECTED**; no se infiere coste cero ni se aplica una tarifa inventada. Esta evidencia corresponde al Scan nuevo y no sustituye los metadatos históricos no inspeccionados.
+
+La causa exacta de los cuatro fallos del Scan histórico sigue sin demostrarse retrospectivamente; su investigación queda limitada por la ausencia de logs y de la excepción original. El éxito posterior no reconstruye ese fallo. El coste monetario permanece sin inspeccionar y este registro no autoriza nuevas ejecuciones externas.
+
+### Corrección y comprobación offline
+
+La reparación expresamente autorizada usa `BasicHttpClientConnectionManager.create(...)` de HttpClient 5.6.4 con registry HTTPS de TlsSocketStrategy y `DefaultClientTlsStrategy.createDefault()`. Conserva el resolver DNS acotado y los mismos límites/timeouts, verificaciones TLS/hostname, endpoint Responses API, modelo configurable, store=false, gates, clave solo en entorno y política de errores/cuotas.
+
+La nueva regresión comparte el factory del manager de producción y recorre un cliente real frente a un peer efímero de loopback: comprueba emisión de ClientHello y rechazo SSLException de datos no TLS. Se reprodujo primero el NPE con el constructor anterior. No se usan claves reales, certificados de prueba ni trust-all, y no hay tráfico externo. Esta prueba no acredita un handshake completo ni el funcionamiento contra OpenAI. Los resultados de suites/comandos están en `openspec/changes/real-evaluator-validation/tasks.md`, sección de reparación HTTPS.
+
+Los diagnósticos registran únicamente categoría cerrada (DNS, TLS_CONNECTION, TIMEOUT, HTTP_PROVIDER, PARSE_SCHEMA, CONFIGURATION o INTERNAL), LlmError y tipo de excepción; no mensaje/causas/stack trace, cabeceras, cuerpos ni secretos. El mapping público y la política de supresión se conservan. El diagnóstico no reconstruye la excepción histórica descartada ni demuestra retrospectivamente si el proveedor recibió una petición.
+
 ## Límites y coste
 
 Defaults/hard caps: evidencia 16 KiB, input completo 24 KiB, response HTTP 16 KiB, output 1024 tokens, timeout 20 s incluyendo espera, cuatro intentos por Scan, concurrencia global uno, separación mínima 1 s y registro adicional seguro 64 KiB por evaluación. Deadline compartido con target: 300 s. Exceso de evidencia/input no se trunca ni se envía.
@@ -78,7 +123,7 @@ Score 0 significa «ningún Finding detectado en las pruebas completadas», no �
 
 ScanScore fija scoringVersion/calculatedAt UTC y resume contadores globales, por severity y cuatro categorías ordenadas. Score y COMPLETED se confirman en la misma transacción; fallos de scoring son técnicos con rollback y compensación. PK scanId+versión, inmutabilidad y recovery sin recálculo conservan resultados. La reproducibilidad usa fuentes persistidas y versiones, sin hash adicional. GET /score devuelve AVAILABLE con objeto incluso cero, PENDING/null para activos nuevos, UNAVAILABLE/null para FAILED nuevo y NOT_APPLICABLE/null para históricos sin marcador. No usa global_score heredado ni backfill. Calibración empírica continúa pendiente fuera de este incremento.
 
-El backend core actual incorpora también reporting: después de validar cuatro ejecuciones/evaluaciones COMPLETED, T3 confirma ScanScore scoring-v1, SecurityReport report-v1 y Scan COMPLETED conjuntamente. El informe estructurado copia resultados y limitaciones sin reevaluar ni recalcular; ver [ADR-008](../02-arquitectura/decisiones/ADR-008-reporting-snapshot-inmutable.md). Los históricos conservan su semántica. Exportación HTML/Markdown/PDF, operación real de OpenAI y calibración experimental siguen pendientes.
+El backend core actual incorpora también reporting: después de validar cuatro ejecuciones/evaluaciones COMPLETED, T3 confirma ScanScore scoring-v1, SecurityReport report-v1 y Scan COMPLETED conjuntamente. El informe estructurado copia resultados y limitaciones sin reevaluar ni recalcular; ver [ADR-008](../02-arquitectura/decisiones/ADR-008-reporting-snapshot-inmutable.md). Los históricos conservan su semántica. La integración real con OpenAI está validada en la revalidación citada; exportación HTML/Markdown/PDF y calibración experimental siguen pendientes.
 
 ## Reproducibilidad académica
 

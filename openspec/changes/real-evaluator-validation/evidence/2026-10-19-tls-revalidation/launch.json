@@ -1,0 +1,9 @@
+{
+  "httpStatus": 202,
+  "location": "/api/projects/47006cf8-421d-406c-ab7e-c496e3a67fe5/scans/7cb34443-f65d-4368-a4e4-61029ab03965",
+  "scanId": "7cb34443-f65d-4368-a4e4-61029ab03965",
+  "projectId": "47006cf8-421d-406c-ab7e-c496e3a67fe5",
+  "status": "PENDING",
+  "createdAt": "2026-10-19T21:45:05.625603Z",
+  "responseReceivedAt": "2026-10-19T23:45:05.6743880+02:00"
+}

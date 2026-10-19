@@ -210,8 +210,14 @@ Las tres primeras condiciones habilitan exclusivamente el origen exacto demo exi
 no hace falta TARGET_ALLOWED_ORIGINS. localhost u otro puerto no son equivalentes.
 No se relajan los bloqueos de metadatos/link-local, validación de IP efectiva ni ausencia
 de redirects/retries. No suministrar claves del scanner/proveedor al target.
-`exportPolicy={"enabled":false,"provider":"OPENAI"}` es el default contractual; no autoriza
-exportación ni provoca llamada. La autorización del target y del evaluador son diferentes.
+Las plantillas y el recorrido E2E offline mantienen
+`exportPolicy={"enabled":false,"provider":"OPENAI"}`. El schema auxiliar V1 valida estructura:
+exige `enabled` booleano explícito, sin default ni coerción. Una validación real autorizada
+puede usar `true` en la copia local; ese valor por sí solo no autoriza exportación.
+El scanner sigue exigiendo conjuntamente `EVALUATOR_EXPORT_ENABLED=true`, scenario incluido
+en `EVALUATOR_ALLOWED_SCENARIOS`, manifest válido, binding exacto, API key disponible y los
+controles vigentes de contexto, corpus, tamaños y presupuesto. La autorización del target
+y del evaluador son diferentes; el schema no reemplaza estos gates.
 
 ## Límites, logs y seguridad operacional
 

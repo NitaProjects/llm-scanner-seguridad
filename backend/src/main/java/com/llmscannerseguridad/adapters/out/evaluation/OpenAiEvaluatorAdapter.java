@@ -5,6 +5,7 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.net.InetAddress;
 import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -22,12 +23,18 @@ import org.apache.hc.client5.http.impl.DefaultSchemePortResolver;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.impl.io.BasicHttpClientConnectionManager;
 import org.apache.hc.client5.http.impl.routing.DefaultRoutePlanner;
+import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
+import org.apache.hc.client5.http.ssl.TlsSocketStrategy;
 import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.config.RegistryBuilder;
 import org.apache.hc.core5.http.io.entity.ByteArrayEntity;
 import org.apache.hc.core5.io.CloseMode;
 import org.apache.hc.core5.util.Timeout;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class OpenAiEvaluatorAdapter implements EvaluatorPort, AutoCloseable {
+    private static final Logger LOG = LoggerFactory.getLogger(OpenAiEvaluatorAdapter.class);
     record HttpReply(int status, String body) { }
     @FunctionalInterface interface Transport {
         HttpReply exchange(String body, EvaluationCallBudget budget) throws Exception;
@@ -57,35 +64,35 @@ public final class OpenAiEvaluatorAdapter implements EvaluatorPort, AutoCloseabl
     @Override public EvaluatorOutcome evaluate(EvaluatorInput input, EvaluationCallBudget budget) {
         String apiKey = key.get();
         if (apiKey == null || apiKey.isBlank() || apiKey.codePoints().anyMatch(c -> c < 33 || c > 126)) {
-            return EvaluatorOutcome.failure(LlmError.EVALUATOR_CONFIGURATION_INVALID);
+            return failure(LlmError.EVALUATOR_CONFIGURATION_INVALID, "CONFIGURATION", null);
         }
         String body = messages.request(input, settings);
         if (EvaluationJson.bytes(body) > settings.inputBytes() || EvaluationJson.bytes(input.evidenceText()) > settings.evidenceBytes()) {
-            return EvaluatorOutcome.failure(LlmError.EVALUATOR_INVALID_OUTPUT);
+            return failure(LlmError.EVALUATOR_INVALID_OUTPUT, "PARSE_SCHEMA", null);
         }
         boolean acquired = false;
+        String stage = "TLS_CONNECTION";
         long started = System.nanoTime();
         try {
             acquired = gate.acquire(budget);
-            if (!acquired) return EvaluatorOutcome.failure(LlmError.EVALUATOR_TIMEOUT);
+            if (!acquired) return failure(LlmError.EVALUATOR_TIMEOUT, "TIMEOUT", null);
             if (fixtureTransport != null) {
                 var reply = fixtureTransport.exchange(body, budget);
-                if (budget.remainingNanos() <= 0) return EvaluatorOutcome.failure(LlmError.EVALUATOR_TIMEOUT);
-                if (reply.status() < 200 || reply.status() >= 300) return EvaluatorOutcome.failure(classify(reply.status()));
-                if (EvaluationJson.bytes(reply.body()) > settings.responseBytes()) return EvaluatorOutcome.failure(LlmError.EVALUATOR_INVALID_OUTPUT);
+                if (budget.remainingNanos() <= 0) return failure(LlmError.EVALUATOR_TIMEOUT, "TIMEOUT", null);
+                if (reply.status() < 200 || reply.status() >= 300) return failure(classify(reply.status()), "HTTP_PROVIDER", null);
+                if (EvaluationJson.bytes(reply.body()) > settings.responseBytes()) return failure(LlmError.EVALUATOR_INVALID_OUTPUT, "PARSE_SCHEMA", null);
                 return parseResponse(reply.body(), input, Math.max(0, TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started)));
             }
+            stage = "DNS";
             var addresses = dns.resolve("api.openai.com", Math.min(2000000000L, budget.remainingNanos()));
-            if (addresses.length == 0 || addresses.length > 16) return EvaluatorOutcome.failure(LlmError.EVALUATOR_UNAVAILABLE);
+            if (addresses.length == 0 || addresses.length > 16) return failure(LlmError.EVALUATOR_UNAVAILABLE, "DNS", null);
             var resolver = new DnsResolver() {
                 @Override public InetAddress[] resolve(String host) { return new InetAddress[] {addresses[0]}; }
                 @Override public String resolveCanonicalHostname(String host) { return host; }
             };
-            try (var manager = new BasicHttpClientConnectionManager(null, null, DefaultSchemePortResolver.INSTANCE, resolver)) {
-                long remainingMs = Math.max(1, TimeUnit.NANOSECONDS.toMillis(budget.remainingNanos()));
-                manager.setConnectionConfig(ConnectionConfig.custom().setConnectTimeout(Timeout.ofMilliseconds(Math.min(5000, remainingMs)))
-                        .setSocketTimeout(Timeout.ofMilliseconds(remainingMs)).build());
-                manager.setTlsConfig(TlsConfig.custom().setHandshakeTimeout(Timeout.ofMilliseconds(Math.min(5000, remainingMs))).build());
+            stage = "TLS_CONNECTION";
+            long remainingMs = Math.max(1, TimeUnit.NANOSECONDS.toMillis(budget.remainingNanos()));
+            try (var manager = connectionManager(resolver, remainingMs)) {
                 var request = new HttpPost(ENDPOINT);
                 request.setConfig(RequestConfig.custom().setRedirectsEnabled(false).setAuthenticationEnabled(false)
                         .setContentCompressionEnabled(false).setProtocolUpgradeEnabled(false)
@@ -100,22 +107,22 @@ public final class OpenAiEvaluatorAdapter implements EvaluatorPort, AutoCloseabl
                         .disableAutomaticRetries().disableRedirectHandling().disableCookieManagement()
                         .disableContentCompression().disableAuthCaching().disableConnectionState()
                         .setConnectionReuseStrategy((req, response, context) -> false).build()) {
-                    if (budget.remainingNanos() <= 0) return EvaluatorOutcome.failure(LlmError.EVALUATOR_TIMEOUT);
+                    if (budget.remainingNanos() <= 0) return failure(LlmError.EVALUATOR_TIMEOUT, "TIMEOUT", null);
                     var cancel = deadlines.schedule(() -> { request.cancel(); manager.close(CloseMode.IMMEDIATE); },
                             budget.remainingNanos(), TimeUnit.NANOSECONDS);
                     try {
                         var response = client.execute(request);
-                        if (response.getCode() < 200 || response.getCode() >= 300) return EvaluatorOutcome.failure(classify(response.getCode()));
+                        if (response.getCode() < 200 || response.getCode() >= 300) return failure(classify(response.getCode()), "HTTP_PROVIDER", null);
                         var contentType = response.getFirstHeader("Content-Type");
                         if (contentType == null || !contentType.getValue().toLowerCase(Locale.ROOT).startsWith("application/json")
                                 || response.getHeaders("Content-Type").length != 1
                                 || Arrays.stream(response.getHeaders("Content-Encoding")).anyMatch(h -> !h.getValue().equalsIgnoreCase("identity"))) {
-                            return EvaluatorOutcome.failure(LlmError.EVALUATOR_INVALID_OUTPUT);
+                            return failure(LlmError.EVALUATOR_INVALID_OUTPUT, "PARSE_SCHEMA", null);
                         }
                         var entity = response.getEntity();
-                        if (entity == null || entity.getContentLength() > settings.responseBytes()) return EvaluatorOutcome.failure(LlmError.EVALUATOR_INVALID_OUTPUT);
+                        if (entity == null || entity.getContentLength() > settings.responseBytes()) return failure(LlmError.EVALUATOR_INVALID_OUTPUT, "PARSE_SCHEMA", null);
                         String received = EvaluationJson.read(entity.getContent(), settings.responseBytes());
-                        if (budget.remainingNanos() <= 0) return EvaluatorOutcome.failure(LlmError.EVALUATOR_TIMEOUT);
+                        if (budget.remainingNanos() <= 0) return failure(LlmError.EVALUATOR_TIMEOUT, "TIMEOUT", null);
                         return parseResponse(received, input, Math.max(0, TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started)));
                     } finally {
                         cancel.cancel(false); request.cancel(); request.removeHeaders("Authorization"); manager.close(CloseMode.IMMEDIATE);
@@ -123,14 +130,36 @@ public final class OpenAiEvaluatorAdapter implements EvaluatorPort, AutoCloseabl
                 }
             }
         } catch (InterruptedException error) {
-            Thread.currentThread().interrupt(); return EvaluatorOutcome.failure(LlmError.EVALUATOR_TIMEOUT);
+            Thread.currentThread().interrupt(); return failure(LlmError.EVALUATOR_TIMEOUT, "TIMEOUT", error);
         } catch (SocketTimeoutException error) {
-            return EvaluatorOutcome.failure(LlmError.EVALUATOR_TIMEOUT);
+            return failure(LlmError.EVALUATOR_TIMEOUT, "TIMEOUT", error);
+        } catch (UnknownHostException error) {
+            boolean timedOut = budget.remainingNanos() <= 0;
+            return failure(timedOut ? LlmError.EVALUATOR_TIMEOUT : LlmError.EVALUATOR_UNAVAILABLE,
+                    timedOut ? "TIMEOUT" : "DNS", error);
         } catch (IllegalArgumentException error) {
-            return EvaluatorOutcome.failure(LlmError.EVALUATOR_INVALID_OUTPUT);
+            return failure(LlmError.EVALUATOR_INVALID_OUTPUT, "PARSE_SCHEMA", error);
         } catch (Exception error) {
-            return EvaluatorOutcome.failure(budget.remainingNanos() <= 0 ? LlmError.EVALUATOR_TIMEOUT : LlmError.EVALUATOR_UNAVAILABLE);
+            boolean timedOut = budget.remainingNanos() <= 0;
+            return failure(timedOut ? LlmError.EVALUATOR_TIMEOUT : LlmError.EVALUATOR_UNAVAILABLE,
+                    timedOut ? "TIMEOUT" : "DNS".equals(stage) ? "DNS"
+                        : error instanceof java.io.IOException ? "TLS_CONNECTION" : "INTERNAL", error);
         } finally { if (acquired) gate.release(); }
+    }
+    static BasicHttpClientConnectionManager connectionManager(DnsResolver resolver, long remainingMs) {
+        var registry = RegistryBuilder.<TlsSocketStrategy>create()
+                .register("https", DefaultClientTlsStrategy.createDefault()).build();
+        var manager = BasicHttpClientConnectionManager.create(DefaultSchemePortResolver.INSTANCE, resolver, registry, null);
+        manager.setConnectionConfig(ConnectionConfig.custom().setConnectTimeout(Timeout.ofMilliseconds(Math.min(5000, remainingMs)))
+                .setSocketTimeout(Timeout.ofMilliseconds(remainingMs)).build());
+        manager.setTlsConfig(TlsConfig.custom().setHandshakeTimeout(Timeout.ofMilliseconds(Math.min(5000, remainingMs))).build());
+        return manager;
+    }
+    private static EvaluatorOutcome failure(LlmError reason, String stage, Exception error) {
+        // Nunca registrar mensaje, causa, stack trace, cabeceras o cuerpos del proveedor.
+        LOG.warn("evaluatorFailure={} reason={} exceptionType={}", stage, reason,
+                error == null ? "NONE" : error.getClass().getSimpleName());
+        return EvaluatorOutcome.failure(reason);
     }
     public static LlmError classify(int status) {
         if (status == 429) return LlmError.EVALUATOR_RATE_LIMITED;
@@ -166,7 +195,7 @@ public final class OpenAiEvaluatorAdapter implements EvaluatorPort, AutoCloseabl
                     ? settings.inputPricePerMillion().multiply(BigDecimal.valueOf(in)).add(settings.outputPricePerMillion().multiply(BigDecimal.valueOf(out)))
                         .divide(new BigDecimal("1000000"),6,RoundingMode.HALF_UP) : null;
             return new EvaluatorOutcome(assessment,null,resolved,latencyMs,in,out,cost,requestId);
-        } catch (RuntimeException error) { return EvaluatorOutcome.failure(LlmError.EVALUATOR_INVALID_OUTPUT); }
+        } catch (RuntimeException error) { return failure(LlmError.EVALUATOR_INVALID_OUTPUT, "PARSE_SCHEMA", error); }
     }
     private String safeId(Object value) { return value instanceof String text && text.matches("[A-Za-z0-9._:-]{1,128}") ? text : null; }
     private Long token(Object value) {

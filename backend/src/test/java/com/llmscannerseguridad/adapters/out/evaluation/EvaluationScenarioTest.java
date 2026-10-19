@@ -40,6 +40,32 @@ class EvaluationScenarioTest {
         assertThat(adapter.snapshot(project,target,now.plusSeconds(1),items(tests))).isNull();
         assertThat(new LocalEvaluationScenarioAdapter(null,true,"OPENAI",Set.of()).snapshot(project,target,now,items(tests))).isNull();
     }
+    @Test void manifestTrueStillRequiresGlobalPermissionAllowlistAndMatchingProvider() throws Exception {
+        var tests=tests();var path=directory.resolve("scenario.json");
+        Files.writeString(path,EvaluationJson.write(manifest(tests,List.of("SAFE"))));
+        var projector=new EvaluationEvidenceProjector(EvaluationFixtures.settings(),new EvaluatorMessages(),Clock.fixed(now,ZoneOffset.UTC));
+        var test=tests.get(1);var criteria=new ResourceEvaluationCriteriaCatalog().find(test);
+        for(var adapter:List.of(new LocalEvaluationScenarioAdapter(path,false,"OPENAI",Set.of("synthetic-demo")),
+                new LocalEvaluationScenarioAdapter(path,true,"OPENAI",Set.of()),
+                new LocalEvaluationScenarioAdapter(path,true,"OPENAI",Set.of("another-scenario")),
+                new LocalEvaluationScenarioAdapter(path,true,"OTHER",Set.of("synthetic-demo")))) {
+            var snapshot=adapter.snapshot(project,target,now,items(tests));
+            assertThat(snapshot).isNotNull();assertThat(snapshot.exportAuthorized()).isFalse();
+            UUID id=UUID.randomUUID();
+            var pending=EvaluationResult.pending(id,UUID.randomUUID(),UUID.randomUUID(),test.id(),test.category(),now,
+                    projector.configuration(id,criteria,snapshot));
+            var prepared=projector.prepare(pending,execution(pending,test,"SAFE"),test);
+            assertThat(prepared.insufficiency()).isEqualTo(OutcomeReason.EXPORT_NOT_AUTHORIZED);
+            assertThat(prepared.input()).isNull();
+        }
+        var authorized=new LocalEvaluationScenarioAdapter(path,true,"OPENAI",Set.of("synthetic-demo"));
+        assertThat(authorized.snapshot(project,target,now,items(tests)).exportAuthorized()).isTrue();
+        assertThat(authorized.snapshot(project,target,now.plusNanos(1000),items(tests))).isNull();
+        assertThat(new LocalEvaluationScenarioAdapter(null,true,"OPENAI",Set.of("synthetic-demo"))
+                .snapshot(project,target,now,items(tests))).isNull();
+        Files.writeString(path,"{}");
+        assertThatThrownBy(()->authorized.snapshot(project,target,now,items(tests))).isInstanceOf(IllegalArgumentException.class);
+    }
     @Test void malformedDuplicateUnknownUnicodeAndSizeCapsAreRejectedWithoutEcho() throws Exception {
         var tests=tests();var path=directory.resolve("scenario.json");var valid=EvaluationJson.write(manifest(tests,List.of("SAFE")));
         var adapter=new LocalEvaluationScenarioAdapter(path,true,"OPENAI",Set.of("synthetic-demo"));

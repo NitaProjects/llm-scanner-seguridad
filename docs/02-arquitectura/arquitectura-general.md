@@ -165,7 +165,9 @@ EvaluatorPort
 Adaptador de proveedor concreto
 ```
 
-El MVP implementa un único adaptador `OpenAiEvaluatorAdapter` para OpenAI Responses API/Structured Outputs, con modelo inicial `gpt-6-luna` configurable externamente (ADR-004). La abstracción permite sustituir el proveedor sin acoplar dominio ni casos de uso; otros adaptadores, como Gemini o Hugging Face, siguen siendo futuros. La validación real de cuenta, disponibilidad, retención y tarifa sigue pendiente antes de operación autorizada.
+El MVP implementa un único adaptador `OpenAiEvaluatorAdapter` para OpenAI Responses API/Structured Outputs, con modelo inicial `gpt-6-luna` configurable externamente (ADR-004). La abstracción permite sustituir el proveedor sin acoplar dominio ni casos de uso; otros adaptadores, como Gemini o Hugging Face, siguen siendo futuros. La integración real con OpenAI está `VALIDATED` en la ejecución autorizada documentada en la [revalidación TLS](../../openspec/changes/real-evaluator-validation/evidence/2026-10-19-tls-revalidation/result.md); esto no acredita retención operativa ni tarifa.
+
+El [incidente de `real-evaluator-validation`](../04-ia/estrategia-evaluacion.md#incidente-de-validación-real-del-transporte-openai) registra un defecto de construcción del transporte HTTPS y la pérdida de la causa técnica original. La reparación del transporte TLS está implementada y validada offline mediante regresión con cliente y manager reales, y posteriormente contra OpenAI en el Scan `7cb34443-f65d-4368-a4e4-61029ab03965`. Se acreditan acceso efectivo a `gpt-6-luna`, cuatro respuestas reales aceptadas y evaluación híbrida sin degradación. Usage observado: 3366 input / 2398 output tokens; coste monetario: `NOT_INSPECTED`. La causa exacta de los cuatro fallos LLM del Scan histórico sigue sin poder demostrarse retrospectivamente. Frontend 9.4 no fue revalidado en esta ejecución concreta.
 
 El contrato aprobado e implementado es:
 
@@ -215,7 +217,7 @@ D-CRYPTO queda cerrado para el MVP local: AES-256-GCM con clave externa de 256 b
 ## Decisiones todavía abiertas
 
 - Las alternativas y recomendaciones se recogen en `docs/02-arquitectura/decisiones/decisiones-abiertas.md`.
-- OpenAI y modelo inicial configurable gpt-6-luna están aprobados; cuenta/disponibilidad/retención operativa se comprueban antes de uso real autorizado.
+- OpenAI y modelo inicial configurable gpt-6-luna están aprobados y el acceso efectivo está acreditado en la revalidación citada; retención operativa y tarifa siguen sin acreditarse.
 - Límites y fallback del evaluador cerrados en evaluation-engine D-09/D-15; coste monetario estimado opcional y externo.
 - confidence-v1/severity-v1/scoring-v1 aprobadas; calibración estadística sigue pendiente.
 - Diseño del experimento académico definitivo.
