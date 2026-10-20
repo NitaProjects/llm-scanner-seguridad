@@ -1,5 +1,13 @@
 # Resultado de preparación — 2026-10-20
 
+Registro histórico de preparación local. El despliegue real posterior comunicado por el operador y su aceptación parcial se documentan separadamente en [2026-10-20-aws-deployment.md](2026-10-20-aws-deployment.md). Las referencias siguientes a ausencia de AWS describen esta fase local, no el estado actual de publicación.
+
+Estado vigente tras confirmación del operador: 1.1/6.1/6.2 COMPLETED, 6.4 COMPLETED en preparación
+técnica y 24/25 completas. Certbot en Docker + DNS-01 confirmado, procedimiento validado;
+6.3 PARTIAL exclusivamente por restore aislado.
+La matriz enlazada contiene el estado vigente y sustituye las valoraciones históricas de pendientes
+que se conservan abajo. Acceso académico preparado; entrega efectiva de credenciales no acreditada.
+
 **READY FOR REVIEW** para preparación de producción. F1–F4 comprobados localmente.
 No acredita despliegue ni acceso público. Sin AWS, OpenAI, Scans, commits o pushes.
 
@@ -28,7 +36,7 @@ Detalles reproducibles en [builds.json](builds.json), [local-validation.json](lo
 | Flyway con BD nueva | V1–V7 correctas, cuatro test_cases; reinicio conserva proyecto e historial |
 | Checksum inválido, solo en BD sintética propia | falla readiness; checksum de fixture restaurado |
 | TLS sintético renovado | nuevo serial/caducidad servido; auth conservada, sin reiniciar backend/PG |
-| CloudFormation/bootstrap/wrapper offline | 14 grupos PASS tras corrección F1/F2; sin validate-template del servicio AWS |
+| CloudFormation/bootstrap/wrapper/instancia offline | 16 grupos PASS tras actualizar selección x86_64; sin validate-template del servicio AWS |
 | OpenSpec strict | PASS |
 
 F1: sin credencial/credencial incorrecta devuelve 401; assets y deep links protegidos.
@@ -61,8 +69,8 @@ No se dejó un scanner de prueba activo ni se suministró una clave evaluator a 
 
 ## Límites y verificaciones pendientes
 
-- Tarea 1.1 parcial: herramientas, arquitectura e imágenes fijadas; AMI real sin seleccionar/verificar porque no se autorizó acceso AWS. Mantener pendiente con 6.1.
-- 6.1–6.4 pendientes: cuenta/región/coste, AMI/SSM, dominio/DNS, publicación ECR, provisión real, certificado Let's Encrypt, entrega reservada de Basic Auth y aceptación desde Internet.
+- Tarea 1.1 parcial: herramientas, arquitectura e imágenes fijadas; el operador ha comunicado Amazon Linux 2023 x86_64, pero el identificador exacto de AMI y su verificación no constan en esta evidencia. Mantener pendiente con 6.1.
+- 6.1–6.4 pendientes: completar evidencias de cuenta/coste, AMI/SSM, dominio/DNS, publicación ECR, provisión real, certificado Let's Encrypt, entrega reservada de Basic Auth y aceptación desde Internet. La región y selección comunicadas abajo no acreditan despliegue completado.
 - Verificar semántica CloudFormation/IAM/SSM/KMS y conectividad efectiva en la fase de despliegue autorizada; el test offline es estructural.
 - Procedimientos de backup/restore y actualización documentados; restore real aislado aún pendiente. Datos EBS/ECR retenidos pueden seguir generando coste.
 - Renovación manual DNS-01 exige responsable; no ACME automático ni puerto 80. Solo se probó TLS con material sintético.
@@ -88,6 +96,27 @@ No se ejecutó AWS, ni se lanzaron servicios/builds/Maven por estas correcciones
 inicial del test offline fue bloqueado al escribir su temporal en el sandbox; la ejecución
 autorizada fuera de él terminó PASS. Los resultados anteriores de producto/HTTP/BD son
 históricos y no se atribuyen a esta revalidación. Ninguna tarea de publicación se cierra.
+
+## Selección real de instancia — información del operador
+
+El operador comunica que el primer intento CloudFormation en **eu-north-1** con
+**t3.medium** terminó en **rollback** por no ser Free Tier eligible en esta cuenta.
+La consulta real comunicada devolvió c7i-flex.large, t4g.small, t3.micro, t4g.micro,
+m7i-flex.large y t3.small. No se consultó AWS para verificar estos hechos desde este agente.
+
+Selección final real para el despliegue: **m7i-flex.large**, conservando **Amazon Linux 2023
+x86_64**. La plantilla editada previamente por el operador contiene exactamente una lista:
+`[m7i-flex.large, c7i-flex.large, t3.small, t3.micro]`, con default `m7i-flex.large`.
+No se cambia AMI ni arquitectura. Se excluye `t4g.*` porque requiere ARM.
+
+La elegibilidad Free Tier depende de cuenta/región y debe comprobarse antes de desplegar;
+no supone elegibilidad universal ni coste cero de EC2 y demás recursos.
+Prueba afectada y validación estructural: **16 grupos PASS**, con comprobaciones nuevas
+de default/binding y allowlist exacta x86_64 sin ARM. OpenSpec strict **PASS**.
+`infrastructure.json` registra configuración comprobada offline; `NOT_EXECUTED`/`NOT_QUERIED`
+se refieren a operaciones AWS de este test, no niegan el intento real informado por el operador.
+No se ejecutaron AWS, builds, servicios, cambios de producto, commits ni pushes en esta
+actualización. No se acredita un segundo despliegue exitoso ni se cierran tareas operativas.
 
 README raíz, guía de producción, ADR operativa y checklist actualizados únicamente con el
 alcance demostrado. URL pública, despliegue y entrega final permanecen pendientes.

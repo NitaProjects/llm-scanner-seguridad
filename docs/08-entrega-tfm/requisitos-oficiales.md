@@ -46,7 +46,12 @@ Debe intentarse disponer de un despliegue o publicación funcional siempre que s
 
 La documentación final debe incluir la URL real del proyecto desplegado. Para LLM Scanner Seguridad está previsto un despliegue final en AWS.
 
-Estado actual: **PENDIENTE**.
+Estado actual: **COMPLETADO para publicación funcional observada por el operador el 2026-10-20**;
+URL en [enlaces-entrega.md](enlaces-entrega.md) y [evidencia AWS](../../openspec/changes/aws-production-readiness/evidence/2026-10-20-aws-deployment.md).
+Preparación técnica del acceso académico completada por review (6.4); entrega efectiva de
+credenciales al tribunal aún no acreditada, acción administrativa por canal privado.
+24/25 tareas completas: 6.1 completada tras confirmación operativa/TLS del operador;
+solo 6.3 parcial por restore aislado. Esta actualización de estado no modifica el requisito oficial.
 
 No se registrará ninguna URL hasta que exista un despliegue real.
 

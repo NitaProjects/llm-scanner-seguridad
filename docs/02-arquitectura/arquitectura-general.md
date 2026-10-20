@@ -51,9 +51,9 @@ El resultado prioriza score/riesgo/hallazgos/inconclusos. Cero no certifica segu
 
 TargetForm mantiene credenciales nuevas únicamente de forma transitoria. Conservar/Reemplazar y las nueve transiciones de autenticación siguen TC-10 contra el DTO público original; hasCredentials nunca recupera el secreto. El control se vacía al enviar, fallar, cancelar, cambiar tipo/proyecto o salir. Una respuesta de escritura perdida exige consulta pública antes de otro envío. Los textos de API se renderizan mediante interpolación inerte, sin HTML/Markdown ni storage/logging sensible. El backend conserva autoridad de validación avanzada y autorización de red.
 
-API_BASE_URL procede de environments con `/api`: proxy de desarrollo al puerto backend por defecto 8080 y mismo origen en producción. El hosting futuro debe proporcionar reverse proxy API y fallback SPA; no se modifica despliegue. CSS propio, labels, foco, badges textuales y details nativos cubren responsive/accesibilidad mínima. Pruebas Vitest/TestBed/HTTP simulado y revisión visual a 1280/1024/768/360 están registradas en [tasks.md](../../openspec/changes/frontend-mvp/tasks.md); ejecución y consumo se detallan en [README frontend](../../frontend/README.md). La integración con entorno/demo reales sigue pendiente.
+API_BASE_URL procede de environments con `/api`: proxy de desarrollo al puerto backend por defecto 8080 y mismo origen en producción. El hosting AWS usa Nginx como reverse proxy API y sirve Angular estático; la validación pública observada se limita al acceso y persistencia descritos abajo, sin Scan. CSS propio, labels, foco, badges textuales y details nativos cubren responsive/accesibilidad mínima. Pruebas Vitest/TestBed/HTTP simulado y revisión visual a 1280/1024/768/360 están registradas en [tasks.md](../../openspec/changes/frontend-mvp/tasks.md); ejecución y consumo se detallan en [README frontend](../../frontend/README.md).
 
-`demo-vulnerable/` implementa el target sintético independiente aprobado en su [change](../../openspec/changes/demo-vulnerable/design.md): Java 21/Boot 4.1.1, selección fija en memoria, sin LLM real, BD ni código compartido con el scanner. Escucha por defecto en `127.0.0.1:8081`; solo el backend lo invoca mediante la excepción SSRF existente. [Contrato, perfiles, límites y manifiestos](../../demo-vulnerable/README.md). E2E, operación del proveedor y despliegue permanecen pendientes; el recorrido offline documentado espera INCONCLUSIVE sin Findings.
+`demo-vulnerable/` implementa el target sintético independiente aprobado en su [change](../../openspec/changes/demo-vulnerable/design.md): Java 21/Boot 4.1.1, selección fija en memoria, sin LLM real, BD ni código compartido con el scanner. Escucha por defecto en `127.0.0.1:8081`; solo el backend lo invoca mediante la excepción SSRF existente. [Contrato, perfiles, límites y manifiestos](../../demo-vulnerable/README.md). No está desplegada en AWS; la validación local del evaluator y el despliegue académico se mantienen como evidencias separadas.
 
 ## Backend
 
@@ -212,15 +212,31 @@ Ejemplo conceptual de request:
 
 La autenticación del target es `NONE`, `BEARER_TOKEN` o `API_KEY_HEADER`. El change `target-configuration` define un recurso único POST/GET/PUT en `/api/projects/{projectId}/target`, casos de uso explícitos, puertos de validación/cifrado/persistencia y adaptadores separados. Cada Project admite cero o un target en el MVP. Las operaciones de configuración no ejecutan requests ni extracción de respuestas; ese trabajo corresponde al worker implementado por `security-test-execution`.
 
-D-CRYPTO queda cerrado para el MVP local: AES-256-GCM con clave externa de 256 bits y envelope versionado (ADR-002). GET y conservación en PUT no descifran. Históricamente los controles SSRF de ejecución quedaron fuera de `target-configuration`; `security-test-execution` ya los incorpora, según la [política de autorización](../03-seguridad/politica-de-autorizacion.md). ADR-009 concreta Parameter Store SecureString/KMS para la preparación académica; operación/custodia AWS y rotación avanzada permanecen pendientes.
+D-CRYPTO queda cerrado para el MVP local: AES-256-GCM con clave externa de 256 bits y envelope versionado (ADR-002). GET y conservación en PUT no descifran. Históricamente los controles SSRF de ejecución quedaron fuera de `target-configuration`; `security-test-execution` ya los incorpora, según la [política de autorización](../03-seguridad/politica-de-autorizacion.md). ADR-009 concreta Parameter Store SecureString/KMS; el operador comunica bootstrap AWS a tmpfs con permisos por UID. La revisión efectiva de IAM/KMS, custodia avanzada y rotación no se dan por completadas.
 
 ## Decisiones todavía abiertas
 
-La preparación del despliegue académico está definida en
+El despliegue académico está definido en
 [ADR-009](decisiones/ADR-009-despliegue-academico-ec2.md): una EC2, Nginx/Angular estático,
 backend pro y PostgreSQL16 privado; Basic Auth/TLS, secretos externos y sin demo/evaluator
-activos. Su Compose es independiente del local. La URL pública y validación AWS permanecen
-pendientes; los tests locales no acreditan despliegue.
+activos. Su Compose es independiente del local. Según la [evidencia del operador de 2026-10-20](../../openspec/changes/aws-production-readiness/evidence/2026-10-20-aws-deployment.md),
+está publicado en [https://llmscannerseguridad.com](https://llmscannerseguridad.com), eu-north-1,
+una EC2 m7i-flex.large/AL2023 x86_64 y ECR privado por digest. PostgreSQL16 usa EBS30GB/XFS,
+montaje persistente por UUID en `/srv/llm-scanner/postgres` y volumen externo
+`llm-scanner-pgdata`. Systems Manager sustituye SSH; solo443 público y backend/PG sin
+puertos publicados. Let's Encrypt/DNS-01 manual con Cloudflare, caducidad observada
+2027-01-18, renovación no automática. Se observaron Basic Auth401/login Chrome,
+Angular/API y persistencia de un proyecto al recargar; `TARGET_NOT_CONFIGURED` era esperado.
+Sin Scan ni demo en AWS; evaluator desactivado por defecto. Los tests locales no se atribuyen
+a AWS. El review acredita 1.1/6.2 completas y 6.4 completa en preparación técnica:
+24/25 tareas completas y acceso académico preparado. 6.1 completada: Certbot en Docker
+y DNS-01 disponible, procedimiento validado confirmado por el operador. Solo queda restore
+aislado (6.3). Despliegue académico autorizado en Free Plan/créditos, sin migración voluntaria
+autorizada a Paid Plan ni gasto exacto medido. URL disponible hasta finalizar entrega/evaluación;
+después podrán detenerse o retirarse recursos innecesarios. Operador del proyecto responsable
+operativo/TLS. La entrega efectiva de credenciales al tribunal es una acción
+administrativa pendiente por canal privado; no reabre 6.4. IDs de cuenta/instancia, IP
+directa y URI ECR identificativas se omiten; la URL pública se conserva.
 
 - Las alternativas y recomendaciones se recogen en `docs/02-arquitectura/decisiones/decisiones-abiertas.md`.
 - OpenAI y modelo inicial configurable gpt-6-luna están aprobados y el acceso efectivo está acreditado en la revalidación citada; retención operativa y tarifa siguen sin acreditarse.

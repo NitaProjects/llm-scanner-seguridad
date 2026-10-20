@@ -1,8 +1,28 @@
-# Producción académica: preparación, no despliegue acreditado
+# Producción académica: guía y despliegue observado
 
 Contrato: [aws-production-readiness](../../openspec/changes/aws-production-readiness/design.md).
 Guía de compilación y ejecución local: [README raíz](../../Readme.md).
 No ejecutar comandos AWS sin autorización independiente de cuenta/región/coste/dominio.
+
+Despliegue real comunicado por el operador el 2026-10-20: [https://llmscannerseguridad.com](https://llmscannerseguridad.com),
+en eu-north-1, EC2 m7i-flex.large/AL2023 x86_64, Docker25.0.14/Compose v2.40.3.
+Requiere Basic Auth de prueba, entregable únicamente por canal privado; entrega efectiva al tribunal no acreditada. [Evidencia consolidada](../../openspec/changes/aws-production-readiness/evidence/2026-10-20-aws-deployment.md):
+ECR privado por digest, EBS30GB/XFS, volumen `llm-scanner-pgdata`, SecureString→tmpfs,
+Systems Manager y HTTPS operativo; sin demo ni evaluator activo por defecto.
+Incidencias resueltas: rollback inicial t3.medium y lectura de privkey.pem por UID101.
+Certificado Let's Encrypt expira el 2027-01-18; renovación manual DNS-01/Cloudflare,
+no automática, responsabilidad del operador del proyecto. Review: 1.1/6.2 completas,
+6.4 completa en preparación técnica y 6.1 completada, **24/25 completas**. Solo queda
+restore aislado (6.3). Certbot en Docker + DNS-01 disponible y procedimiento validado,
+según confirmación del operador. La guía siguiente no es una nueva ejecución.
+Despliegue académico autorizado, Free Plan/créditos sin migración voluntaria autorizada
+a Paid Plan ni gasto exacto medido. Mantener URL hasta finalizar entrega/evaluación;
+después podrán detenerse o retirarse recursos innecesarios. El acceso académico está preparado;
+la entrega efectiva de credenciales es administrativa y no reabre 6.4.
+
+En documentación pública usar `<aws-account-id>`, `<instance-id>` y `<public-ip>` cuando
+sean necesarios; para ECR, `<aws-account-id>.dkr.ecr.eu-north-1.amazonaws.com/<service>@sha256:<digest>`.
+No publicar IDs reales innecesarios ni URI ECR con Account ID real. El dominio público se conserva.
 
 ## Tres servicios y acceso
 
@@ -69,12 +89,21 @@ las credenciales Basic Auth son acceso compartido académico y se entregan por c
 ## Secretos AWS, IAM y volumen
 
 `aws.yml` prepara VPC/subred/IGW/rutas, SG443 IPv4 público por defecto, EIP, EC2 x86_64
-t3.medium, EBS gp3 cifrado separado30GiB/Retain y dos repositorios ECR privados inmutables.
+m7i-flex.large por defecto, EBS gp3 cifrado separado30GiB/Retain y dos repositorios ECR privados inmutables.
 No UserData con secretos ni comandos de despliegue automático. AMI Linux con SSM agent,
 región/cuenta, hostname y nombres de parámetros SecureString son entradas del operador.
 Las referencias de imágenes se configuran después en Compose, no en CloudFormation.
-Todos esos valores deben verificarse antes de publicar. No se ha seleccionado/consultado
-una AMI real. IP del tribunal no requerida. RestrictIngressIp=true exige ReviewerCidr;
+Todos esos valores deben verificarse antes de publicar. El operador informa que en el primer
+despliegue en `eu-north-1` usó Amazon Linux 2023 x86_64 y eligió `m7i-flex.large` tras el
+rollback del intento con `t3.medium`, no elegible para Free Tier en esta cuenta.
+La consulta real comunicada por el operador devolvió `c7i-flex.large`, `t4g.small`,
+`t3.micro`, `t4g.micro`, `m7i-flex.large` y `t3.small`. La plantilla permite únicamente
+`m7i-flex.large`, `c7i-flex.large`, `t3.small` y `t3.micro`: se excluye `t4g.*` porque usa
+ARM y no corresponde a la AMI x86_64 actual. No se cambia AMI ni arquitectura.
+La elegibilidad Free Tier depende de cuenta/región y debe comprobarse antes de cada
+despliegue; no garantiza coste cero del conjunto ni acredita un despliegue completado.
+Estos hechos son aportados por el operador, sin consulta AWS en esta actualización.
+IP del tribunal no requerida. RestrictIngressIp=true exige ReviewerCidr;
 ese modo opcional no sustituye Basic Auth. Sin IPv6/AAAA ni puertos SSH/HTTP/backend/PG.
 
 Rol de instancia: canales ssmmessages y UpdateInstanceInformation explícitos (sin política
@@ -119,8 +148,10 @@ single-instance. Un checksum inválido impide readiness. No copiar dumps de desa
 
 ## TLS externo: Certbot manual DNS-01
 
-En equipo seguro del operador, fuera de todos los contenedores y de Git, con Certbot
-instalado y directorio de estado ACME privado:
+El operador confirma renovación manual mediante Certbot en Docker + DNS-01, procedimiento
+ya validado y separado de los tres servicios de aplicación; no se añade un servicio ACME
+permanente al despliegue. Estado ACME y material TLS fuera de Git. El siguiente ejemplo
+es la variante con Certbot instalado en el equipo del operador, no evidencia de una nueva ejecución:
 
 ```sh
 certbot certonly --manual --preferred-challenges dns -d "$PUBLIC_HOSTNAME" \
@@ -269,8 +300,12 @@ requiere restauración/plan aprobado, nunca migración inversa improvisada.
 Backup: con aprobación, snapshot cifrado coherente con PG detenido o pg_dump protegido fuera
 de Git; custodiar la misma AES separadamente. Probar restore en volumen/entorno aislado antes de
 afirmar recuperabilidad. CloudFormation retiene datos/ECR; conservarlos puede seguir generando coste
-con EC2 parada. Cuentas, región, AMI, dominio, presupuesto, renovación y canal reservado de entrega
-siguen pendientes antes del despliegue. No hay URL pública acreditada ni entrega TFM cerrada.
+con EC2 parada. El despliegue y URL reales comunicados constan en la evidencia enlazada;
+AMI real e imágenes por digest aceptadas por review. Contexto económico Free Plan/créditos,
+ventana hasta finalizar evaluación/entrega y responsable operativo documentados arriba.
+6.1 completada con confirmación de Certbot en Docker + DNS-01; solo queda restore aislado,
+recarga de proyecto o reinicio simple no
+constituyen restore. Entrega administrativa de credenciales y TFM completo no acreditados.
 
 ## Pruebas sin AWS
 

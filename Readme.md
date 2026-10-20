@@ -80,8 +80,8 @@ La [demo sintética local](demo-vulnerable/README.md) implementa un target indep
 
 La instalación/ejecución y preparación de producción se documentan abajo, con validación local
 en aws-production-readiness. La operación real local de OpenAI está acreditada en
-[real-evaluator-validation](openspec/changes/real-evaluator-validation/tasks.md). Despliegue AWS,
-experimento académico y entregables finales siguen pendientes; no se atribuye a AWS evidencia local.
+[real-evaluator-validation](openspec/changes/real-evaluator-validation/tasks.md). El despliegue AWS
+está operativo según la [evidencia del operador](openspec/changes/aws-production-readiness/evidence/2026-10-20-aws-deployment.md), con aceptación completa pendiente. Experimento académico y entregables finales siguen pendientes; no se atribuye a AWS evidencia local.
 
 ## Funcionalidades
 
@@ -116,7 +116,7 @@ Consulta la [arquitectura conceptual](docs/02-arquitectura/arquitectura-general.
 - PostgreSQL 16.
 - Flyway.
 - Docker Compose para el entorno local.
-- AWS como despliegue final previsto.
+- AWS: despliegue académico en eu-north-1, con aceptación completa pendiente.
 
 ## Estructura del repositorio
 
@@ -280,8 +280,13 @@ estadística ni resultados científicos.
 
 ## Despliegue
 
-Preparación en [docker/production](docker/production/README.md) y plantilla
-[aws.yml](docker/production/aws.yml), **sin despliegue AWS realizado**. Una EC2 y tres
+Aplicación publicada en **[https://llmscannerseguridad.com](https://llmscannerseguridad.com)**,
+con Basic Auth: requiere credenciales de prueba entregadas por canal privado; nunca incluir
+la contraseña real en el repositorio. La entrega al tribunal todavía no está acreditada.
+[Evidencia real comunicada por el operador, 2026-10-20](openspec/changes/aws-production-readiness/evidence/2026-10-20-aws-deployment.md).
+Guía en [docker/production](docker/production/README.md) y plantilla
+[aws.yml](docker/production/aws.yml). En eu-north-1 (Stockholm), una EC2 m7i-flex.large,
+Amazon Linux 2023 x86_64, Docker25.0.14/Compose v2.40.3 y tres
 contenedores: Nginx/Angular→backend→PostgreSQL16.443 público con TLS y Basic Auth,
 22/80/8080/5432 cerrados; sin conocer IP del tribunal. Allowlist IP opcional, desactivada.
 
@@ -290,10 +295,22 @@ y control TXT del dominio. Sin ACME automático ni puerto80/cuarto contenedor. C
 private keys y estado ACME quedan fuera de Git. Instalar directorio TLS read-only, validar
 nginx -t y renovar manualmente con30días o menos, comprobando certificado servido tras reload.
 
-Secretos futuros en Parameter Store SecureString/KMS, rol IAM del host/SSM sin claves AWS
-estáticas; bootstrap en tmpfs y custodia AES separada de BD. No se ejecuta ese bootstrap en
-la validación local. Región/cuenta/AMI/dominio/coste/certificado y canal reservado de entrega
-requieren aprobación independiente. La URL real y entrega final permanecen **pendientes**.
+Secretos suministrados mediante Parameter Store SecureString y bootstrap a `/run/llm-scanner`
+tmpfs, con permisos por UID. PostgreSQL16 usa EBS30GB/XFS en `/srv/llm-scanner/postgres` y
+volumen externo `llm-scanner-pgdata`. Certificado Let's Encrypt con expiración observada
+2027-01-18, DNS-01 manual mediante Cloudflare; renovación no automática. Acceso administrativo
+mediante Systems Manager. Se observaron 401 sin credencial, login Chrome, Angular/API y
+persistencia de un proyecto tras recargar. No se ejecutó Scan ni se desplegó demo; OpenAI
+permanece desactivado por defecto en AWS. El review acredita AMI real, herramientas,
+imágenes por digest, provisión y acceso académico preparado: **24/25 tareas completas**.
+6.1 completada; solo queda restore aislado (6.3). Renovación manual mediante Certbot en Docker
+y DNS-01, procedimiento validado confirmado por el operador. Despliegue académico autorizado
+en Free Plan/créditos, sin migración voluntaria autorizada a Paid Plan ni gasto exacto medido.
+La URL se mantendrá hasta finalizar entrega/evaluación; después podrán detenerse o retirarse
+recursos innecesarios. Responsable operativo/TLS: operador del proyecto. La entrega efectiva
+de credenciales al tribunal es una acción administrativa por canal privado aún no acreditada;
+el despliegue no acredita el TFM completo. No publicar Account ID, Instance ID, IP directa ni
+URI ECR con Account ID; usar placeholders en procedimientos y conservar el dominio público.
 
 ## Documentación
 

@@ -14,8 +14,21 @@
     "post-publish digests reach Compose services",
     "Compose rejects either missing image reference",
     "POSIX Maven documentation uses sh",
-    "wrapper Git modes unchanged 100644"
+    "wrapper Git modes unchanged 100644",
+    "selected instance default and parameter binding",
+    "exact x86_64 instance allowlist excludes ARM"
   ],
+  "instanceSelection": {
+    "default": "m7i-flex.large",
+    "allowedValues": [
+      "m7i-flex.large",
+      "c7i-flex.large",
+      "t3.small",
+      "t3.micro"
+    ],
+    "architecture": "x86_64",
+    "freeTierEligibility": "NOT_QUERIED"
+  },
   "awsServiceValidation": "NOT_EXECUTED",
   "deployment": "NOT_EXECUTED"
 }

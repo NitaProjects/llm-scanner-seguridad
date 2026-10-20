@@ -18,6 +18,14 @@ with tempfile.TemporaryDirectory(prefix='apr-template-') as directory:
                              'config', '--format', 'json'], input=wrapped, capture_output=True, text=True, check=True)
     template = json.loads(parsed.stdout)['x-template']
 resources = template['Resources']
+
+# Selección aprobada para la AMI x86_64; no consultar elegibilidad AWS desde este test.
+instance_type = template['Parameters']['InstanceType']
+assert instance_type['Default'] == 'm7i-flex.large'
+assert resources['Instance']['Properties']['InstanceType'] == {'Ref': 'InstanceType'}
+assert len(re.findall(r'^  InstanceType:', source, re.MULTILINE)) == 1
+assert instance_type['AllowedValues'] == ['m7i-flex.large', 'c7i-flex.large', 't3.small', 't3.micro']
+assert not any(value.startswith('t4g.') for value in instance_type['AllowedValues'])
 ingress = resources['SecurityGroup']['Properties']['SecurityGroupIngress']
 assert len(ingress) == 1 and ingress[0]['FromPort'] == ingress[0]['ToPort'] == 443
 assert template['Parameters']['RestrictIngressIp']['Default'] == 'false'
@@ -99,7 +107,10 @@ result = {'status': 'PASS', 'checks': ['YAML parsed', '443 only', 'optional IP r
           'initial stack needs no image digest', 'generated repository URI outputs preserved',
           'ECR pull restricted to created repositories', 'post-publish digests reach Compose services',
           'Compose rejects either missing image reference', 'POSIX Maven documentation uses sh',
-          'wrapper Git modes unchanged 100644'],
+          'wrapper Git modes unchanged 100644', 'selected instance default and parameter binding',
+          'exact x86_64 instance allowlist excludes ARM'],
+          'instanceSelection': {'default': instance_type['Default'], 'allowedValues': instance_type['AllowedValues'],
+                                'architecture': 'x86_64', 'freeTierEligibility': 'NOT_QUERIED'},
           'awsServiceValidation': 'NOT_EXECUTED', 'deployment': 'NOT_EXECUTED'}
 (root / 'openspec/changes/aws-production-readiness/evidence/infrastructure.json').write_text(json.dumps(result, indent=2))
 print(json.dumps(result))

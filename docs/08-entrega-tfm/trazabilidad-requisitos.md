@@ -26,12 +26,12 @@ El backend core está aprobado e implementado por `project-management`, `target-
 | Backend core | [`backend/`](../../backend/), [`openspec/changes/`](../../openspec/changes/), [`reporting/tasks.md`](../../openspec/changes/reporting/tasks.md#validaciones-ejecutadas) | COMPLETADO |
 | Aplicación vulnerable | [`demo-vulnerable/`](../../demo-vulnerable/) | EN PROGRESO |
 | Código fuente en GitHub | [`enlaces-entrega.md`](./enlaces-entrega.md) | PENDIENTE |
-| Despliegue funcional | [`enlaces-entrega.md`](./enlaces-entrega.md) | PENDIENTE |
+| Despliegue funcional | [`enlaces-entrega.md`](./enlaces-entrega.md), [`evidencia AWS`](../../openspec/changes/aws-production-readiness/evidence/2026-10-20-aws-deployment.md) | COMPLETADO; acceso académico preparado, 6.1 completa por confirmación operativa/TLS y 6.4 completa técnicamente. 24/25 tareas completas: solo restore aislado (6.3) pendiente; entrega administrativa de credenciales no acreditada |
 | Slides | [`enlaces-entrega.md`](./enlaces-entrega.md) | PENDIENTE |
 | Vídeo | [`enlaces-entrega.md`](./enlaces-entrega.md) | PENDIENTE |
 | Formulario final | [`requisitos-oficiales.md`](./requisitos-oficiales.md) | PENDIENTE |
 
-API figura EN PROGRESO porque el contrato del backend core ya existe, mientras la integración frontend y la documentación final siguen en desarrollo. OpenSpec figura EN PROGRESO porque los siete contratos están aprobados e implementados en los changes, pero `openspec/specs/` aún no contiene specs consolidadas; sincronización y archivo podrán realizarse posteriormente según el workflow sin reescribir históricos. Instalación/ejecución completa, despliegue AWS, enlaces GitHub, slides, vídeo, formulario y memoria final conservan sus estados pendientes o en progreso.
+API figura EN PROGRESO porque el contrato del backend core ya existe, mientras la integración frontend y la documentación final siguen en desarrollo. OpenSpec figura EN PROGRESO porque los siete contratos están aprobados e implementados en los changes, pero `openspec/specs/` aún no contiene specs consolidadas; sincronización y archivo podrán realizarse posteriormente según el workflow sin reescribir históricos. Despliegue AWS funcional observado el 2026-10-20: URL protegida, Angular/API y persistencia de proyecto, con preparación técnica académica aceptada por review. No acredita Scan/demo/evaluator en AWS ni restore aislado. La entrega efectiva de credenciales al tribunal sigue administrativa, por canal privado, sin reabrir 6.4. Enlaces GitHub, slides, vídeo, formulario y memoria final conservan sus estados pendientes o en progreso.
 
 ## Fuentes de verdad
 

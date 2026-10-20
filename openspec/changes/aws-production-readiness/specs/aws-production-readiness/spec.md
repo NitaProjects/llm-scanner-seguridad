@@ -93,6 +93,18 @@ El procedimiento SHALL crear una BD/esquema vacíos y aplicar Flyway del backend
 - **WHEN** se inicia sobre BD vacía o se detecta una migración inválida
 - **THEN** aplica el historial oficial íntegro o falla cerrado, sin servir una instalación parcial
 
+Para cerrar el restore aislado pendiente de6.3, la prueba SHALL usar pg_dump lógico consistente con scanner_app, autenticado por socket Unix y secreto leído solo dentro del contenedor a PGPASSWORD, sin credencial en argv/logs/evidencia. Producción SHALL permanecer activa y recibir únicamente las lecturas/testigos necesarios; SHALL NOT detenerse, limpiarse ni recibir pg_restore, DML, DDL, cambios de permisos o modificación de PGDATA por esta prueba. La restauración SHALL ejecutarse con la misma imagen PG16 ya disponible en un contenedor temporal sin red/puertos, sin backend/Flyway activo ni secretos productivos y con volumen tmpfs distinto del volumen/EBS productivo. SHALL comprobar historial/checksums Flyway, esquema/constraints, catálogo y proyecto de validación existente, integridad y disponibilidad/identidad productivas antes/durante/después. Dump y logs crudos SHALL permanecer privados en tmpfs y retirarse junto a contenedor/volumen temporales tras guardas de identidad, también ante fallo. Solo se conservarán códigos, tiempos, hashes y metadatos no secretos. No disponibilidad de UUID/capacidad/equivalencia/cleanup SHALL mantener6.3 PARTIAL; diseñar el procedimiento SHALL NOT acreditar su ejecución. Detalle operativo acotado: D-11.
+
+#### Scenario: Restore aislado sin alterar producción
+- **WHEN** la ejecución futura autorizada restaura el backup en el destino temporal de D-11
+- **THEN** acredita datos de validación y estructura restaurados, con servicios productivos disponibles y sin reinicios/cambios de volumen o del testigo observado
+- **AND** retira solo los recursos temporales identificados, sin borrar datos productivos ni afirmar recuperación completa de secretos/host
+
+#### Scenario: Fallo de comparación o cleanup inseguro
+- **WHEN** no coinciden los testigos, hay un fallo de disponibilidad o no se puede acreditar la identidad del recurso temporal
+- **THEN** se registra fallo/inconcluso,6.3 permanece PARTIAL y no se escribe ni repara producción para obtener PASS
+- **AND** se limpian únicamente los recursos temporales cuya identidad resulte segura, conservando el bloqueo de cualquier cleanup no acreditado
+
 ### Requirement: APR-07 Secretos y configuración explícita pro
 
 **Historia:** Como operador, quiero suministrar secretos sin incluirlos en imágenes, frontend o logs.

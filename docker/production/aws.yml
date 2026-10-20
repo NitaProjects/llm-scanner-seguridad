@@ -2,7 +2,7 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: Academic single-instance scanner; prepare only, no secrets or automatic deployment.
 Parameters:
   AmiId: {Type: AWS::EC2::Image::Id, Description: Verified Linux x86_64 AMI with SSM agent; operator must supply}
-  InstanceType: {Type: String, Default: t3.medium, AllowedValues: [t3.medium]}
+  InstanceType: {Type: String, Default: m7i-flex.large, AllowedValues: [m7i-flex.large, c7i-flex.large, t3.small, t3.micro]}
   RootDeviceName: {Type: String, Default: /dev/xvda, AllowedValues: [/dev/xvda, /dev/sda1], Description: Must match the verified AMI root device}
   PublicHostname: {Type: String, AllowedPattern: '[a-z0-9][a-z0-9.-]*[a-z0-9]'}
   SecretPrefix: {Type: String, Default: /llm-scanner/pro, AllowedPattern: '/[A-Za-z0-9/_-]+'}

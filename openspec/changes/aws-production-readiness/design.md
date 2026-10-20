@@ -20,7 +20,7 @@ Motivación: [proposal.md](proposal.md). Contrato: [APR-01..APR-12](specs/aws-pr
 
 ### D-01 Topología mínima y servicios concretos
 
-Una EC2 Linux x86_64, una AZ, VPC/subred pública propia con Internet Gateway, una Elastic IP y Security Group que publica únicamente443; restricción IP opcional, desactivada por defecto. Tamaño inicial propuesto t3.medium (4GiB RAM) para evitar competir builds/JVM/PostgreSQL en 1–2GiB; builds fuera de EC2. Confirmar disponibilidad/cuota antes de aprovisionar; no se afirma precio ni free tier. Almacenamiento gp3 cifrado, referencia30GiB, con volumen de datos separado/conservado y margen monitorizado. No despliegue blue/green ni réplica adicional.
+Una EC2 Linux x86_64, una AZ, VPC/subred pública propia con Internet Gateway, una Elastic IP y Security Group que publica únicamente443; restricción IP opcional, desactivada por defecto. Selección final para el despliegue real en eu-north-1: m7i-flex.large, manteniendo Amazon Linux 2023 x86_64 y builds fuera de EC2. Según el operador, el primer intento con t3.medium terminó en rollback por no ser Free Tier eligible en esta cuenta. Su consulta en eu-north-1 devolvió c7i-flex.large, t4g.small, t3.micro, t4g.micro, m7i-flex.large y t3.small. La plantilla permite exactamente m7i-flex.large (default), c7i-flex.large, t3.small y t3.micro; excluye t4g.* por requerir ARM. Esta actualización no consulta AWS, no cambia AMI/arquitectura ni acredita despliegue completado. Confirmar disponibilidad/cuota y elegibilidad por cuenta/región antes de aprovisionar; no se promete gratuidad. Almacenamiento gp3 cifrado, referencia30GiB, con volumen de datos separado/conservado y margen monitorizado. No despliegue blue/green ni réplica adicional.
 
 Servicios de aplicación mediante Docker Engine/Compose v2 en esa EC2, archivo NUEVO docker/production/compose.yml, sin extender/copiar valores secretos del Compose local:
 
@@ -177,9 +177,300 @@ Las pruebas de proxy/Compose/BD implican levantar fixtures y migrar BD de prueba
 
 ### D-10 Coste, plazo y administración
 
-Coste **bajo relativo** a arquitecturas AWS con ALB/RDS/NAT/HA: una EC2, EBS cifrado, IPv4/EIP, ECR, DNS/dominio y custodia de secretos; transferencia/logs/snapshots también pueden facturarse. Sin estimaciones monetarias, tarifas verificadas o promesa de gratuidad. t3.medium no es el tamaño más barato, pero reduce riesgo de memoria/plazo; decidir reducción solo con evidencia de consumo, no cambiar arquitectura. Instancia detenida puede seguir generando coste de EBS/IP/dominio; presupuestar ventana y eliminación autorizada posterior preservando datos. No abrir consola ni consultar precios ahora. Antes de crear recursos, operador confirma región/cuenta/cuotas y presupuesto; no tratar AWS Budget como hard cap automático de consumo OpenAI.
+Coste **bajo relativo** a arquitecturas AWS con ALB/RDS/NAT/HA: una EC2, EBS cifrado, IPv4/EIP, ECR, DNS/dominio y custodia de secretos; transferencia/logs/snapshots también pueden facturarse. Sin estimaciones monetarias, tarifas verificadas o promesa de gratuidad. La selección real m7i-flex.large responde a la elegibilidad comunicada por el operador para esta cuenta en eu-north-1; no presupone elegibilidad universal ni coste cero. Revisar elegibilidad Free Tier, capacidad y consumo antes de usar cualquiera de las alternativas permitidas, sin cambiar arquitectura. Instancia detenida puede seguir generando coste de EBS/IP/dominio; presupuestar ventana y eliminación autorizada posterior preservando datos. No abrir consola ni consultar precios ahora. Antes de crear recursos, operador confirma región/cuenta/cuotas y presupuesto; no tratar AWS Budget como hard cap automático de consumo OpenAI.
 
 Orden objetivo en Europe/Madrid:20 diseño;21 empaquetado/proxy/secretos/guía;22 pruebas locales F1–F4;23 despliegue solo si está autorizado y hay dominio/certificado/Basic Auth;24 verificación de acceso del evaluador sin IP preconocida;25 documentación/evidencia y margen. Fecha límite antes del26-10-2026; no prometer cumplimiento sin recursos/autorizaciones. Si se retrasa dominio/certificado o credenciales, no abrir sin protección para cumplir fecha. Los CIDRs no bloquean el acceso académico. No se crean recordatorios ni automatizaciones.
+
+### D-11 Validación pendiente 6.3: backup lógico y restore aislado
+
+**Estado del diseño: READY FOR IMPLEMENTATION; NO EJECUTADO.** Se concreta únicamente el restore que mantiene 6.3 PARTIAL; no se reabren F1/F2, acceso, TLS, 6.1 ni despliegue. La ejecución requiere autorización posterior. Este procedimiento no modifica scripts ni crea una herramienta permanente.
+
+**Hechos inspeccionados:** compose.yml identifica proyecto Compose llm-scanner-pro, servicio postgres, imagen PostgreSQL16-alpine fijada por digest y PGDATA externo. postgres/init.sh crea scanner_app como propietario de llm_scanner_seguridad_pro y su esquema public, sin privilegios globales. pg_hba.conf permite scanner_app por socket Unix con SCRAM; el secreto app está montado como /run/secrets/app-password, legible por postgres/UID70. scanner_bootstrap es administrador: no hace falta para el backup. La evidencia AWS identifica volumen llm-scanner-pgdata vinculado a /srv/llm-scanner/postgres y un proyecto persistido, pero no aporta su UUID. El operador debe copiar ese UUID de la URL/API ya conocida; no se inventa ni selecciona por nombre.
+
+**Elección mínima:** pg_dump consistente con scanner_app sobre el socket existente, sin parar servicios; pg_restore en otro contenedor de la misma imagen local por Image ID, con red none, sin ports ni secretos productivos, sin backend y volumen local de tipo tmpfs distinto del productivo. Dump y diagnósticos privados en /run tmpfs; nunca copiar PGDATA, montar EBS productivo en el destino, usar snapshot con parada o hacer restore en producción. Se reutilizan Docker, herramientas PG16 de la imagen, Bash/coreutils/util-linux del host y readiness.sh existente. No instalaciones, pulls ni servicios AWS nuevos.
+
+**Precondiciones:** sesión Bash administrativa autorizada en la EC2 ya operativa, con Docker; mínimo1536MiB MemAvailable,64MiB libres en /run y BD<=64MiB para esta prueba académica pequeña. Se limita dump a64MiB, volumen temporal a512MiB y contenedor a768MiB/0.25CPU; si no caben los datos, la prueba queda BLOCKED para rediseñar capacidad, sin usar EBS productivo como espacio temporal ni quitar límites. No despliegues/migraciones durante la ventana y ninguna edición del proyecto de validación mientras se comparan testigos; otras lecturas/servicio continúan. No se detiene la producción ni se fuerza su inactividad. Leer pg_dump implica locks ACCESS SHARE, compatibles con DML pero no con DDL; lock-wait-timeout evita esperar indefinidamente.
+
+Los bloques siguientes son comandos **propuestos, no ejecutados**, para una misma sesión supervisada. No son un script instalado. Antes de cada etapa comprobar exit code: ante cualquier fallo, no continuar hacia PASS, registrar el código de etapa sin salida cruda y ejecutar el cleanup acotado de D-11.7. Si se pierde la sesión, recuperar los nombres del registro no secreto de la ejecución y completar cleanup; nunca deducirlos de un prefijo con borrado masivo.
+
+#### D-11.1 Identificación y recursos permitidos
+
+```bash
+set +x
+set -euo pipefail
+umask 077
+# Lo suministra el operador: UUID del proyecto YA persistido, no un nombre.
+: "${VALIDATION_PROJECT_ID:?Falta UUID del proyecto existente}"
+[[ "$VALIDATION_PROJECT_ID" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]]
+test "$(id -u)" = 0
+test "$(findmnt -n -o FSTYPE -T /run)" = tmpfs
+awk '/MemAvailable:/ {ok=($2>=1572864)} END {exit !ok}' /proc/meminfo
+test "$(df -Pk /run | awk 'NR==2 {print $4}')" -ge 65536
+
+PROD_PG=$(docker ps -q --filter label=com.docker.compose.project=llm-scanner-pro --filter label=com.docker.compose.service=postgres)
+PROD_BACKEND=$(docker ps -q --filter label=com.docker.compose.project=llm-scanner-pro --filter label=com.docker.compose.service=backend)
+PROD_INGRESS=$(docker ps -q --filter label=com.docker.compose.project=llm-scanner-pro --filter label=com.docker.compose.service=ingress)
+for id in "$PROD_PG" "$PROD_BACKEND" "$PROD_INGRESS"; do
+  [[ "$id" =~ ^[0-9a-f]{12,64}$ ]] || { echo BLOCKED_PRODUCTION_IDENTITY; exit 1; }
+  test "$(docker inspect -f '{{.State.Running}}' "$id")" = true
+done
+PROD_VOLUME=llm-scanner-pgdata
+test "$(docker inspect -f '{{range .Mounts}}{{if eq .Destination "/var/lib/postgresql/data"}}{{.Name}}{{end}}{{end}}' "$PROD_PG")" = "$PROD_VOLUME"
+test "$(docker volume inspect -f '{{index .Options "device"}}' "$PROD_VOLUME")" = /srv/llm-scanner/postgres
+PG_IMAGE=$(docker inspect -f '{{.Image}}' "$PROD_PG")
+docker image inspect "$PG_IMAGE" --format '{{.Id}}'
+docker exec --user postgres "$PROD_PG" sh -c 'command -v pg_dump >/dev/null && command -v psql >/dev/null && command -v timeout >/dev/null'
+
+WORK=$(mktemp -d /run/apr-restore.XXXXXX)
+RUN=${WORK##*/}
+TEMP_PG="$RUN-pg"
+TEMP_VOLUME="$RUN-pgdata"
+EVIDENCE=$(mktemp -d /run/apr-restore-evidence.XXXXXX)
+printf 'run=%s\ncontainer=%s\nvolume=%s\n' "$RUN" "$TEMP_PG" "$TEMP_VOLUME" > "$EVIDENCE/resources.txt"
+test "$TEMP_VOLUME" != "$PROD_VOLUME"
+if docker container inspect "$TEMP_PG" >/dev/null 2>&1; then echo BLOCKED_CONTAINER_COLLISION; exit 1; fi
+if docker volume inspect "$TEMP_VOLUME" >/dev/null 2>&1; then echo BLOCKED_VOLUME_COLLISION; exit 1; fi
+printf '%s\n' "$PG_IMAGE" > "$EVIDENCE/postgres-image-id.txt"
+
+# Solo objetos de esta ejecución, tanto en salida normal como por error.
+cleanup_objects() (
+  trap - EXIT INT TERM
+  docker info --format '{{.ServerVersion}}' >/dev/null 2>&1 || exit 1
+  case "$WORK" in /run/apr-restore.??????) ;; *) exit 1;; esac
+  test -d "$WORK" && test ! -L "$WORK" && test "$(stat -c %u "$WORK")" = 0 || exit 1
+  test "$RUN" = "${WORK##*/}" && test "$TEMP_PG" = "$RUN-pg" &&
+    test "$TEMP_VOLUME" = "$RUN-pgdata" && test "$TEMP_VOLUME" != "$PROD_VOLUME" || exit 1
+  if docker container inspect "$TEMP_PG" >/dev/null 2>&1; then
+    test "$(docker inspect -f '{{index .Config.Labels "apr.restore.run"}}' "$TEMP_PG")" = "$RUN" &&
+    test "$(docker inspect -f '{{.HostConfig.NetworkMode}}' "$TEMP_PG")" = none &&
+    test "$(docker inspect -f '{{len .Mounts}}' "$TEMP_PG")" = 1 &&
+    test "$(docker inspect -f '{{range .Mounts}}{{.Name}}{{end}}' "$TEMP_PG")" = "$TEMP_VOLUME" || exit 1
+    docker rm -f "$TEMP_PG" >/dev/null || exit 1
+  fi
+  if docker volume inspect "$TEMP_VOLUME" >/dev/null 2>&1; then
+    test "$(docker volume inspect -f '{{index .Labels "apr.restore.run"}}' "$TEMP_VOLUME")" = "$RUN" &&
+    test "$(docker volume inspect -f '{{index .Options "type"}}' "$TEMP_VOLUME")" = tmpfs || exit 1
+    docker volume rm "$TEMP_VOLUME" >/dev/null || exit 1
+  fi
+  remaining_containers=$(docker ps -aq --filter "label=apr.restore.run=$RUN") || exit 1
+  remaining_volumes=$(docker volume ls -q --filter "label=apr.restore.run=$RUN") || exit 1
+  test -z "$remaining_containers" && test -z "$remaining_volumes" || exit 1
+  docker info --format '{{.ServerVersion}}' >/dev/null 2>&1 || exit 1
+)
+failed_exit() {
+  rc=$?
+  test "$rc" -ne 0 || return 0
+  trap - EXIT
+  set +e
+  touch "$WORK/monitor.stop"
+  test -z "${MONITOR_PID:-}" || wait "$MONITOR_PID"
+  cleanup_objects >/dev/null 2>&1
+  cleanup_rc=$?
+  printf 'FAILED exit=%s cleanup_exit=%s\n' "$rc" "$cleanup_rc" > "$EVIDENCE/failure.txt"
+  case "$WORK" in /run/apr-restore.??????)
+    if test -d "$WORK" && test ! -L "$WORK" && test "$(stat -c %u "$WORK")" = 0; then
+      rm -f -- "$WORK/backup.dump" "$WORK/private.log" "$WORK/check.sql" "$WORK/monitor.stop"
+      rmdir -- "$WORK"
+    fi;;
+  esac
+  exit "$rc"
+}
+trap failed_exit EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+```
+
+Si una comprobación falla, **detener esa etapa**; set -e/pipefail y el trap posterior intentan terminar la prueba con cleanup, no continuar hacia PASS. No imprimir docker inspect completo/config/env ni leer el secreto en el host. El Image ID fija exactamente la imagen local utilizada por producción; comprobar major16 por SQL a continuación. La creación de metadatos Docker usa el disco de sistema normal; el volumen/EBS que contiene PGDATA productivo no se monta/escribe desde ningún recurso temporal. No editar ni reasignar WORK/RUN/TEMP_PG/TEMP_VOLUME/PROD_VOLUME durante la sesión.
+
+#### D-11.2 Lectura de referencia y disponibilidad
+
+```bash
+prod_sql() {
+  docker exec -i --user postgres "$PROD_PG" sh -ceu '
+    set +x
+    export PGPASSWORD="$(cat /run/secrets/app-password)"
+    export PGOPTIONS="-c default_transaction_read_only=on -c statement_timeout=15000 -c lock_timeout=5000"
+    exec psql -X -qAt -w -U scanner_app -d llm_scanner_seguridad_pro \
+      -v ON_ERROR_STOP=1 -v validation_id="$1"
+  ' -- "$VALIDATION_PROJECT_ID"
+}
+prod_identity() {
+  for id in "$PROD_PG" "$PROD_BACKEND" "$PROD_INGRESS"; do
+    docker inspect -f '{{.Id}}|{{.Image}}|{{.State.Running}}|{{.State.StartedAt}}|{{.RestartCount}}' "$id"
+  done
+  docker inspect -f '{{range .Mounts}}{{if eq .Destination "/var/lib/postgresql/data"}}{{.Name}}|{{.Source}}{{end}}{{end}}' "$PROD_PG"
+}
+test "$(prod_sql <<< 'SELECT current_setting('\''server_version_num'\'')::int / 10000;')" = 16
+test "$(prod_sql <<< 'SELECT pg_database_size(current_database()) <= 67108864;')" = t
+prod_identity | sha256sum > "$EVIDENCE/production-identity.before"
+
+# Función existente: GET privado backend/API,200/JSON y cuerpo descartado.
+docker exec "$PROD_INGRESS" /opt/readiness.sh
+(
+  trap - EXIT INT TERM
+  while test ! -f "$WORK/monitor.stop"; do
+    if docker exec "$PROD_INGRESS" /opt/readiness.sh >/dev/null 2>&1; then result=PASS; else result=FAIL; fi
+    printf '%s,%s\n' "$(date -u +%FT%TZ)" "$result" >> "$EVIDENCE/availability.csv"
+    sleep 5
+  done
+) &
+MONITOR_PID=$!
+```
+
+Crear en WORK el siguiente SQL, que devuelve solo booleanos, conteos y huellas de metadata/proyecto sintético, nunca nombres/descripciones/evidencias libres, blobs cifrados o credenciales. El mismo SQL se usa antes, en el restore y después. Cada lectura es una transacción READ ONLY; las filas del proyecto no deben editarse concurrentemente. No comparar hashes físicos de PGDATA: una BD activa cambia WAL/estadísticas de forma normal.
+
+```bash
+cat > "$WORK/check.sql" <<'SQL'
+BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY;
+SET LOCAL TIME ZONE 'UTC';
+SET LOCAL DateStyle TO 'ISO, YMD';
+SELECT 'flyway_valid|' || (count(*)=7 AND bool_and(success)
+  AND array_agg(version ORDER BY installed_rank)=ARRAY['1','2','3','4','5','6','7'])::text
+FROM public.flyway_schema_history;
+SELECT 'flyway_hash|' || md5(string_agg(version || ':' || coalesce(checksum::text,'') || ':' || success::text,'|' ORDER BY installed_rank))
+FROM public.flyway_schema_history;
+SELECT 'tables_valid|' || (count(*)=10 AND bool_and(tablename=ANY(ARRAY[
+ 'projects','scans','test_cases','test_executions','findings','target_configurations',
+ 'evaluation_results','scan_scores','security_reports','flyway_schema_history'])))::text
+FROM pg_catalog.pg_tables WHERE schemaname='public';
+SELECT 'schema_hash|' || md5(string_agg(table_name || ':' || column_name || ':' || data_type || ':' || is_nullable || ':' || coalesce(column_default,''),'|' ORDER BY table_name,ordinal_position))
+FROM information_schema.columns WHERE table_schema='public';
+SELECT 'constraints_hash|' || md5(string_agg(conrelid::regclass::text || ':' || conname || ':' || pg_get_constraintdef(oid),'|' ORDER BY conrelid::regclass::text,conname))
+FROM pg_constraint WHERE connamespace='public'::regnamespace AND contype IN ('p','u','f','c');
+SELECT 'constraints_valid|' || coalesce(bool_and(convalidated),false)::text
+FROM pg_constraint WHERE connamespace='public'::regnamespace AND contype IN ('f','c');
+SELECT 'indexes_valid|' || bool_and(i.indisvalid AND i.indisready)::text
+FROM pg_index i JOIN pg_class c ON c.oid=i.indrelid WHERE c.relnamespace='public'::regnamespace;
+SELECT 'catalog_valid|' || (count(*)=4 AND count(DISTINCT category)=4 AND bool_and(revision=1 AND code=ANY(ARRAY[
+ 'LLM01-INSTRUCTION-001','LLM02-CANARY-001','LLM08-CONTEXT-001','LLM10-MARKUP-001'])))::text FROM public.test_cases;
+SELECT 'validation_present|' || (count(*)=1)::text FROM public.projects WHERE id=:'validation_id'::uuid;
+SELECT 'validation_hash|' || coalesce(md5(string_agg(row_to_json(p)::text,'|' ORDER BY id)),'ABSENT')
+FROM public.projects p WHERE id=:'validation_id'::uuid;
+SELECT 'validation_children|' || (SELECT count(*) FROM public.target_configurations WHERE project_id=:'validation_id'::uuid)
+ || '|' || (SELECT count(*) FROM public.scans WHERE project_id=:'validation_id'::uuid);
+ROLLBACK;
+SQL
+prod_sql < "$WORK/check.sql" > "$EVIDENCE/production.before" 2> "$WORK/private.log"
+for key in flyway_valid tables_valid constraints_valid indexes_valid catalog_valid validation_present; do
+  grep -Fxq "$key|true" "$EVIDENCE/production.before" || { echo BLOCKED_REFERENCE; exit 1; }
+done
+```
+
+Si historial/catálogo no corresponden a V1..V7/cuatro pruebas, detener y revisar contra la revisión desplegada; nunca migrar o corregir producción para ajustar esta prueba. Las huellas sirven para comparar estado lógico, no como prueba criptográfica de anonimización. Son datos sintéticos/metadata del proyecto de validación; no se generaliza la huella a filas sensibles.
+
+#### D-11.3 Backup consistente, protegido y sin credencial en argv
+
+```bash
+# Bash ulimit -f usa KiB; solo afecta al subshell del backup.
+printf '%s,BACKUP_START\n' "$(date -u +%FT%TZ)" >> "$EVIDENCE/steps.csv"
+(
+  trap - EXIT INT TERM
+  ulimit -f 65536
+  docker exec --user postgres "$PROD_PG" sh -ceu '
+    set +x
+    export PGPASSWORD="$(cat /run/secrets/app-password)"
+    export PGOPTIONS="-c default_transaction_read_only=on"
+    exec timeout -s TERM -k 5 120 pg_dump -w -U scanner_app \
+      -d llm_scanner_seguridad_pro --format=custom --no-acl --lock-wait-timeout=5s
+  ' > "$WORK/backup.dump" 2> "$WORK/private.log"
+)
+test -s "$WORK/backup.dump"
+stat -c %s "$WORK/backup.dump" > "$EVIDENCE/backup.bytes"
+sha256sum "$WORK/backup.dump" | awk '{print $1}' > "$EVIDENCE/backup.sha256"
+printf '%s,BACKUP_EXIT_0\n' "$(date -u +%FT%TZ)" >> "$EVIDENCE/steps.csv"
+```
+
+Exigir exit0 del subshell antes de continuar; fichero no vacío por sí solo no acredita backup. pg_dump hace su snapshot lógico consistente sin detener PostgreSQL y sin congelar la aplicación. El timeout se ejecuta dentro del contenedor para terminar pg_dump, no solo el cliente docker del host. No pg_dumpall/globals/roles/password hashes; no URI con password ni docker exec -e PGPASSWORD=valor. PGPASSWORD se resuelve solo dentro del proceso local de PostgreSQL, sin eco/logs; la contraseña no sale al host ni a evidencia. El dump puede contener datos/blobs cifrados del producto y se trata entero como privado aunque no incluya secretos de roles; no mostrarlo, subirlo al repo ni retenerlo como evidencia.
+
+#### D-11.4 Destino temporal estrictamente aislado
+
+```bash
+docker volume create --label "apr.restore.run=$RUN" --driver local \
+  --opt type=tmpfs --opt device=tmpfs --opt o=size=512m "$TEMP_VOLUME"
+docker run -d --pull=never --name "$TEMP_PG" --label "apr.restore.run=$RUN" \
+  --network none --restart no --log-driver none --memory 768m --memory-swap 768m \
+  --cpus 0.25 --pids-limit 128 --shm-size 64m --security-opt no-new-privileges:true \
+  --mount "type=volume,source=$TEMP_VOLUME,target=/var/lib/postgresql/data" \
+  -e POSTGRES_USER=restore_bootstrap -e POSTGRES_DB=restore_check \
+  -e POSTGRES_HOST_AUTH_METHOD=trust -e POSTGRES_INITDB_ARGS=--auth-local=trust \
+  "$PG_IMAGE" postgres -c 'listen_addresses=' -c shared_buffers=32MB \
+    -c max_connections=5 -c log_statement=none -c log_min_error_statement=panic
+
+test "$(docker inspect -f '{{.HostConfig.NetworkMode}}' "$TEMP_PG")" = none
+test "$(docker inspect -f '{{len .HostConfig.PortBindings}}' "$TEMP_PG")" = 0
+test "$(docker inspect -f '{{len .Mounts}}' "$TEMP_PG")" = 1
+test "$(docker inspect -f '{{range .Mounts}}{{.Name}}{{end}}' "$TEMP_PG")" = "$TEMP_VOLUME"
+test "$(docker volume inspect -f '{{index .Options "type"}}' "$TEMP_VOLUME")" = tmpfs
+for n in $(seq 1 30); do
+  docker exec --user postgres "$TEMP_PG" pg_isready -q -U restore_bootstrap -d restore_check && break
+  sleep 1
+done
+docker exec --user postgres "$TEMP_PG" pg_isready -q -U restore_bootstrap -d restore_check
+```
+
+Trust se limita al cluster desechable sin red, sin escucha TCP y accesible solo por docker exec administrativo/socket local; no cambia pg_hba ni autenticación de producción y evita aprovisionar/copiar secretos en el destino. No se monta init.sh, pg_hba.conf, /run/secrets, TLS, AES, EBS productivo ni redes app/data/egress. No se usa Compose up/down para crear un segundo stack. La imagen ya existe por Image ID: no pull, nuevas dependencias ni acceso ECR/AWS.
+
+#### D-11.5 Restore y verificación mínima
+
+```bash
+printf '%s,RESTORE_START\n' "$(date -u +%FT%TZ)" >> "$EVIDENCE/steps.csv"
+docker exec -i --user postgres "$TEMP_PG" timeout -s TERM -k 5 120 \
+  pg_restore -w -U restore_bootstrap -d restore_check --no-owner --no-acl \
+    --exit-on-error --single-transaction \
+  < "$WORK/backup.dump" > /dev/null 2> "$WORK/private.log"
+printf '%s,RESTORE_EXIT_0\n' "$(date -u +%FT%TZ)" >> "$EVIDENCE/steps.csv"
+docker exec -i --user postgres "$TEMP_PG" psql -X -qAt -w \
+  -U restore_bootstrap -d restore_check -v ON_ERROR_STOP=1 -v validation_id="$VALIDATION_PROJECT_ID" \
+  < "$WORK/check.sql" > "$EVIDENCE/restored.check" 2> "$WORK/private.log"
+cmp -s "$EVIDENCE/production.before" "$EVIDENCE/restored.check"
+```
+
+Exigir pg_restore exit0 y comparación exit0. --single-transaction/--exit-on-error evita aceptar un restore parcial; PostgreSQL recrea y valida índices/FKs/checks al restaurar. Se comprueban diez tablas incluidas Flyway, versiones/checksums/success, estructura de columnas y constraints, índices válidos, catálogo de cuatro pruebas, proyecto de validación íntegro y sus conteos target/Scan. No arrancar backend/Flyway contra restore_check: se valida lo restaurado, no un esquema regenerado que oculte errores. No --clean, --create ni --dbname productiva. Solo restore_bootstrap escribe y solo en restore_check del contenedor temporal.
+
+--no-owner/--no-acl permite restaurar sin copiar roles/secrets de producción. Esta prueba acredita backup/restauración lógica de esquema y datos, **no** restauración de permisos de todos los roles, clave AES, descifrado de credenciales, TLS, host completo o failover. Se conserva la custodia AES de D-04/D-05 sin leerla/provisionarla para este test. Las referencias se leen antes del dump, no del mismo snapshot exportado: por eso se exige estabilidad del proyecto/metadata durante la ventana y coincidencia posterior; cambios concurrentes relevantes dejan comparación inconclusa, no justifican sobrescribir producción ni fabricar igualdad.
+
+#### D-11.6 Producción intacta y disponible
+
+```bash
+prod_sql < "$WORK/check.sql" > "$EVIDENCE/production.after-restore" 2> "$WORK/private.log"
+prod_identity | sha256sum > "$EVIDENCE/production-identity.after-restore"
+cmp -s "$EVIDENCE/production.before" "$EVIDENCE/production.after-restore"
+cmp -s "$EVIDENCE/production-identity.before" "$EVIDENCE/production-identity.after-restore"
+docker exec "$PROD_INGRESS" /opt/readiness.sh
+```
+
+Se comparan identidad/image/StartedAt/RestartCount/volumen de los tres servicios, historial/schema y testigo del proyecto. Readiness privado200/JSON se muestrea antes/durante/después con código existente y sin Basic Auth de producción. Los intervalos no prueban disponibilidad continua absoluta; registrar frecuencia5s/timeout5s, timestamps, duración y cualquier fallo observado. No afirmar cero cambios físicos de WAL/estadísticas ni igualdad de toda la BD si hubo otros usuarios. La prueba no emite DML/DDL, reinicios o cleanup contra producción; actividad interna normal del servidor no equivale a que el test modificó sus datos.
+
+#### D-11.7 Cleanup exacto, también si falla una etapa
+
+Conservar la sesión/variables o recuperarlas exclusivamente de resources.txt de esta ejecución. cleanup_objects, definida antes del backup, valida identidad, etiquetas y montajes **antes** de cada borrado. failed_exit intenta el mismo cleanup si falla una etapa, también tras SIGINT/SIGTERM; no protege frente a SIGKILL/pérdida del host, casos que requieren verificar recursos al recuperar la sesión. Si una guarda falla, detener cleanup de ese objeto y dejar estado CLEANUP_BLOCKED para revisión; nunca usar prune, comodines, down -v ni nombres de producción como alternativa.
+
+```bash
+cleanup_objects
+
+# Verificación final antes de retirar el SQL temporal; si no se creó, registrar NOT_RUN.
+prod_sql < "$WORK/check.sql" > "$EVIDENCE/production.after-cleanup" 2> "$WORK/private.log"
+prod_identity | sha256sum > "$EVIDENCE/production-identity.after-cleanup"
+cmp -s "$EVIDENCE/production.before" "$EVIDENCE/production.after-cleanup"
+cmp -s "$EVIDENCE/production-identity.before" "$EVIDENCE/production-identity.after-cleanup"
+docker exec "$PROD_INGRESS" /opt/readiness.sh
+touch "$WORK/monitor.stop"
+wait "$MONITOR_PID"
+awk -F, '$2!="PASS" {failed++} END {exit failed>0}' "$EVIDENCE/availability.csv"
+
+# SOLO estos ficheros del directorio tmpfs creado por esta prueba; sin rm -rf.
+rm -f -- "$WORK/backup.dump" "$WORK/private.log" "$WORK/check.sql" "$WORK/monitor.stop"
+rmdir -- "$WORK"
+test ! -e "$WORK"
+printf 'PASS backup=0 restore=0 comparisons=0 cleanup=0\n' > "$EVIDENCE/result.txt"
+trap - EXIT INT TERM
+```
+
+Si la etapa previa falló antes de crear SQL/monitor, omitir únicamente esas lecturas finales inexistentes y marcar NOT_RUN; siempre retirar dump/error privado si existen y completar las guardas del cleanup. Un fallo de disponibilidad/comparación se registra como FAIL, pero no impide limpiar recursos temporales seguros. Un Docker no disponible impide acreditar cleanup hasta verificarlo, sin intentar borrar su almacenamiento manualmente. No shred sobre tmpfs/EBS ni rm del directorio /srv/llm-scanner/postgres: no mejora seguridad y amenaza producción. No se conservan dumps ni errores crudos como evidencia de fallo.
+
+**Evidencia a conservar:** resultado breve de cada etapa/exit code, tiempos, versión PG16 e Image ID usado, tamaño y SHA256 del dump (no el dump), etiquetas/nombres efímeros, guardas de red none/sin puertos/mount tmpfs distinto, hashes y booleanos/conteos de production.before/restored.check/production.after-restore/after-cleanup, identidad productiva comparada, availability.csv (incluidos fallos) y ausencia final de contenedor/volumen/dump. Mantener EVIDENCE solo con esos ficheros no secretos y trasladarlos por el operador al paquete de evidencia del change; después puede retirar ese directorio tmpfs con sus nombres concretos. No incluir UUID real si no es necesario publicarlo: registrar una huella del testigo, no una lista de proyectos. No docker logs/inspect/env completos, pg_dumpall, passwords, blobs, contenido de proyectos o terminal transcrita con secretos.
+
+**Aceptación 6.3:** PASS solo con backup exit0, restore transaccional exit0, equivalencia de testigos/metadata, integridad válida, disponibilidad sin fallos observados, servicios productivos sin reinicios/cambio de volumen y cleanup acreditado. Inconcluso por concurrencia/capacidad/UUID no disponible o fallo mantiene6.3 PARTIAL, con motivo y sin tocar producción. El diseño no marca6.3 completa, no reabre las comprobaciones F1–F3 ya aceptadas y no cierra6.1 ni el change. Las guardas protegen el ámbito de comandos supervisados; no son garantía frente a un operador root malicioso.
 
 ## Risks / Trade-offs
 
