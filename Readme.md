@@ -46,37 +46,15 @@ Por este motivo, LLM Scanner Seguridad plantea una aproximación híbrida:
 
 Esta combinación busca conservar la reproducibilidad de las reglas tradicionales sin renunciar a la capacidad de interpretación que ofrece la inteligencia artificial.
 
-### Evolución futura
-
-El proyecto ha sido diseñado para poder crecer más allá del alcance del TFM.
-
-Entre las posibles líneas de evolución se encuentran:
-
-- ampliar el catálogo de pruebas y la cobertura OWASP;
-- generar o adaptar dinámicamente pruebas mediante IA;
-- incorporar nuevos motores de evaluación;
-- comparar distintos modelos evaluadores;
-- exportar el informe estructurado a HTML, Markdown o PDF;
-- comparar scans y sus históricos;
-- integrar el scanner en pipelines CI/CD;
-- realizar análisis periódicos;
-- incorporar autenticación, organizaciones y gestión de equipos;
-- soportar arquitecturas LLM más complejas, como RAG, agentes y uso de herramientas;
-- ofrecer integraciones con plataformas de desarrollo y seguridad.
-
-A nivel empresarial, una evolución natural sería convertir el sistema en una herramienta de **LLM Security Testing / AI Security Testing**, orientada a equipos que desarrollan aplicaciones con modelos de lenguaje y necesitan incorporar comprobaciones de seguridad durante el ciclo de desarrollo.
-
-El modelo podría evolucionar hacia un servicio SaaS, una herramienta desplegable dentro de la infraestructura del cliente o una integración de seguridad para pipelines de desarrollo.
-
-El objetivo del TFM no es demostrar la viabilidad comercial de ese producto completo, sino construir y validar técnicamente una base suficientemente sólida sobre la que una solución de este tipo pueda evolucionar.
-
 ## Estado del proyecto
 
-En desarrollo. El backend core está aprobado e implementado mediante los changes `project-management`, `target-configuration`, `scan-execution`, `security-test-execution`, `evaluation-engine`, `scoring-engine` y `reporting`.
+MVP implementado y despliegue académico operativo según la evidencia conservada. La entrega académica sigue en preparación: GitHub privado justificado con invitación enviada, pendiente exclusivamente de aceptación por el destinatario; faltan slides, vídeo, comprobación final de acceso al deployment y formulario. Esta revisión documental de 2026-10-23 no ejecuta producto ni verifica de nuevo servicios externos.
+
+El backend core está aprobado e implementado mediante los changes `project-management`, `target-configuration`, `scan-execution`, `security-test-execution`, `evaluation-engine`, `scoring-engine` y `reporting`. El frontend permite gestionar proyectos/target, iniciar y seguir Scans, consultar resultados, abrir Findings y leer el informe.
 
 Los contratos aprobados están actualmente en `openspec/changes/<cambio>/specs/<capacidad>/spec.md`, junto con sus diseños y tareas. `openspec/specs/` todavía no contiene las specs consolidadas; su sincronización y el archivo de changes podrán realizarse posteriormente según el workflow OpenSpec.
 
-La [demo sintética local](demo-vulnerable/README.md) implementa un target independiente y determinista con cuatro escenarios y sus controles seguros, sin LLM real ni BD. Su integración E2E, Docker y la comprobación de safety con aislamiento externo siguen pendientes.
+La [demo sintética local](demo-vulnerable/README.md) implementa un target independiente y determinista con cuatro escenarios y sus controles seguros, sin LLM real ni BD. El [E2E offline del 2026-10-16](openspec/changes/e2e-integration/evidence/2026-10-16-005150/result.md) y el [recorrido UI con Findings del 2026-10-19](openspec/changes/real-evaluator-validation/evidence/2026-10-19-ui-real/result.md) acreditan integración API/UI. Este último usó consolidación determinista degradada; la revalidación posterior acreditó el proveedor real. Estas evidencias no cierran por inferencia las tareas históricas pendientes de review/recorrido ni acreditan aislamiento externo de egress de la demo o su validación Docker.
 
 La instalación/ejecución y preparación de producción se documentan abajo, con validación local
 en aws-production-readiness. La operación real local de OpenAI está acreditada en
@@ -93,7 +71,7 @@ Para confirmar `COMPLETED`, los scans nuevos requieren cuatro ejecuciones y cuat
 
 El score es heurístico, no una probabilidad ni un porcentaje de seguridad. Score 0 significa ningún Finding detectado en las pruebas completadas; no demuestra que la aplicación sea segura. `INCONCLUSIVE` se conserva por separado y no equivale a `NOT_VULNERABLE`.
 
-El dashboard/frontend y la integración real con la demo siguen en progreso. Las exportaciones HTML/Markdown/PDF permanecen como evolución futura.
+El frontend y la demo se han utilizado en los recorridos locales documentados. La instalación AWS muestra UI/API y persistencia básica, sin ejecutar Scans ni alojar la demo. Exportaciones HTML/Markdown/PDF, ampliación de categorías, RAG/agentes, autenticación multiusuario y benchmark formal son evolución futura; no se presentan como funcionalidades terminadas ni obligaciones de esta entrega.
 
 ## Arquitectura
 
@@ -115,7 +93,7 @@ Consulta la [arquitectura conceptual](docs/02-arquitectura/arquitectura-general.
 - Maven Wrapper.
 - PostgreSQL 16.
 - Flyway.
-- Docker Compose para el entorno local.
+- TypeScript, Nginx y Docker Compose para ejecución contenerizada y entrada HTTPS.
 - AWS: despliegue académico en eu-north-1, con aceptación completa pendiente.
 
 ## Estructura del repositorio
@@ -125,10 +103,13 @@ Consulta la [arquitectura conceptual](docs/02-arquitectura/arquitectura-general.
 - `demo-vulnerable/`: aplicación vulnerable para demostraciones.
 - `docs/`: documentación técnica, investigación, arquitectura, memoria y entrega del TFM.
 - `openspec/`: especificaciones y changes implementables.
-- `docker/`: configuración de infraestructura local.
+- `docker/`: Compose local y empaquetado/infraestructura de producción separados.
 - `.github/workflows/`: automatizaciones CI/CD cuando estén definidas.
+- `agent-roles/` y `AGENTS.md`: perfiles e instrucciones de colaboración; no son componentes del producto.
 
 ## Instalación
+
+Los comandos siguientes son instrucciones para el operador; no se han ejecutado durante esta auditoría. Las descargas, builds, arranque y migraciones deben hacerse en un entorno propio autorizado, sin credenciales de producción. La URL/revisión GitHub de entrega está pendiente de aportar y verificar; se parte de un checkout de la revisión elegida por el autor.
 
 El backend requiere **JDK 21** para compilar, ejecutar tests y empaquetar. `JAVA_HOME` debe apuntar al directorio del JDK 21 y su carpeta `bin` debe aparecer en `PATH` antes que instalaciones anteriores de Java.
 
@@ -193,6 +174,8 @@ docker compose -f docker/docker-compose.yml up -d
 $env:SPRING_PROFILES_ACTIVE = 'local'
 $env:DB_URL = 'jdbc:postgresql://localhost:5432/llm_scanner_seguridad'
 # DB_USERNAME y DB_PASSWORD ya preparados de forma segura en esta terminal.
+# TARGET_CREDENTIAL_ENCRYPTION_KEY: clave Base64 de 32 bytes, preparada de forma segura.
+$env:EVALUATOR_EXPORT_ENABLED = 'false'
 java -jar backend/target/llm-scanner-seguridad-0.0.1-SNAPSHOT.jar
 ```
 
@@ -205,10 +188,18 @@ errores ni ddl-auto=create/update. Recovery y ejecución son single-instance.
 
 ### Demo y evaluator: opt-in local
 
-Desde una terminal sin secretos del scanner, configurar DEMO_PROFILE=VULNERABLE y arrancar
-el jar demo en127.0.0.1:8081. Ver [demo-vulnerable/README.md](demo-vulnerable/README.md) para
-health, contrato, plantillas y binding. El scanner local requiere además
-TARGET_LOCAL_DEMO_ENABLED=true y TARGET_LOCAL_DEMO_ORIGINS=http://127.0.0.1:8081.
+Desde otra terminal sin secretos del scanner, ejecutar desde la raíz:
+
+```powershell
+$env:DEMO_PROFILE = 'VULNERABLE'
+java -jar demo-vulnerable/target/demo-vulnerable-0.0.1-SNAPSHOT.jar
+```
+
+La demo escucha por defecto en `127.0.0.1:8081`; `GET http://127.0.0.1:8081/health`
+debe confirmar perfil y versión antes de preparar un análisis. `SAFE` es el perfil por defecto
+si no se selecciona `VULNERABLE`. Ver [guía de demo](demo-vulnerable/README.md) para contrato,
+plantillas y binding. Antes de arrancar el scanner local que vaya a usarla, establecer
+`TARGET_LOCAL_DEMO_ENABLED=true` y `TARGET_LOCAL_DEMO_ORIGINS=http://127.0.0.1:8081`.
 
 Crear Project/Target reales por la API, releer IDs/updatedAt exactos y completar la plantilla
 del perfil elegido y bindings.local.json según sus schemas; nunca copiar UUIDs de evidencia
@@ -223,7 +214,14 @@ claves por chat, escribirlas en archivos ni copiarlas a demo/frontend. Tras oper
 detener scanner o reiniciarlo sin clave/exportación, deshabilitar manifest y retirar la
 variable de su terminal. No repetir esta operación para validar instalación offline.
 
-### Producción preparada
+El recorrido funcional local es crear proyecto → configurar el target demo autorizado
+`http://127.0.0.1:8081/api/chat` (POST JSON, mensaje `{{PROMPT}}`, respuesta `$.response`,
+autenticación NONE) → preparar manifest/binding con los IDs y fecha reales → iniciar un
+Scan autorizado → consultar evaluaciones, Findings, score e informe. Sin exportación,
+un resultado `INCONCLUSIVE` o la ausencia de Findings puede ser correcto; no debe
+forzarse una detección ni habilitar OpenAI para comprobar la instalación.
+
+### Instalación de producción independiente
 
 La [guía de producción](docker/production/README.md) detalla el Compose separado, secretos,
 volumen nuevo, TLS, Basic Auth, arranque, health y actualización. Se requieren PUBLIC_HOSTNAME,
@@ -258,6 +256,15 @@ inyecta automáticamente variables al proceso Java; deben existir en environment
 en el bootstrap autorizado. No guardar secretos en .env. Un proceso abierto conserva su
 entorno anterior: cambiar otra terminal no cambia su configuración efectiva.
 
+| Configuración | Uso |
+| --- | --- |
+| `SPRING_PROFILES_ACTIVE`, `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` | Perfil `local` para desarrollo y conexión a PostgreSQL; preparar los secretos fuera del repositorio. Producción utiliza `pro` y su bootstrap propio. |
+| `TARGET_CREDENTIAL_ENCRYPTION_KEY` | Clave externa Base64 de 32 bytes para AES-256-GCM; conservarla, no regenerarla al reiniciar ni publicarla. |
+| `TARGET_LOCAL_DEMO_ENABLED`, `TARGET_LOCAL_DEMO_ORIGINS` | Excepción opt-in exclusiva del perfil local para la demo. Producción no admite ese bypass. |
+| `EVALUATION_SCENARIO_FILE` | Copia local de escenario con binding real; no se usa una plantilla con placeholders sin completar. |
+| `EVALUATOR_EXPORT_ENABLED` | Mantener `false` para reproducción sin proveedor; la exportación exige además los gates de escenario/corpus y autorización independiente. |
+| `EVALUATOR_PROVIDER`, `EVALUATOR_MODEL`, `EVALUATOR_API_KEY` | OpenAI/`gpt-6-luna` y clave solo en el proceso backend cuando exista autorización real. No necesarios para el recorrido offline. |
+
 Producción requiere DB_URL/DB_USERNAME y DB_PASSWORD nueva, TARGET_CREDENTIAL_ENCRYPTION_KEY
 Base64 de32bytes conservada, htpasswd bcrypt externo y certificados TLS externos.
 El entrypoint lee únicamente los ficheros segregados necesarios y exporta DB_PASSWORD/AES
@@ -269,7 +276,14 @@ origen HTTPS canónico. La demo no se despliega; no relajar SSRF ni activar loca
 
 El scanner debe utilizarse únicamente contra aplicaciones propias, autorizadas o preparadas específicamente para pruebas. La documentación de seguridad se encuentra en [`docs/03-seguridad/`](docs/03-seguridad/).
 
-## Testing
+El target y el evaluador son componentes distintos; sus respuestas son datos no confiables.
+Se aplican políticas SSRF, límites de peticiones/tiempo/tamaño/concurrencia, gates de
+exportación y redacción de evidencia. No se ejecuta el marcado recibido del target en la UI.
+Una URL guardada no autoriza tráfico; no se deben analizar servicios ajenos ni interpretar
+el score como garantía de seguridad. No hay usuarios/roles internos: Basic Auth protege
+la instalación académica en Nginx.
+
+## Pruebas y validación
 
 El backend dispone de pruebas de dominio, casos de uso, API, transporte con fixtures/fakes, persistencia y migraciones sobre PostgreSQL de test. Los registros de cada change conservan los comandos, resultados y límites de las validaciones ejecutadas. El [registro de reporting](openspec/changes/reporting/tasks.md#validaciones-ejecutadas) documenta una regresión de 400 pruebas, sin fallos, errores ni omisiones, el 2026-10-10; es evidencia técnica registrada, no una validación del proveedor real.
 
@@ -278,11 +292,23 @@ El [experimento académico](docs/01-investigacion/experimento-academico.md) requ
 ground truth, repeticiones y análisis propios; las pruebas técnicas no acreditan calibración
 estadística ni resultados científicos.
 
+| Evidencia conservada | Alcance acreditado y límites |
+| --- | --- |
+| [E2E offline, 2026-10-16](openspec/changes/e2e-integration/evidence/2026-10-16-005150/result.md) | Scanner→demo y UI/API con exportación desactivada. Conservar sus pendientes históricos; no acredita proveedor. |
+| [UI real, 2026-10-19](openspec/changes/real-evaluator-validation/evidence/2026-10-19-ui-real/result.md) | Findings/score/informe visibles; los cuatro componentes LLM fallaron y consolidaron por reglas. No acredita éxito OpenAI. |
+| [Revalidación OpenAI local, 2026-10-19](openspec/changes/real-evaluator-validation/evidence/2026-10-19-tls-revalidation/result.md) | Cuatro respuestas reales aceptadas de `gpt-6-luna`, evaluación híbrida sin degradación; usage 3366 input / 2398 output tokens, coste monetario `NOT_INSPECTED`. No repitió frontend 9.4 ni demuestra retrospectivamente la causa del Scan anterior. |
+| [Preparación de producción local, 2026-10-20](openspec/changes/aws-production-readiness/evidence/result.md) | Builds y 51 comprobaciones locales del entorno; no son pruebas ejecutadas en AWS. |
+| [Despliegue AWS, 2026-10-20](openspec/changes/aws-production-readiness/evidence/2026-10-20-aws-deployment.md) | Publicación, Basic Auth, Angular/API y persistencia básica según el operador; sin Scan/demo/OpenAI. |
+
+Esta tabla resume registros existentes, no nuevas pruebas ni métricas científicas.
+El restore aislado 6.3 está expresamente pospuesto y no bloquea la entrega académica;
+no se declara ejecutado. La revisión pública integral y las comprobaciones finales de
+acceso/enlaces pertenecen a las fases C–H de `tfm-final-delivery`.
+
 ## Despliegue
 
 Aplicación publicada en **[https://llmscannerseguridad.com](https://llmscannerseguridad.com)**,
-con Basic Auth: requiere credenciales de prueba entregadas por canal privado; nunca incluir
-la contraseña real en el repositorio. La entrega al tribunal todavía no está acreditada.
+con Basic Auth. Acceso: **las credenciales se facilitarán por canal privado**.
 [Evidencia real comunicada por el operador, 2026-10-20](openspec/changes/aws-production-readiness/evidence/2026-10-20-aws-deployment.md).
 Guía en [docker/production](docker/production/README.md) y plantilla
 [aws.yml](docker/production/aws.yml). En eu-north-1 (Stockholm), una EC2 m7i-flex.large,
@@ -290,27 +316,25 @@ Amazon Linux 2023 x86_64, Docker25.0.14/Compose v2.40.3 y tres
 contenedores: Nginx/Angular→backend→PostgreSQL16.443 público con TLS y Basic Auth,
 22/80/8080/5432 cerrados; sin conocer IP del tribunal. Allowlist IP opcional, desactivada.
 
-TLS se emite fuera de contenedores con Let's Encrypt/Certbot **manual DNS-01**; A hacia EIP
-y control TXT del dominio. Sin ACME automático ni puerto80/cuarto contenedor. Certificados,
-private keys y estado ACME quedan fuera de Git. Instalar directorio TLS read-only, validar
-nginx -t y renovar manualmente con30días o menos, comprobando certificado servido tras reload.
+TLS usa Let's Encrypt/Certbot en Docker con **DNS-01 manual**, separado de los servicios
+de aplicación. Cloudflare gestiona A en modo DNS only y TXT ACME temporal. Renovación no
+automática; certificado con expiración observada 2027-01-18. Certificados, private keys
+y estado ACME quedan fuera de Git.
 
 Secretos suministrados mediante Parameter Store SecureString y bootstrap a `/run/llm-scanner`
 tmpfs, con permisos por UID. PostgreSQL16 usa EBS30GB/XFS en `/srv/llm-scanner/postgres` y
-volumen externo `llm-scanner-pgdata`. Certificado Let's Encrypt con expiración observada
-2027-01-18, DNS-01 manual mediante Cloudflare; renovación no automática. Acceso administrativo
+volumen externo `llm-scanner-pgdata`. Acceso administrativo
 mediante Systems Manager. Se observaron 401 sin credencial, login Chrome, Angular/API y
 persistencia de un proyecto tras recargar. No se ejecutó Scan ni se desplegó demo; OpenAI
 permanece desactivado por defecto en AWS. El review acredita AMI real, herramientas,
 imágenes por digest, provisión y acceso académico preparado: **24/25 tareas completas**.
-6.1 completada; solo queda restore aislado (6.3). Renovación manual mediante Certbot en Docker
-y DNS-01, procedimiento validado confirmado por el operador. Despliegue académico autorizado
+Restore aislado 6.3 permanece pospuesto y no bloquea esta entrega; no se ha ejecutado.
+Despliegue académico autorizado
 en Free Plan/créditos, sin migración voluntaria autorizada a Paid Plan ni gasto exacto medido.
 La URL se mantendrá hasta finalizar entrega/evaluación; después podrán detenerse o retirarse
-recursos innecesarios. Responsable operativo/TLS: operador del proyecto. La entrega efectiva
-de credenciales al tribunal es una acción administrativa por canal privado aún no acreditada;
-el despliegue no acredita el TFM completo. No publicar Account ID, Instance ID, IP directa ni
-URI ECR con Account ID; usar placeholders en procedimientos y conservar el dominio público.
+recursos innecesarios. Responsable operativo/TLS: operador del proyecto. El despliegue no
+acredita el TFM completo ni la disponibilidad de los materiales pendientes. La comprobación
+final de acceso está prevista en fase D y no se ha realizado en esta auditoría.
 
 ## Documentación
 
@@ -328,17 +352,29 @@ URI ECR con Account ID; usar placeholders en procedimientos y conservar el domin
 
 La documentación específica de requisitos, trazabilidad y enlaces de entrega está en [`docs/08-entrega-tfm/`](docs/08-entrega-tfm/README.md).
 
-## Demo / credenciales
+## Repositorio GitHub
 
-La demo está en `demo-vulnerable/` y se ejecuta solo localmente. La instalación académica
-preparada exige Basic Auth en Nginx para UI y API, sin usuarios/roles Spring. El operador
-entregará la credencial técnica por canal reservado; ninguna contraseña de evaluación se
-publica en este README. Esa entrega no se acredita hasta desplegar y verificar acceso real.
+[NitaProjects/llm-scanner-seguridad](https://github.com/NitaProjects/llm-scanner-seguridad)
+permanece **privado deliberadamente**: al ser un proyecto de seguridad con documentación
+y configuración operativa, se prefiere acceso controlado. El requisito oficial admite
+privado justificado; no es necesario hacerlo público. Un 404 sin autenticación es esperado.
+
+El operador confirma invitación enviada al evaluador designado: acceso preparado, pendiente
+de aceptación por el destinatario. No se afirma acceso efectivo hasta esa aceptación.
+La revisión public-safe del working tree e historial local fue PASS, sin secretos reales
+detectados en el ámbito registrado en [Fase C](openspec/changes/tfm-final-delivery/evidence/result.md).
+El control debe repetirse sobre material nuevo; no se infiere que cambios locales estén publicados.
 
 ## Slides
 
-**Pendiente de entrega.** El enlace se añadirá en [`docs/08-entrega-tfm/enlaces-entrega.md`](docs/08-entrega-tfm/enlaces-entrega.md) cuando exista.
+**PENDIENTE — presentación y URL pública todavía no disponibles.** Placeholder documental;
+no hay un archivo/enlace entregable acreditado. Se crearán y revisarán en fase E y se añadirá
+su referencia aquí y en [enlaces de entrega](docs/08-entrega-tfm/enlaces-entrega.md).
 
 ## Vídeo
 
-**Pendiente de entrega.** El enlace se añadirá en [`docs/08-entrega-tfm/enlaces-entrega.md`](docs/08-entrega-tfm/enlaces-entrega.md) cuando exista.
+**PENDIENTE — vídeo y URL pública todavía no disponibles.** Placeholder documental.
+Fases F–G: guion y grabación con explicación propia del alumno y pantalla; rostro opcional.
+Se documentará aquí y en [enlaces de entrega](docs/08-entrega-tfm/enlaces-entrega.md) tras
+su revisión y publicación. Un guion o slides no sustituyen el vídeo. El formulario final
+y la confirmación administrativa corresponden a H; A+B no declaran DONE la entrega.

@@ -48,10 +48,12 @@ La documentación final debe incluir la URL real del proyecto desplegado. Para L
 
 Estado actual: **COMPLETADO para publicación funcional observada por el operador el 2026-10-20**;
 URL en [enlaces-entrega.md](enlaces-entrega.md) y [evidencia AWS](../../openspec/changes/aws-production-readiness/evidence/2026-10-20-aws-deployment.md).
-Preparación técnica del acceso académico completada por review (6.4); entrega efectiva de
-credenciales al tribunal aún no acreditada, acción administrativa por canal privado.
+Preparación técnica del acceso académico completada por review (6.4). Las credenciales se
+facilitarán por canal privado. Comprobación final y confirmación administrativa en D/H
+de `tfm-final-delivery`, no realizadas en la auditoría A+B de 2026-10-23.
 24/25 tareas completas: 6.1 completada tras confirmación operativa/TLS del operador;
-solo 6.3 parcial por restore aislado. Esta actualización de estado no modifica el requisito oficial.
+solo 6.3 parcial por restore aislado expresamente pospuesto, no bloqueante para la entrega
+académica. Esta actualización de estado no modifica el requisito oficial.
 
 No se registrará ninguna URL hasta que exista un despliegue real.
 
