@@ -48,7 +48,7 @@ Esta combinación busca conservar la reproducibilidad de las reglas tradicionale
 
 ## Estado del proyecto
 
-MVP implementado y despliegue académico operativo según la evidencia conservada. La entrega académica sigue en preparación: GitHub privado justificado con invitación enviada, pendiente exclusivamente de aceptación por el destinatario; faltan slides, vídeo, comprobación final de acceso al deployment y formulario. Esta revisión documental de 2026-10-23 no ejecuta producto ni verifica de nuevo servicios externos.
+MVP implementado y despliegue académico operativo según la evidencia conservada. Slides finales creadas, revisadas y accesibles por enlace público, Fase E completada el 2026-10-24. Deployment comprobado en D; la entrega académica sigue en preparación: GitHub privado justificado con invitación enviada, pendiente exclusivamente de aceptación por el destinatario, vídeo y formulario pendientes. Las credenciales se facilitarán por canal privado; no se afirma su entrega efectiva.
 
 El backend core está aprobado e implementado mediante los changes `project-management`, `target-configuration`, `scan-execution`, `security-test-execution`, `evaluation-engine`, `scoring-engine` y `reporting`. El frontend permite gestionar proyectos/target, iniciar y seguir Scans, consultar resultados, abrir Findings y leer el informe.
 
@@ -367,14 +367,20 @@ El control debe repetirse sobre material nuevo; no se infiere que cambios locale
 
 ## Slides
 
-**PENDIENTE — presentación y URL pública todavía no disponibles.** Placeholder documental;
-no hay un archivo/enlace entregable acreditado. Se crearán y revisarán en fase E y se añadirá
-su referencia aquí y en [enlaces de entrega](docs/08-entrega-tfm/enlaces-entrega.md).
+**COMPLETADO — presentación final de 10 slides, revisada.**
+
+- [Ver slides oficiales en Google Drive](https://drive.google.com/file/d/15EqoH_KUZoZEyiApI_oVqTwvNv2c7TFE/view?usp=sharing): acceso público de lectura, sin login ni solicitud de permisos; comprobado el 2026-10-24.
+- [PDF en el repositorio](docs/08-entrega-tfm/slides/LLM-Scanner-Seguridad-TFM.pdf).
+- [PPTX editable con notas del presentador](docs/08-entrega-tfm/slides/LLM-Scanner-Seguridad-TFM.pptx).
+
+La publicación de las slides no completa el vídeo, el formulario ni la entrega privada de credenciales.
 
 ## Vídeo
 
 **PENDIENTE — vídeo y URL pública todavía no disponibles.** Placeholder documental.
-Fases F–G: guion y grabación con explicación propia del alumno y pantalla; rostro opcional.
+Preparación y grabación fuera del repositorio, con explicación propia del alumno y pantalla; rostro opcional. No se exige ni se creará un guion versionado.
 Se documentará aquí y en [enlaces de entrega](docs/08-entrega-tfm/enlaces-entrega.md) tras
 su revisión y publicación. Un guion o slides no sustituyen el vídeo. El formulario final
 y la confirmación administrativa corresponden a H; A+B no declaran DONE la entrega.
+
+**Release candidate — cierre técnico de 2026-10-24.** Código, documentación técnica y slides congelados para la grabación. Después de este cierre solo se espera añadir la URL final del vídeo público/no listado y actualizar los estados, checklist/tasks/evidence de entrega; completar el formulario y confirmar la entrega privada de credenciales. La aceptación externa de la invitación GitHub sigue pendiente (3.3) y se registrará cuando exista. No se necesitan nuevos Scans/OpenAI, tests, despliegues ni cambios de código; restore 6.3 permanece pospuesto y no bloqueante.

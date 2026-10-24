@@ -28,7 +28,7 @@ Los estados siguientes describen evidencia documental actual, no una verificaci�
 | O2 GitHub accesible | URL/revisión/inventario registrados; repositorio privado justificado, revisión public-safe local PASS e invitación enviada según operador | 3.1 completa; 3.3 pendiente exclusivamente de aceptación por el destinatario. 404 anónimo esperado; no exigir visibilidad pública |
 | O3 publicación y URL | README/enlaces y `aws-production-readiness/evidence/2026-10-20-aws-deployment.md`; URL real, preparación académica aceptada | Publicación acreditada por operador; comprobación final autorizada y entrega privada de acceso pendientes |
 | O4 slides: documento o enlace | Enlaces y requisitos: PENDIENTE; carpeta de entrega no contiene presentación | Pendiente crear, revisar, hacer accesible y enlazar presentación válida |
-| O5 vídeo propio con pantalla y URL | Enlaces y requisitos: PENDIENTE | Pendiente guion, grabación por alumno, revisión y publicación/reproducción |
+| O5 vídeo propio con pantalla y URL | Enlaces y requisitos: PENDIENTE | Preparación oral fuera del repositorio, grabación por alumno, revisión y publicación/reproducción; no se exige guion versionado |
 | O6 directorio: docs, despliegue, slides/enlace | `docs/`, README y guía de producción existen | Parcial: añadir slides/enlace y comprobar referencias del paquete final |
 | O7 formulario | Campos enumerados en requisitos; deployment conocido | Pendiente nombre/email por canal privado, GitHub/slides/vídeo reales y entrega privada de credenciales; no inferir datos personales |
 
@@ -45,7 +45,7 @@ Orden exacto: **A → B → C → D → E → F → G → H**. Antes de publicar
 | C GitHub/public-safe | Revisar material publicable e historial con resultados redactados; obtener URL/revisión y verificar acceso público con autorización | Correcciones documentales puntuales detectadas y `enlaces-entrega.md`; evidencia sanitizada del change. No reescritura de historial ni push implícitos |
 | D Deployment/acceso | Confirmar lectura UI/API, TLS y funcionamiento de Basic Auth; preparar usuario/contraseña para entrega privada, sin enviarlos ni confirmar entrega | `enlaces-entrega.md`, checklist y evidencia sanitizada del change; documentar únicamente «las credenciales se facilitarán por canal privado». No editar guía ni infraestructura salvo contradicción indispensable revisada aparte |
 | E Slides | Crear presentación y verificar archivo/enlace; registrar URL incluso si apunta al documento público en GitHub | Futuro archivo en `docs/08-entrega-tfm/slides/` si se elige archivo; o URL externa real. README/enlaces e índice solo para referencias |
-| F Guion | Redactar relato y secuencia visual con fuente de cada resultado | Futuro `docs/08-entrega-tfm/guion-video.md`, sin credenciales ni configuración sensible |
+| F Preparación oral | Preparar fuera del repositorio relato y secuencia visual con fuentes existentes; encuadre sin secretos | Ningún archivo nuevo ni guion versionado; solo estado/evidencia cuando se realice |
 | G Vídeo | Alumno graba voz/pantalla, revisa y publica; comprobar reproducción por enlace final | URL en `enlaces-entrega.md` y README; vídeo alojado externamente, no requiere versionar binario |
 | H Checklist/formulario | Revisar paquete completo, enlaces, acceso y evidencia; reunir campos y entregar credenciales en formulario/canal privado, registrar confirmación efectiva de entrega sin valores | Checklist, trazabilidad, enlaces, README si quedan referencias pendientes; evidencia mínima del change |
 
@@ -97,6 +97,8 @@ Propuesta de 10 slides, ajustable por claridad; la fuente oficial inspeccionada 
 Recomendada una única presentación con herramienta ya disponible para el autor, entregada como archivo válido o enlace público. Si se usa archivo, su enlace público GitHub sirve para el campo slides URL; no se obliga a contratar hosting ni generar dos formatos. Reviewer abre todas las slides y revisa texto legible, enlaces, alcance y metadatos públicos antes de publicación.
 
 ### D-07 — Vídeo propuesto
+
+Actualización autorizada de cierre técnico, 2026-10-24: la preparación oral y visual se realiza fuera del repositorio; no se crea `guion-video.md`. Las slides finales con sus notas y las fuentes conservadas bastan como apoyo, sin convertir su uso en prueba de vídeo realizado. Código, documentación técnica y slides quedan congelados. Después solo se espera la URL final del vídeo público/no listado y actualizar estados/checklist/tasks/evidence, completar formulario/entrega privada y registrar aceptación externa de GitHub cuando ocurra. No se añaden features, refactors, tests, despliegues ni Scans/OpenAI. La matriz inicial de D-01 conserva su contexto de planificación; D/E ya completadas se acreditan en tasks/evidence.
 
 Guion en seis segmentos, duración orientativa 5–8 minutos, sin presentarla como requisito oficial:
 

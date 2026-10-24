@@ -73,6 +73,11 @@ La entrega SHALL disponer de un vídeo reproducible con explicación propia del 
 - **WHEN** solo existe guion, slides o una URL placeholder
 - **THEN** el requisito de vídeo permanece pendiente
 
+#### Scenario: Release candidate antes del vídeo
+- **WHEN** código, documentación técnica, slides y controles de seguridad/acceso están validados y el autor congela el repositorio antes de grabar
+- **THEN** la preparación y grabación SHALL realizarse fuera del repositorio, sin exigir ni crear un guion versionado
+- **AND** los únicos cambios posteriores esperados SHALL ser la URL final del vídeo público/no listado y estados/checklist/tasks/evidence de entrega, incluyendo el cierre administrativo y la aceptación externa de GitHub cuando se produzca; no se declara el vídeo realizado ni se amplía el producto
+
 #### Scenario: Revisión del vídeo publicado
 - **WHEN** el reviewer reproduce el vídeo por su enlace final
 - **THEN** comprueba voz explicativa del alumno, pantalla visible, contenido coherente y ausencia de datos sensibles; una presentación sin explicación propia o sin pantalla no satisface el requisito

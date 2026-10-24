@@ -27,13 +27,20 @@ Scan en AWS; evaluator OpenAI desactivado por defecto.
 
 Estado vigente: 24/25 tareas completas; 6.1 completada tras confirmar procedimiento validado
 Certbot en Docker + DNS-01 y decisiones operativas. Solo restore aislado pendiente (6.3).
-Acceso académico técnicamente preparado según la evidencia de 2026-10-20. La comprobación
-final desde sesión nueva pertenece a D y no se ejecuta en A+B.
+Acceso académico técnicamente preparado; D completada el 2026-10-23: TLS y rechazo
+anónimo UI/API comprobados directamente, UI autenticada y proyectos confirmados por el operador.
 
 ## Slides
 
-Estado: **PENDIENTE**  
-URL: **PENDIENTE — presentación/enlace todavía no disponibles; fase E.**
+Estado: **COMPLETADO — Fase E, 2026-10-24.**  
+URL oficial: [Slides finales — Google Drive](https://drive.google.com/file/d/15EqoH_KUZoZEyiApI_oVqTwvNv2c7TFE/view?usp=sharing)
+
+PDF/PPTX finales creados y revisados, 10 slides, sin secretos ni credenciales.
+El operador confirma «cualquier persona con el enlace» y permiso lector. Comprobación
+directa del visor sin sesión: PDF de 10 páginas, sin login obligatorio ni solicitud de permisos.
+Archivos conservados: [PDF](slides/LLM-Scanner-Seguridad-TFM.pdf) y
+[PPTX con notas](slides/LLM-Scanner-Seguridad-TFM.pptx). URL disponible para el formulario futuro;
+no implica formulario enviado ni otra entrega administrativa realizada.
 
 ## Vídeo
 
@@ -46,6 +53,6 @@ La captura de pantalla durante la explicación será obligatoria. La grabación 
 
 **Las credenciales se facilitarán por canal privado.**
 
-La preparación de acceso en D y la confirmación administrativa en H siguen sus tareas
-en `tfm-final-delivery`; no se registran valores ni se afirma entrega efectiva en A+B.
+Preparación de acceso y conservación de credenciales confirmadas en D. La entrega efectiva
+y su confirmación administrativa siguen pendientes de H; no se registran valores públicos.
 

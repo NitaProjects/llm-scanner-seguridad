@@ -49,8 +49,9 @@ La documentación final debe incluir la URL real del proyecto desplegado. Para L
 Estado actual: **COMPLETADO para publicación funcional observada por el operador el 2026-10-20**;
 URL en [enlaces-entrega.md](enlaces-entrega.md) y [evidencia AWS](../../openspec/changes/aws-production-readiness/evidence/2026-10-20-aws-deployment.md).
 Preparación técnica del acceso académico completada por review (6.4). Las credenciales se
-facilitarán por canal privado. Comprobación final y confirmación administrativa en D/H
-de `tfm-final-delivery`, no realizadas en la auditoría A+B de 2026-10-23.
+facilitarán por canal privado. D completada el 2026-10-23: TLS/401 comprobados directamente
+y UI autenticada con proyectos confirmada por el operador. Entrega efectiva y confirmación
+administrativa pendientes de H; no se declaran realizadas por el cierre técnico.
 24/25 tareas completas: 6.1 completada tras confirmación operativa/TLS del operador;
 solo 6.3 parcial por restore aislado expresamente pospuesto, no bloqueante para la entrega
 académica. Esta actualización de estado no modifica el requisito oficial.
@@ -63,9 +64,11 @@ La entrega requiere slides de presentación del proyecto. Podrán realizarse con
 
 La entrega deberá disponer de una URL pública o del documento correspondiente, y el enlace deberá aparecer en la documentación del proyecto.
 
-Estado actual: **PENDIENTE**.
-
-Las slides no se crean en esta fase.
+Estado actual: **COMPLETADO — Fase E, 2026-10-24**. Presentación final de 10 slides;
+PDF y PPTX revisados y conservados en `slides/`. [URL oficial y acceso](enlaces-entrega.md#slides):
+Drive configurado como lector para cualquiera con enlace según operador y visor abierto
+sin login obligatorio ni solicitud de permisos. Esta actualización de estado no modifica
+la obligación oficial ni afirma vídeo, formulario o entrega de credenciales completados.
 
 ## Vídeo
 

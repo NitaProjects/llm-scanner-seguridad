@@ -1,0 +1,87 @@
+{
+  "date": "2026-10-23",
+  "status": "READY FOR PHASE F",
+  "files": [
+    {
+      "path": "docs/08-entrega-tfm/slides/LLM-Scanner-Seguridad-TFM.pptx",
+      "bytes": 62742,
+      "sha256": "02f69cb18c3b4717c387167c0ae69130ad2161a79fb6320224cf51a01ed3b7d7"
+    },
+    {
+      "path": "docs/08-entrega-tfm/slides/LLM-Scanner-Seguridad-TFM.pdf",
+      "bytes": 938595,
+      "sha256": "66f3cedc0068f4eebf296088a4e6ee7101d587038e603901ef81f0252a64451c"
+    }
+  ],
+  "slideCount": 10,
+  "aspectRatio": "16:9",
+  "speakerNotesMatchedToApprovedSource": 10,
+  "notesHiddenFromSlideBody": true,
+  "pptxOpenMethod": "Artifact Tool import del archivo final; no comprobado en Microsoft PowerPoint",
+  "packageIntegrity": "PASS",
+  "geometryAndHeadingFit": "PASS",
+  "pdfReopenedPages": 10,
+  "pdfRender": "Poppler PASS, 10 páginas",
+  "pdfFormat": "PDF estático, render de PPTX validado a 2560x1440 por slide; texto no seleccionable",
+  "visualReview": {
+    "status": "PASS",
+    "slidesReviewed": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "unresolvedOverflow": 0,
+    "clippedText": 0,
+    "unresolvedLegibilityIssues": 0,
+    "repairs": [
+      "Tipografía declarada correctamente",
+      "Dirección de flechas",
+      "Margen inferior slide 6",
+      "Flechas explícitas slide 9"
+    ]
+  },
+  "sensitiveMaterial": "Sin credenciales, claves, capturas de login ni identificadores operativos innecesarios añadidos",
+  "externalPublicationVerified": true,
+  "task51": "COMPLETED",
+  "task52": "COMPLETED",
+  "tasksComplete": 10,
+  "tasksTotal": 18,
+  "reviewRefinements": {
+    "slide4": "Bloque Puertos explícito entre Aplicación/Dominio y adaptadores de salida",
+    "slide10": "score heurístico ≠ probabilidad de vulnerabilidad",
+    "changedSlideRenders": [
+      4,
+      10
+    ],
+    "slide7PixelIdentical": true,
+    "otherSlidesPixelIdentical": [
+      1,
+      2,
+      3,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "speakerNotesUnchanged": true
+  },
+  "publicSlidesUrl": "https://drive.google.com/file/d/15EqoH_KUZoZEyiApI_oVqTwvNv2c7TFE/view?usp=sharing",
+  "publicAccess": {
+    "checkedDate": "2026-10-24",
+    "method": "Navegador integrado sin sesión: visor abierto, sin login obligatorio ni solicitud de permisos",
+    "observedFile": "LLM-Scanner-Seguridad-TFM.pdf",
+    "observedPageCount": 10,
+    "sharingSetting": "Cualquier persona con el enlace; lector",
+    "sharingSettingSource": "Confirmación del operador",
+    "finalPublishedArtifactIdentitySource": "Confirmación del operador; no descarga ni comparación de hash remoto",
+    "permissionsChangedByAgent": false
+  }
+}
