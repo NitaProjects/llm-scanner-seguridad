@@ -4,7 +4,7 @@ import java.time.Clock;
 import java.util.UUID;
 import com.llmscannerseguridad.application.execution.ExecuteSecurityTestsUseCase;
 import com.llmscannerseguridad.application.execution.TestExecutionRepositoryPort;
-import com.llmscannerseguridad.application.execution.TargetInvocationPort;
+import com.llmscannerseguridad.application.execution.TargetAdapter;
 import com.llmscannerseguridad.adapters.out.execution.securitytest.ExecutionLimits;
 import com.llmscannerseguridad.adapters.out.execution.scan.SpringScanDispatcherAdapter;
 import com.llmscannerseguridad.adapters.out.persistence.scan.PostgresScanRepositoryAdapter;
@@ -84,9 +84,9 @@ public class ScanConfiguration {
     }
 
     @Bean
-    ScanWorkPort scanWorkPort(TestExecutionRepositoryPort executions, TargetInvocationPort invocation, ExecutionLimits limits,
+    ScanWorkPort scanWorkPort(TestExecutionRepositoryPort executions, TargetAdapter adapter, ExecutionLimits limits,
             com.llmscannerseguridad.application.evaluation.EvaluateExecutionUseCase evaluations) {
-        return new ExecuteSecurityTestsUseCase(executions, invocation, limits.scanBudgetMs(), Clock.systemUTC(), System::nanoTime, evaluations);
+        return new ExecuteSecurityTestsUseCase(executions, adapter, limits.scanBudgetMs(), Clock.systemUTC(), System::nanoTime, evaluations);
     }
 
     @Bean

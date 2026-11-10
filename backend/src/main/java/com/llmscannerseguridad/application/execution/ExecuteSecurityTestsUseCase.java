@@ -9,22 +9,22 @@ import com.llmscannerseguridad.domain.execution.ExecutionError;
 
 public final class ExecuteSecurityTestsUseCase implements ScanWorkPort {
     private final TestExecutionRepositoryPort executions;
-    private final TargetInvocationPort invocation;
+    private final TargetAdapter adapter;
     private final long budgetMs;
     private final Clock clock;
     private final LongSupplier ticker;
     private final com.llmscannerseguridad.application.evaluation.EvaluateExecutionUseCase evaluations;
 
-    public ExecuteSecurityTestsUseCase(TestExecutionRepositoryPort executions, TargetInvocationPort invocation,
+    public ExecuteSecurityTestsUseCase(TestExecutionRepositoryPort executions, TargetAdapter adapter,
             long budgetMs, Clock clock, LongSupplier ticker) {
-        this(executions, invocation, budgetMs, clock, ticker, null);
+        this(executions, adapter, budgetMs, clock, ticker, null);
     }
 
-    public ExecuteSecurityTestsUseCase(TestExecutionRepositoryPort executions, TargetInvocationPort invocation,
+    public ExecuteSecurityTestsUseCase(TestExecutionRepositoryPort executions, TargetAdapter adapter,
             long budgetMs, Clock clock, LongSupplier ticker,
             com.llmscannerseguridad.application.evaluation.EvaluateExecutionUseCase evaluations) {
         this.executions = executions;
-        this.invocation = invocation;
+        this.adapter = adapter;
         this.budgetMs = budgetMs;
         this.clock = clock;
         this.ticker = ticker;
@@ -44,7 +44,8 @@ public final class ExecuteSecurityTestsUseCase implements ScanWorkPort {
             try {
                 result = budget.remainingNanos() == 0
                         ? InvocationResult.failure(ExecutionError.SCAN_BUDGET_EXCEEDED)
-                        : invocation.invoke(plan.target(), plan.tests().get(i).prompt(), budget);
+                        : LegacyInvocationResultProjection.toLegacy(
+                                adapter.interact(plan.target(), plan.tests().get(i).prompt(), budget));
             } catch (RuntimeException error) {
                 result = InvocationResult.failure(ExecutionError.EXECUTION_INTERNAL_ERROR);
             }

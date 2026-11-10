@@ -1,0 +1,21 @@
+{
+  "date": "2026-11-10",
+  "status": "PASS",
+  "executedBy": "operator in prepared terminal",
+  "verifiedBy": "local Surefire XML and operator console result",
+  "command": "mvnw.cmd -o '-Dtest=EvaluationEnginePostgresIntegrationTest#fourEvaluationsFindingsMetadataEndpointsAndIdempotenceAreDurable+clearSafeIsolatedLlmAndEveryComponentFailureCloseCoherently' test",
+  "suite": "com.llmscannerseguridad.integration.EvaluationEnginePostgresIntegrationTest",
+  "passed": 2,
+  "failed": 0,
+  "skipped": 0,
+  "testSeconds": "11.212",
+  "mavenSeconds": 13.059,
+  "finishTime": "2026-11-10T17:46:34+01:00",
+  "database": "localhost:5432/llm_scanner_seguridad_test",
+  "databaseSource": "operator-authorized dedicated test database",
+  "tests": [
+    "fourEvaluationsFindingsMetadataEndpointsAndIdempotenceAreDurable",
+    "clearSafeIsolatedLlmAndEveryComponentFailureCloseCoherently"
+  ],
+  "rawReportsStored": false
+}

@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 import com.llmscannerseguridad.application.scan.ScanOperationException;
+import com.llmscannerseguridad.adapters.out.execution.securitytest.LegacyRestTargetAdapter;
 import com.llmscannerseguridad.domain.execution.*;
 import com.llmscannerseguridad.domain.securitytest.*;
 import com.llmscannerseguridad.domain.target.*;
@@ -22,6 +23,79 @@ class ExecuteSecurityTestsUseCaseTest {
     private final UUID scan = UUID.randomUUID();
     private final TestExecutionRepositoryPort repository = mock(TestExecutionRepositoryPort.class);
     private final TargetInvocationPort invocation = mock(TargetInvocationPort.class);
+
+    @Test
+    void applicationPortIsNotCalledWhenPreparationFailsOrBudgetIsExhausted() {
+        var adapter = mock(TargetAdapter.class);
+        when(repository.prepare(scan)).thenThrow(ScanOperationException.internal());
+        var worker = new ExecuteSecurityTestsUseCase(repository, adapter, 300000,
+                Clock.fixed(now, ZoneOffset.UTC), System::nanoTime);
+        assertThatThrownBy(() -> worker.execute(scan)).isInstanceOf(ScanOperationException.class);
+        verifyNoInteractions(adapter);
+        reset(repository);
+        var plan = plan();
+        when(repository.prepare(scan)).thenReturn(plan);
+        var first = plan.executions().getFirst();
+        when(repository.start(first.id())).thenReturn(first.start(now.plusSeconds(301), now));
+        var expired = new ExecuteSecurityTestsUseCase(repository, adapter, 300000,
+                Clock.fixed(now.plusSeconds(301), ZoneOffset.UTC), System::nanoTime);
+        assertThatThrownBy(() -> expired.execute(scan)).isInstanceOf(ScanOperationException.class);
+        verifyNoInteractions(adapter);
+        verify(repository).finish(any(), eq(InvocationResult.failure(ExecutionError.SCAN_BUDGET_EXCEEDED)));
+    }
+
+    @Test
+    void applicationPortIsTheOnlyPathAndFinishPrecedesEvaluation() {
+        var plan = stubPlan();
+        var adapter = mock(TargetAdapter.class);
+        var evaluations = mock(com.llmscannerseguridad.application.evaluation.EvaluateExecutionUseCase.class);
+        when(adapter.interact(same(plan.target()), anyString(), any())).thenReturn(
+                LegacyInvocationResultProjection.fromLegacy(success()));
+        when(repository.allCompleted(scan)).thenReturn(true);
+        when(evaluations.allCompleted(scan)).thenReturn(true);
+        var confirmed = plan.executions().stream().map(row -> row.start(now, now).finish(
+                now, 200, 1L, null, "{}", "untrusted", false, false)).toList();
+        when(repository.findByScanId(scan)).thenReturn(confirmed);
+        new ExecuteSecurityTestsUseCase(repository, adapter, 300000, Clock.fixed(now, ZoneOffset.UTC),
+                System::nanoTime, evaluations).execute(scan);
+        var order = inOrder(repository, adapter, evaluations);
+        order.verify(repository).prepare(scan);
+        for (int i = 0; i < 4; i++) {
+            order.verify(repository).start(plan.executions().get(i).id());
+            order.verify(adapter).interact(same(plan.target()), eq(plan.tests().get(i).prompt()), any());
+            order.verify(repository).finish(plan.executions().get(i).start(now, now), success());
+            order.verify(repository).findByScanId(scan);
+            order.verify(evaluations).execute(eq(confirmed.get(i)), eq(plan.tests().get(i)), any());
+        }
+        verifyNoInteractions(invocation);
+        for (var constructor : ExecuteSecurityTestsUseCase.class.getConstructors()) {
+            assertThat(constructor.getParameterTypes()).contains(TargetAdapter.class).doesNotContain(TargetInvocationPort.class);
+        }
+    }
+
+    @Test
+    void invocationExceptionAndInterruptionKeepExistingFailureSemantics() {
+        stubPlan();
+        when(invocation.invoke(any(), anyString(), any())).thenThrow(new IllegalStateException("fixture"));
+        assertThatThrownBy(() -> worker().execute(scan)).isInstanceOf(ScanOperationException.class);
+        verify(repository).finish(any(), eq(InvocationResult.failure(ExecutionError.EXECUTION_INTERNAL_ERROR)));
+        verify(invocation).invoke(any(), anyString(), any());
+        reset(repository, invocation);
+        stubPlan();
+        when(repository.allCompleted(scan)).thenReturn(true);
+        when(invocation.invoke(any(), anyString(), any())).thenAnswer(ignored -> {
+            Thread.currentThread().interrupt();
+            return success();
+        });
+        try {
+            assertThatThrownBy(() -> worker().execute(scan)).isInstanceOf(ScanOperationException.class);
+            verify(invocation, times(4)).invoke(any(), anyString(), any());
+            verify(repository, times(4)).finish(any(), eq(success()));
+            assertThat(Thread.currentThread().isInterrupted()).isTrue();
+        } finally {
+            Thread.interrupted();
+        }
+    }
 
     @Test
     void committedCompletePlanPrecedesAllRequestsAndSnapshotNeverChanges() {
@@ -110,7 +184,7 @@ class ExecuteSecurityTestsUseCaseTest {
         });
         var first = plan.executions().getFirst();
         when(repository.start(first.id())).thenReturn(first.start(now, now));
-        var worker = new ExecuteSecurityTestsUseCase(repository, invocation, 300000,
+        var worker = new ExecuteSecurityTestsUseCase(repository, new LegacyRestTargetAdapter(invocation), 300000,
                 Clock.fixed(now.minusSeconds(10), ZoneOffset.UTC), nanos::get);
         assertThatThrownBy(() -> worker.execute(scan)).isInstanceOf(ScanOperationException.class);
         verifyNoInteractions(invocation);
@@ -127,7 +201,7 @@ class ExecuteSecurityTestsUseCaseTest {
     }
 
     private ExecuteSecurityTestsUseCase worker() {
-        return new ExecuteSecurityTestsUseCase(repository, invocation, 300000, Clock.fixed(now, ZoneOffset.UTC), System::nanoTime);
+        return new ExecuteSecurityTestsUseCase(repository, new LegacyRestTargetAdapter(invocation), 300000, Clock.fixed(now, ZoneOffset.UTC), System::nanoTime);
     }
 
     private InvocationResult success() {

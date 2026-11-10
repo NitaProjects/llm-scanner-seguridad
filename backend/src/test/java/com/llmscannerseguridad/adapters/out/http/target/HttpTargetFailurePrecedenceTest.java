@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import com.llmscannerseguridad.adapters.out.execution.securitytest.ExecutionLimits;
+import com.llmscannerseguridad.adapters.out.execution.securitytest.LegacyRestTargetAdapter;
 import com.llmscannerseguridad.application.execution.*;
 import com.llmscannerseguridad.application.scan.ScanOperationException;
 import com.llmscannerseguridad.domain.execution.*;
@@ -71,7 +72,7 @@ class HttpTargetFailurePrecedenceTest {
         when(repository.start(first.id())).thenReturn(first);
         var result = translate(error, System.nanoTime() - 1, false, budget());
         when(invocation.invoke(any(), anyString(), any())).thenReturn(result);
-        var worker = new ExecuteSecurityTestsUseCase(repository, invocation, 300000, Clock.fixed(now, ZoneOffset.UTC), System::nanoTime);
+        var worker = new ExecuteSecurityTestsUseCase(repository, new LegacyRestTargetAdapter(invocation), 300000, Clock.fixed(now, ZoneOffset.UTC), System::nanoTime);
         assertThatThrownBy(() -> worker.execute(scan)).isInstanceOf(ScanOperationException.class);
         verify(repository).finish(first, result);
         verify(repository, times(1)).start(any());

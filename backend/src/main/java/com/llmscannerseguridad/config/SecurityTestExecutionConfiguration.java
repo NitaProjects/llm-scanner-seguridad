@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
 import com.llmscannerseguridad.adapters.out.execution.securitytest.ExecutionLimits;
+import com.llmscannerseguridad.adapters.out.execution.securitytest.LegacyRestTargetAdapter;
 import com.llmscannerseguridad.adapters.out.http.target.BoundedDnsResolver;
 import com.llmscannerseguridad.adapters.out.http.target.HttpTargetInvocationAdapter;
 import com.llmscannerseguridad.adapters.out.http.target.TargetDestinationPolicy;
@@ -17,6 +18,8 @@ import com.llmscannerseguridad.adapters.out.validation.target.TargetJsonProcesso
 import com.llmscannerseguridad.application.execution.ListTestExecutionsUseCase;
 import com.llmscannerseguridad.application.execution.SecurityTestCatalogPort;
 import com.llmscannerseguridad.application.execution.TestExecutionRepositoryPort;
+import com.llmscannerseguridad.application.execution.TargetAdapter;
+import com.llmscannerseguridad.application.execution.TargetInvocationPort;
 import com.llmscannerseguridad.application.scan.GetScanUseCase;
 import com.llmscannerseguridad.application.scan.ScanRepositoryPort;
 import com.llmscannerseguridad.application.target.CredentialDecryptionPort;
@@ -75,6 +78,11 @@ public class SecurityTestExecutionConfiguration {
             CredentialDecryptionPort crypto, ExecutionLimits limits) {
         var validator = new JsonTargetConfigurationValidator(new LocalTargetUrlPolicy(false, false, Set.of()));
         return new HttpTargetInvocationAdapter(destinations, dns, new TargetJsonProcessor(validator), crypto, limits);
+    }
+
+    @Bean(destroyMethod = "")
+    TargetAdapter targetAdapter(TargetInvocationPort invocation) {
+        return new LegacyRestTargetAdapter(invocation);
     }
 
     @Bean

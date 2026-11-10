@@ -35,7 +35,7 @@ class HttpTargetInvocationAdapterTest {
                 var dns = new BoundedDnsResolver(host -> { throw new AssertionError("No DNS para literal."); });
                 var adapter = adapter(server, dns, crypto, ExecutionLimits.defaults())) {
             for (AuthType type : AuthType.values()) {
-                var result = adapter.invoke(target(server.origin() + "/echo", type, 10000, "{\"m\":\"{{PROMPT}}\",\"known\":\"fixture-secret\"}"),
+                var result = invoke(adapter, target(server.origin() + "/echo", type, 10000, "{\"m\":\"{{PROMPT}}\",\"known\":\"fixture-secret\"}"),
                         "comillas \" 😀\n", budget());
                 assertThat(result.errorReason()).isNull();
                 assertThat(result.httpStatus()).isEqualTo(200);
@@ -67,7 +67,7 @@ class HttpTargetInvocationAdapterTest {
     void neverRetriesOrFollowsRedirects(int status) throws Exception {
         try (var server = new ControlledTargetServer(); var dns = new BoundedDnsResolver(InetAddress::getAllByName);
                 var adapter = adapter(server, dns, crypto, ExecutionLimits.defaults())) {
-            var result = adapter.invoke(target(server.origin() + "/status/" + status, AuthType.NONE, 10000, "{\"m\":\"{{PROMPT}}\"}"),
+            var result = invoke(adapter, target(server.origin() + "/status/" + status, AuthType.NONE, 10000, "{\"m\":\"{{PROMPT}}\"}"),
                     "prompt", budget());
             assertThat(result.httpStatus()).isEqualTo(status);
             assertThat(result.errorReason()).isEqualTo(status < 300 ? null : ExecutionError.HTTP_STATUS_ERROR);
@@ -84,16 +84,16 @@ class HttpTargetInvocationAdapterTest {
                     "/nontext", ExecutionError.RESPONSE_NOT_TEXT, "/format", ExecutionError.RESPONSE_FORMAT_ERROR,
                     "/large", ExecutionError.RESPONSE_TOO_LARGE, "/slow", ExecutionError.TARGET_TIMEOUT);
             for (var entry : cases.entrySet()) {
-                var result = adapter.invoke(target(server.origin() + entry.getKey(), AuthType.NONE, 1000, "{\"m\":\"{{PROMPT}}\"}"),
+                var result = invoke(adapter, target(server.origin() + entry.getKey(), AuthType.NONE, 1000, "{\"m\":\"{{PROMPT}}\"}"),
                         "prompt", budget());
                 assertThat(result.errorReason()).as(entry.getKey()).isEqualTo(entry.getValue());
             }
-            assertThat(adapter.invoke(target(server.origin() + "/dangerous", AuthType.NONE, 10000, "{\"m\":\"{{PROMPT}}\"}"),
+            assertThat(invoke(adapter, target(server.origin() + "/dangerous", AuthType.NONE, 10000, "{\"m\":\"{{PROMPT}}\"}"),
                     "prompt", budget()).errorReason()).isNull();
-            assertThat(adapter.invoke(target(server.origin() + "/nul", AuthType.NONE, 10000, "{\"m\":\"{{PROMPT}}\"}"),
+            assertThat(invoke(adapter, target(server.origin() + "/nul", AuthType.NONE, 10000, "{\"m\":\"{{PROMPT}}\"}"),
                     "prompt", budget()).responseText()).isEqualTo("a\0😀");
             int count = server.received.size();
-            assertThat(adapter.invoke(target(server.origin(), AuthType.NONE, 10000, "{\"m\":\"{{PROMPT}}\"}"),
+            assertThat(invoke(adapter, target(server.origin(), AuthType.NONE, 10000, "{\"m\":\"{{PROMPT}}\"}"),
                     "x".repeat(65536), budget()).errorReason()).isEqualTo(ExecutionError.REQUEST_TOO_LARGE);
             assertThat(server.received).hasSize(count);
         }
@@ -106,7 +106,7 @@ class HttpTargetInvocationAdapterTest {
         try (var dns = new BoundedDnsResolver(host -> { calls.incrementAndGet(); throw new java.net.UnknownHostException("PRIVATE_DNS_MARKER"); });
                 var adapter = new HttpTargetInvocationAdapter(new TargetDestinationPolicy(Set.of(), false, false, Set.of(), Set.of()),
                         dns, json(), forbiddenCrypto, ExecutionLimits.defaults())) {
-            var result = adapter.invoke(target("https://controlled.invalid", AuthType.BEARER_TOKEN, 10000, "{\"m\":\"{{PROMPT}}\"}"), "prompt", budget());
+            var result = invoke(adapter, target("https://controlled.invalid", AuthType.BEARER_TOKEN, 10000, "{\"m\":\"{{PROMPT}}\"}"), "prompt", budget());
             assertThat(result.errorReason()).isEqualTo(ExecutionError.TARGET_NOT_AUTHORIZED);
             assertThat(calls).hasValue(0);
             verifyNoInteractions(forbiddenCrypto);
@@ -114,7 +114,7 @@ class HttpTargetInvocationAdapterTest {
         }
         try (var server = new ControlledTargetServer(); var dns = new BoundedDnsResolver(InetAddress::getAllByName);
                 var adapter = adapter(server, dns, encrypted -> { throw new IllegalStateException("PRIVATE_CRYPTO_MARKER"); }, ExecutionLimits.defaults())) {
-            var result = adapter.invoke(target(server.origin(), AuthType.BEARER_TOKEN, 10000, "{\"m\":\"{{PROMPT}}\"}"), "prompt", budget());
+            var result = invoke(adapter, target(server.origin(), AuthType.BEARER_TOKEN, 10000, "{\"m\":\"{{PROMPT}}\"}"), "prompt", budget());
             assertThat(result.errorReason()).isEqualTo(ExecutionError.CREDENTIAL_UNAVAILABLE);
             assertThat(server.received).isEmpty();
         }
@@ -130,10 +130,10 @@ class HttpTargetInvocationAdapterTest {
                         calls.incrementAndGet() == 1 ? "127.0.0.1" : "169.254.169.254")});
                     var adapter = new HttpTargetInvocationAdapter(new TargetDestinationPolicy(Set.of(), true, true, Set.of(origin), Set.of()),
                             dns, json(), crypto, ExecutionLimits.defaults())) {
-                assertThat(adapter.invoke(target(origin, AuthType.NONE, 10000, "{\"m\":\"{{PROMPT}}\"}"), "prompt", budget()).errorReason()).isNull();
+                assertThat(invoke(adapter, target(origin, AuthType.NONE, 10000, "{\"m\":\"{{PROMPT}}\"}"), "prompt", budget()).errorReason()).isNull();
                 assertThat(calls).hasValue(1);
                 assertThat(server.received).hasSize(1);
-                assertThat(adapter.invoke(target(origin, AuthType.NONE, 10000, "{\"m\":\"{{PROMPT}}\"}"), "prompt", budget()).errorReason())
+                assertThat(invoke(adapter, target(origin, AuthType.NONE, 10000, "{\"m\":\"{{PROMPT}}\"}"), "prompt", budget()).errorReason())
                         .isEqualTo(ExecutionError.TARGET_ADDRESS_BLOCKED);
                 assertThat(server.received).hasSize(1);
                 assertThat(calls).hasValue(2);
@@ -156,7 +156,7 @@ class HttpTargetInvocationAdapterTest {
                             ExecutionLimits.defaults(), org.apache.hc.client5.http.ssl.SSLConnectionSocketFactoryBuilder.create()
                                 .setSslContext(server.trustedContext).build())) {
                 for (var adapter : java.util.List.of(ordinary, trustedCertificateOnly)) {
-                    var result = adapter.invoke(target(server.origin(), AuthType.NONE, 10000, "{\"m\":\"{{PROMPT}}\"}"), "prompt", budget());
+                    var result = invoke(adapter, target(server.origin(), AuthType.NONE, 10000, "{\"m\":\"{{PROMPT}}\"}"), "prompt", budget());
                     assertThat(result.errorReason()).isEqualTo(ExecutionError.TARGET_CONNECTION_FAILED);
                     assertThat(server.received).hasValue(0);
                 }
@@ -178,7 +178,7 @@ class HttpTargetInvocationAdapterTest {
             var destination = new TargetDestinationPolicy(Set.of(), true, true, Set.of(origin), Set.of());
             try (var adapter = new HttpTargetInvocationAdapter(destination, dns, json(), crypto, ExecutionLimits.defaults(),
                     org.apache.hc.client5.http.ssl.SSLConnectionSocketFactoryBuilder.create().setSslContext(server.trustedContext).build())) {
-                var result = adapter.invoke(target(origin, AuthType.NONE, 10000, "{\"m\":\"{{PROMPT}}\"}"), "prompt", budget());
+                var result = invoke(adapter, target(origin, AuthType.NONE, 10000, "{\"m\":\"{{PROMPT}}\"}"), "prompt", budget());
                 assertThat(result.errorReason()).isNull();
                 assertThat(result.httpStatus()).isEqualTo(200);
                 assertThat(result.responseText()).isEqualTo("ok");
@@ -196,8 +196,8 @@ class HttpTargetInvocationAdapterTest {
             var target = target(server.origin() + "/text/8", AuthType.NONE, 1000, "{\"m\":\"{{PROMPT}}\"}");
             var exact = new ExecutionLimits(4, 16, 19, 8, 26, 100, 60000, 2000, 5000, 1000);
             try (var adapter = adapter(server, dns, crypto, exact)) {
-                assertThat(adapter.invoke(target, "12345678", budget()).errorReason()).isNull();
-                assertThat(adapter.invoke(target, "123456789", budget()).errorReason()).isEqualTo(ExecutionError.REQUEST_TOO_LARGE);
+                assertThat(invoke(adapter, target, "12345678", budget()).errorReason()).isNull();
+                assertThat(invoke(adapter, target, "123456789", budget()).errorReason()).isEqualTo(ExecutionError.REQUEST_TOO_LARGE);
                 assertThat(server.received).hasSize(1);
             }
             for (var changed : java.util.List.of(
@@ -205,7 +205,7 @@ class HttpTargetInvocationAdapterTest {
                     new ExecutionLimits(4, 16, 19, 7, 26, 100, 60000, 2000, 5000, 1000),
                     new ExecutionLimits(4, 16, 19, 8, 25, 100, 60000, 2000, 5000, 1000))) {
                 try (var adapter = adapter(server, dns, crypto, changed)) {
-                    assertThat(adapter.invoke(target, "12345678", budget()).errorReason()).isEqualTo(
+                    assertThat(invoke(adapter, target, "12345678", budget()).errorReason()).isEqualTo(
                             changed.responseBytes() == 18 ? ExecutionError.RESPONSE_TOO_LARGE : ExecutionError.EVIDENCE_LIMIT_EXCEEDED);
                 }
             }
@@ -217,7 +217,7 @@ class HttpTargetInvocationAdapterTest {
         try (var server = new ControlledTargetServer(); var dns = new BoundedDnsResolver(InetAddress::getAllByName);
                 var adapter = adapter(server, dns, crypto, ExecutionLimits.defaults())) {
             for (var path : java.util.List.of("/utf8", "/duplicate", "/deep", "/compressed", "/manyheaders", "/slowbody")) {
-                var result = adapter.invoke(target(server.origin() + path, AuthType.NONE, 1000, "{\"m\":\"{{PROMPT}}\"}"), "prompt", budget());
+                var result = invoke(adapter, target(server.origin() + path, AuthType.NONE, 1000, "{\"m\":\"{{PROMPT}}\"}"), "prompt", budget());
                 var expected = path.equals("/slowbody") ? ExecutionError.TARGET_TIMEOUT
                         : path.equals("/compressed") || path.equals("/manyheaders") ? ExecutionError.RESPONSE_FORMAT_ERROR
                         : ExecutionError.RESPONSE_INVALID_JSON;
@@ -233,14 +233,14 @@ class HttpTargetInvocationAdapterTest {
         try (var dns = new BoundedDnsResolver(host -> { throw new AssertionError("DNS no autorizado."); });
                 var adapter = new HttpTargetInvocationAdapter(new TargetDestinationPolicy(Set.of("http://controlled.invalid"), false, false, Set.of(), Set.of()),
                         dns, json(), forbiddenCrypto, ExecutionLimits.defaults())) {
-            var result = adapter.invoke(target("http://controlled.invalid", AuthType.BEARER_TOKEN, 1000, "{\"m\":\"{{PROMPT}}\"}"), "prompt", budget());
+            var result = invoke(adapter, target("http://controlled.invalid", AuthType.BEARER_TOKEN, 1000, "{\"m\":\"{{PROMPT}}\"}"), "prompt", budget());
             assertThat(result.errorReason()).isEqualTo(ExecutionError.TARGET_TRANSPORT_REJECTED);
             verifyNoInteractions(forbiddenCrypto);
         }
         try (var server = new ControlledTargetServer(); var dns = new BoundedDnsResolver(InetAddress::getAllByName);
                 var adapter = adapter(server, dns, crypto, ExecutionLimits.defaults())) {
             var shortBudget = new ScanBudget(Instant.now(), 100, Clock.systemUTC(), System::nanoTime);
-            var result = adapter.invoke(target(server.origin() + "/slow", AuthType.NONE, 1000, "{\"m\":\"{{PROMPT}}\"}"), "prompt", shortBudget);
+            var result = invoke(adapter, target(server.origin() + "/slow", AuthType.NONE, 1000, "{\"m\":\"{{PROMPT}}\"}"), "prompt", shortBudget);
             assertThat(result.errorReason()).isEqualTo(ExecutionError.SCAN_BUDGET_EXCEEDED);
         }
     }
@@ -261,7 +261,7 @@ class HttpTargetInvocationAdapterTest {
             try (var dns = new BoundedDnsResolver(InetAddress::getAllByName);
                     var adapter = new HttpTargetInvocationAdapter(new TargetDestinationPolicy(Set.of(), true, true, Set.of(origin), Set.of()),
                             dns, json(), crypto, limits)) {
-                var result = adapter.invoke(target(origin, AuthType.NONE, 1000, "{\"m\":\"{{PROMPT}}\"}"), "prompt", budget());
+                var result = invoke(adapter, target(origin, AuthType.NONE, 1000, "{\"m\":\"{{PROMPT}}\"}"), "prompt", budget());
                 assertThat(result.errorReason()).isEqualTo(ExecutionError.TARGET_TIMEOUT);
                 assertThat(result.httpStatus()).isNull();
                 assertThat(result.latencyMs()).isLessThan(900L);
@@ -272,6 +272,11 @@ class HttpTargetInvocationAdapterTest {
         }
     }
 
+    private InvocationResult invoke(HttpTargetInvocationAdapter adapter, TargetConfiguration target, String prompt, ScanBudget budget) {
+        return LegacyInvocationResultProjection.toLegacy(
+                new com.llmscannerseguridad.adapters.out.execution.securitytest.LegacyRestTargetAdapter(adapter)
+                        .interact(target, prompt, budget));
+    }
     private TargetJsonProcessor json() {
         return new TargetJsonProcessor(new JsonTargetConfigurationValidator(new LocalTargetUrlPolicy(false, false, Set.of())));
     }

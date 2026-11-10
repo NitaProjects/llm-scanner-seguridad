@@ -73,8 +73,43 @@ class EvaluationEnginePostgresIntegrationTest {
     }
     private List<String> corpus() { return List.of("SAFE","UNKNOWN",EvaluationFixtures.vulnerable("LLM01"),EvaluationFixtures.vulnerable("LLM02"),EvaluationFixtures.vulnerable("LLM08"),EvaluationFixtures.vulnerable("LLM10")); }
     private UUID run(ConfigurableApplicationContext context,UUID project) {
+        assertThat(context.getBean(TargetAdapter.class)).isExactlyInstanceOf(
+                com.llmscannerseguridad.adapters.out.execution.securitytest.LegacyRestTargetAdapter.class);
         UUID scan=context.getBean(ScanLifecyclePort.class).create(project).id();
         context.getBean(ScanWorkerEntry.class).execute(scan);return scan;
+    }
+    private void derivedResults(ConfigurableApplicationContext context, UUID project, UUID scan,
+            int findings, int negative, int inconclusive, int globalScore) {
+        var executions=context.getBean(TestExecutionRepositoryPort.class).findByScanId(scan);
+        assertThat(executions).hasSize(4).allSatisfy(row->{
+            assertThat(row.httpStatus()).isEqualTo(200);assertThat(row.latencyMs()).isEqualTo(1L);
+            assertThat(row.requestBody()).isEqualTo("{\"secretExcluded\":\"SYNTHETIC_INTERNAL\"}");
+            assertThat(row.requestRedacted()).isFalse();assertThat(row.responseRedacted()).isFalse();
+        });
+        var score=context.getBean(com.llmscannerseguridad.application.scoring.GetScanScoreUseCase.class).execute(project,scan).score();
+        assertThat(score.scoringVersion()).isEqualTo("scoring-v1");
+        assertThat(score.globalScore()).isEqualTo(globalScore);assertThat(score.evaluationCount()).isEqualTo(4);
+        assertThat(score.findingCount()).isEqualTo(findings);assertThat(score.notVulnerableCount()).isEqualTo(negative);
+        assertThat(score.inconclusiveCount()).isEqualTo(inconclusive);
+        var report=context.getBean(com.llmscannerseguridad.application.reporting.GetSecurityReportUseCase.class).execute(project,scan).report();
+        assertThat(report.reportVersion()).isEqualTo("report-v1");
+        assertThat(report.scanId()).isEqualTo(scan);assertThat(report.projectId()).isEqualTo(project);
+        assertThat(report.summary().globalScore()).isEqualTo(globalScore);
+        assertThat(report.summary().findingCount()).isEqualTo(findings);
+        assertThat(report.summary().notVulnerableCount()).isEqualTo(negative);
+        assertThat(report.summary().inconclusiveCount()).isEqualTo(inconclusive);
+        assertThat(report.evaluations()).hasSize(4);assertThat(report.findings()).hasSize(findings);
+        var stored=context.getBean(EvaluationRepositoryPort.class).listEvaluations(scan).items();
+        report.evaluations().forEach(row->{
+            var original=stored.stream().filter(value->value.id().equals(row.id())).findFirst().orElseThrow();
+            assertThat(row.finalVerdict()).isEqualTo(original.finalVerdict());
+            assertThat(row.confidence()).isEqualByComparingTo(original.confidence());
+            assertThat(row.severity()).isEqualTo(original.severity());
+            assertThat(row.findingId()).isEqualTo(original.findingId());
+            assertThat(executions).anySatisfy(execution->assertThat(execution.id()).isEqualTo(row.testExecutionId()));
+        });
+        assertThat(context.getBean(com.llmscannerseguridad.application.reporting.GetSecurityReportUseCase.class)
+                .execute(project,scan).report()).isEqualTo(report);
     }
     private EvaluatorOutcome success(EvaluatorInput input,Verdict verdict) {
         return new EvaluatorOutcome(EvaluationFixtures.assessment(input,verdict),null,"gpt-6-luna",10L,100L,40L,null,"resp_fixture");
@@ -93,6 +128,7 @@ class EvaluationEnginePostgresIntegrationTest {
                 assertThat(r.evaluatorProvider()).isEqualTo("OPENAI");assertThat(r.evaluatorModel()).isEqualTo("gpt-6-luna");assertThat(r.findingId()).isNotNull();
             });
             assertThat(repository.listFindings(scan)).hasSize(4);
+            derivedResults(context,project,scan,4,0,0,55);
             for(String mutation:List.of("risk_level='HIGH'","confidence=0.01","owasp_category='LLM08'","final_verdict='INCONCLUSIVE'",
                     "evaluation_result_id='00000000-0000-0000-0000-000000000000'")) {
                 assertThatThrownBy(()->db.jdbc().execute("update findings set "+mutation+" where id='"+repository.listFindings(scan).getFirst().id()+"'"))
@@ -134,6 +170,7 @@ class EvaluationEnginePostgresIntegrationTest {
                     assertThat(r.confidence()).isEqualByComparingTo(failure==null?"0.85":"0.00");
                 });
                 assertThat(calls).hasValue(failure!=null&&failure.suppressesScan()?1:4);
+                derivedResults(context,project,scan,0,failure==null?4:0,failure==null?0:4,0);
             }
         }
         try(var db=new ScanTestDatabase()) {
