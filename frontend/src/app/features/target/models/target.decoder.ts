@@ -3,6 +3,16 @@ import { contractError } from '../../../core/api/api-error';
 import { TargetConfigurationDto, authTypes } from './target';
 export function decodeTarget(value: unknown): TargetConfigurationDto {
   const source = record(value);
+  if (source['adapterType'] === 'OPENAI_COMPATIBLE') {
+    if (source['authType'] !== 'BEARER_TOKEN' || source['authConfig'] !== null ||
+        ['url', 'requestTemplate', 'responsePath', 'headers'].some(key => key in source)) throw contractError();
+    return { adapterType: 'OPENAI_COMPATIBLE', id: uuid(source['id']), projectId: uuid(source['projectId']),
+      name: nullable(text)(source['name']), endpoint: text(source['endpoint']), model: text(source['model']),
+      systemPrompt: nullable(text)(source['systemPrompt']), authType: 'BEARER_TOKEN', authConfig: null,
+      timeoutMs: number(1000, 60000)(source['timeoutMs']), hasCredentials: bool(source['hasCredentials']),
+      createdAt: date(source['createdAt']), updatedAt: date(source['updatedAt']) };
+  }
+  if (source['adapterType'] !== undefined && source['adapterType'] !== 'REST_LEGACY') throw contractError();
   const fields = {
     id: uuid(source['id']), projectId: uuid(source['projectId']), name: nullable(text)(source['name']), url: text(source['url']),
     method: oneOf(['POST'])(source['method']), contentType: oneOf(['application/json'])(source['contentType']),

@@ -78,6 +78,12 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
 
     @Override
     public InvocationResult invoke(TargetConfiguration target, String prompt, ScanBudget budget) {
+        return invokeWithResponseExtractor(target, prompt, budget,
+                value -> json.render(target.settings(), value), body -> json.extract(body, target.settings().responsePath()));
+    }
+
+    public InvocationResult invokeWithResponseExtractor(TargetConfiguration target, String prompt, ScanBudget budget,
+            java.util.function.Function<String, String> requestRenderer, TargetResponseTextExtractor extractor) {
         try {
             gate.acquire(budget);
         } catch (InvocationFailure error) {
@@ -101,7 +107,7 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
             }
             String rendered;
             try {
-                rendered = json.render(settings, prompt);
+                rendered = requestRenderer.apply(prompt);
             } catch (RuntimeException error) {
                 throw new InvocationFailure(ExecutionError.TARGET_CONFIGURATION_INVALID);
             }
@@ -200,7 +206,7 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
                         }
                         // No cerrar el stream mediante drain: se cierra la conexión en finally.
                         String decoded = readResponse(entity.getContent(), deadline, budget);
-                        String text = json.extract(decoded, settings.responsePath());
+                        String text = extractor.extract(decoded);
                         if (text.getBytes(StandardCharsets.UTF_8).length > limits.textBytes()) {
                             throw new InvocationFailure(ExecutionError.EVIDENCE_LIMIT_EXCEEDED);
                         }

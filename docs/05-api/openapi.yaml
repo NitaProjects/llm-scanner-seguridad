@@ -206,6 +206,11 @@ paths:
           $ref: '#/components/responses/TargetBadRequest'
         '404':
           $ref: '#/components/responses/TargetNotFound'
+        '409':
+          description: TARGET_TYPE_REQUIRED sin discriminador o TARGET_TYPE_CHANGED por conversión concurrente; UPDATE condicionado sin retry ni escritura parcial.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TargetApiError'}
         '500':
           $ref: '#/components/responses/InternalError'
   /api/projects/{projectId}/scans:
@@ -1134,6 +1139,33 @@ components:
         message: {type: string, description: Mensaje sanitizado en español.}
         fieldErrors: {type: array, maxItems: 0, items: {}}
     TargetConfigurationInput:
+      oneOf:
+        - $ref: '#/components/schemas/LegacyTargetConfigurationInput'
+        - $ref: '#/components/schemas/ChatTargetInput'
+      discriminator:
+        propertyName: adapterType
+        mapping:
+          REST_LEGACY: '#/components/schemas/LegacyTargetConfigurationInput'
+          OPENAI_COMPATIBLE: '#/components/schemas/ChatTargetInput'
+      description: Tipo omitido significa REST_LEGACY. PUT sin tipo sobre chat devuelve 409 TARGET_TYPE_REQUIRED.
+    ChatTargetInput:
+      type: object
+      additionalProperties: false
+      required: [adapterType, endpoint, model, authType, authConfig]
+      properties:
+        adapterType: {type: string, const: OPENAI_COMPATIBLE}
+        name: {type: [string, 'null'], maxLength: 120}
+        endpoint: {type: string, format: uri, maxLength: 2048, description: Endpoint completo autorizado; no se añade ninguna ruta.}
+        model: {type: string, minLength: 1, maxLength: 200, description: Trim de bordes; sin controles ni placeholder reservado.}
+        systemPrompt: {type: [string, 'null'], minLength: 1, description: Opcional; hasta 16384 bytes UTF-8, no blanco, sin U+0000 ni placeholder; no se recorta. Solo texto sintético no sensible.}
+        authType: {type: string, const: BEARER_TOKEN}
+        authConfig:
+          type: object
+          additionalProperties: false
+          properties:
+            secretValue: {$ref: '#/components/schemas/TargetAuthInput/properties/secretValue'}
+        timeoutMs: {type: integer, minimum: 1000, maximum: 60000, default: 10000}
+    LegacyTargetConfigurationInput:
       type: object
       additionalProperties: false
       required: [url, requestTemplate, responsePath, authType]
@@ -1143,6 +1175,7 @@ components:
         claves y cadenas decodificadas, sin eliminar ni sustituir.
         Campos generados no admitidos. Constantes del MVP no persistidas.
       properties:
+        adapterType: {type: string, const: REST_LEGACY, description: Opcional; ausencia conserva compatibilidad legacy.}
         name:
           type: [string, 'null']
           description: Opcional; trim exterior, máximo 120 puntos de código; blanco/null/omisión → null.
@@ -1251,6 +1284,29 @@ components:
             Bearer sin espacios. Obligatorio al crear autenticado; en PUT omisión
             solo conserva bajo TC-10, null/vacío inválido. Nunca devuelto.
     TargetConfiguration:
+      oneOf:
+        - $ref: '#/components/schemas/LegacyTargetConfiguration'
+        - $ref: '#/components/schemas/ChatTargetConfiguration'
+      description: Legacy conserva exactamente su forma; chat devuelve columnas propias y nunca plantillas/rutas/cabeceras genéricas ni secretos.
+    ChatTargetConfiguration:
+      type: object
+      additionalProperties: false
+      required: [id, projectId, name, adapterType, endpoint, model, systemPrompt, authType, authConfig, hasCredentials, timeoutMs, createdAt, updatedAt]
+      properties:
+        id: {type: string, format: uuid}
+        projectId: {type: string, format: uuid}
+        name: {type: [string, 'null']}
+        adapterType: {type: string, const: OPENAI_COMPATIBLE}
+        endpoint: {type: string}
+        model: {type: string}
+        systemPrompt: {type: [string, 'null']}
+        authType: {type: string, const: BEARER_TOKEN}
+        authConfig: {type: 'null'}
+        hasCredentials: {type: boolean}
+        timeoutMs: {type: integer, minimum: 1000, maximum: 60000}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+    LegacyTargetConfiguration:
       type: object
       additionalProperties: false
       required: [id, projectId, name, url, method, contentType, requestTemplate,
@@ -1350,7 +1406,7 @@ components:
       properties:
         code:
           type: string
-          enum: [INVALID_REQUEST, VALIDATION_ERROR, INVALID_PROJECT_ID, PROJECT_NOT_FOUND, TARGET_NOT_CONFIGURED, TARGET_ALREADY_CONFIGURED, INTERNAL_ERROR]
+          enum: [INVALID_REQUEST, VALIDATION_ERROR, INVALID_PROJECT_ID, PROJECT_NOT_FOUND, TARGET_NOT_CONFIGURED, TARGET_ALREADY_CONFIGURED, TARGET_TYPE_REQUIRED, TARGET_TYPE_CHANGED, INTERNAL_ERROR]
         message:
           type: string
           description: Explicación comprensible en español.
@@ -1366,7 +1422,7 @@ components:
       properties:
         field:
           type: string
-          enum: [name, description, url, method, contentType, promptPlaceholder, requestTemplate, responsePath, headers, authType, authConfig, authConfig.headerName, authConfig.secretValue, timeoutMs]
+          enum: [adapterType, endpoint, model, systemPrompt, name, description, url, method, contentType, promptPlaceholder, requestTemplate, responsePath, headers, authType, authConfig, authConfig.headerName, authConfig.secretValue, timeoutMs]
         code:
           type: string
           enum: [REQUIRED, INVALID_TYPE, TOO_LONG, INVALID_FORMAT, INVALID_CHARACTER, OUT_OF_RANGE, NOT_ALLOWED, CONFLICT]

@@ -24,7 +24,7 @@ import { Icon } from '../../../shared/ui/icon';
       @if (target().status === 'loading') { <p>Cargando configuración…</p> }
       @if (target().error; as error) { <app-feedback-panel kind="error" [message]="error.message" [retryable]="true" (retry)="loadTarget()" /> }
       @if (target().status === 'loaded') {
-        @if (target().data; as config) { <p><strong>{{ config.name ?? 'Target configurado' }}</strong></p><p class="text">{{ config.url }}</p><p class="meta">Autenticación: {{ config.authType }} · {{ config.hasCredentials ? 'Credencial configurada' : 'Sin credencial configurada' }}</p><a class="button secondary" [routerLink]="['/projects', projectId(), 'target']"><app-icon name="settings" />Editar target</a> }
+        @if (target().data; as config) { <p><strong>{{ config.name ?? 'Target configurado' }}</strong></p><p class="text">{{ config.adapterType === 'OPENAI_COMPATIBLE' ? config.endpoint : config.url }}</p><p class="meta">Autenticación: {{ config.authType }} · {{ config.hasCredentials ? 'Credencial configurada' : 'Sin credencial configurada' }}</p><a class="button secondary" [routerLink]="['/projects', projectId(), 'target']"><app-icon name="settings" />Editar target</a> }
         @else { <p>No hay un target configurado.</p><a class="button" [routerLink]="['/projects', projectId(), 'target']"><app-icon name="settings" />Configurar target</a> }
       }
     <div class="actions">@if (active(); as scan) { <a class="button" [routerLink]="['/projects', projectId(), 'scans', scan.id]"><app-icon name="play" />Ver análisis en curso</a> }

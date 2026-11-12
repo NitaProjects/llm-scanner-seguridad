@@ -1,0 +1,441 @@
+{
+  "date": "2026-11-11",
+  "command": ".\\mvnw.cmd -o test",
+  "source": "Operator prepared terminal; totals and affected suites verified against local Surefire XML",
+  "status": "PASS",
+  "total": 641,
+  "passed": 629,
+  "failed": 0,
+  "errors": 0,
+  "skipped": 12,
+  "exitCode": 0,
+  "suites": [
+    {
+      "suite": "com.llmscannerseguridad.adapters.in.rest.project.ProjectControllerTest",
+      "tests": 11,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.adapters.in.rest.scan.EvaluationControllerTest",
+      "tests": 4,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.adapters.in.rest.scan.EvaluationOpenApiContractTest",
+      "tests": 1,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.adapters.in.rest.scan.ReportControllerTest",
+      "tests": 2,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.adapters.in.rest.scan.ReportingOpenApiContractTest",
+      "tests": 1,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.adapters.in.rest.scan.ScanControllerTest",
+      "tests": 9,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.adapters.in.rest.scan.ScoreControllerTest",
+      "tests": 4,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.adapters.in.rest.scan.ScoringOpenApiContractTest",
+      "tests": 1,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.adapters.in.rest.scan.TestExecutionControllerTest",
+      "tests": 3,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.adapters.in.rest.target.OpenAiCompatibleContractTest",
+      "tests": 1,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.adapters.in.rest.target.TargetControllerTest",
+      "tests": 10,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.adapters.out.crypto.target.AesGcmCredentialEncryptionAdapterTest",
+      "tests": 3,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.adapters.out.crypto.target.CredentialDecryptionTest",
+      "tests": 2,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.adapters.out.evaluation.EvaluationScenarioTest",
+      "tests": 9,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.adapters.out.evaluation.EvaluatorContractTest",
+      "tests": 7,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.adapters.out.evaluation.OpenAiTransportTest",
+      "tests": 7,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.adapters.out.execution.scan.ScanExecutorTest",
+      "tests": 2,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.adapters.out.execution.securitytest.LegacyRestTargetAdapterTest",
+      "tests": 3,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.adapters.out.http.target.ExecutionLimitsAndGateTest",
+      "tests": 3,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.adapters.out.http.target.HttpTargetFailurePrecedenceTest",
+      "tests": 44,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.adapters.out.http.target.HttpTargetInvocationAdapterTest",
+      "tests": 20,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.adapters.out.http.target.OpenAiCompatibleTargetAdapterTest",
+      "tests": 30,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.adapters.out.http.target.TargetDestinationPolicyTest",
+      "tests": 31,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.adapters.out.persistence.scan.ScanPersistenceTest",
+      "tests": 2,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.adapters.out.validation.target.TargetJsonProcessorTest",
+      "tests": 3,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.adapters.out.validation.target.TargetValidationTest",
+      "tests": 3,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.application.evaluation.EvaluateExecutionUseCaseTest",
+      "tests": 5,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.application.execution.ExecuteSecurityTestsUseCaseTest",
+      "tests": 9,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.application.execution.LegacyInvocationResultProjectionTest",
+      "tests": 194,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.application.project.ProjectUseCasesTest",
+      "tests": 5,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.application.reporting.GenerateReportUseCaseTest",
+      "tests": 11,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.application.scan.ScanUseCasesTest",
+      "tests": 11,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.application.scoring.CalculateScanScoreUseCaseTest",
+      "tests": 6,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.application.target.TargetUseCasesTest",
+      "tests": 4,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.config.ScanInfrastructureTest",
+      "tests": 9,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.config.ScoringLifecycleTest",
+      "tests": 3,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.config.SecurityTestExecutionTransactionsTest",
+      "tests": 3,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.config.TargetAdapterWiringTest",
+      "tests": 1,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.config.TargetTransactionsTest",
+      "tests": 2,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.config.TransactionalCreateProjectUseCaseTest",
+      "tests": 1,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.domain.evaluation.EvaluationPoliciesTest",
+      "tests": 16,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.domain.execution.SecurityTestExecutionDomainTest",
+      "tests": 3,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.domain.project.ProjectTest",
+      "tests": 8,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.domain.reporting.SecurityReportTest",
+      "tests": 7,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.domain.scan.ScanTest",
+      "tests": 3,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.domain.scoring.ScoringPolicyV1Test",
+      "tests": 34,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.domain.target.TargetConfigurationTest",
+      "tests": 4,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.integration.EvaluationEnginePostgresIntegrationTest",
+      "tests": 17,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.integration.EvaluationMigrationIntegrationTest",
+      "tests": 3,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.integration.OpenAiCompatiblePostgresIntegrationTest",
+      "tests": 3,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.integration.ProjectPostgresIntegrationTest",
+      "tests": 7,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 7
+    },
+    {
+      "suite": "com.llmscannerseguridad.integration.ReportingMigrationIntegrationTest",
+      "tests": 3,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.integration.ReportingPostgresIntegrationTest",
+      "tests": 11,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.integration.ScanMigrationIntegrationTest",
+      "tests": 2,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.integration.ScanPostgresIntegrationTest",
+      "tests": 13,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.integration.ScoringEnginePostgresIntegrationTest",
+      "tests": 9,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.integration.ScoringMigrationIntegrationTest",
+      "tests": 3,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.integration.SecurityTestExecutionPostgresIntegrationTest",
+      "tests": 7,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.integration.SecurityTestMigrationIntegrationTest",
+      "tests": 2,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "com.llmscannerseguridad.integration.TargetPostgresIntegrationTest",
+      "tests": 5,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 5
+    },
+    {
+      "suite": "com.llmscannerseguridad.LlmScannerSeguridadApplicationTests",
+      "tests": 1,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ]
+}

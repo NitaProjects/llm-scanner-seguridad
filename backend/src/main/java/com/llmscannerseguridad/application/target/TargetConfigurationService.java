@@ -49,6 +49,9 @@ public final class TargetConfigurationService {
         projects.findById(projectId).orElseThrow(ProjectNotFoundException::new);
         var previous = targets.findByProjectId(projectId).orElseThrow(() ->
                 new TargetOperationException(TargetOperationException.Reason.TARGET_NOT_CONFIGURED));
+        if (!command.adapterTypeExplicit() && previous.settings().adapterType() != com.llmscannerseguridad.domain.target.TargetAdapterType.REST_LEGACY) {
+            throw new TargetOperationException(TargetOperationException.Reason.TARGET_TYPE_REQUIRED);
+        }
         EncryptedCredential credential = credential(command, previous);
         Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
         if (now.isBefore(previous.updatedAt())) {
@@ -56,7 +59,12 @@ public final class TargetConfigurationService {
         }
         var target = new TargetConfiguration(previous.id(), projectId, command.settings(), credential,
                 previous.createdAt(), now);
-        targets.replace(target);
+        var expectedType = command.adapterTypeExplicit() ? previous.settings().adapterType()
+                : com.llmscannerseguridad.domain.target.TargetAdapterType.REST_LEGACY;
+        if (!targets.replace(target, expectedType)) {
+            throw new TargetOperationException(command.adapterTypeExplicit()
+                    ? TargetOperationException.Reason.TARGET_TYPE_CHANGED : TargetOperationException.Reason.TARGET_TYPE_REQUIRED);
+        }
         return TargetView.from(target);
     }
 

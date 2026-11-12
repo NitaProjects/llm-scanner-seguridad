@@ -27,10 +27,16 @@ public class TargetConfigurationJpaEntity {
     private String name;
     @Column(nullable = false, length = 2048)
     private String url;
-    @Column(name = "request_template", nullable = false, columnDefinition = "text")
+    @Column(name = "request_template", columnDefinition = "text")
     private String requestTemplate;
-    @Column(name = "response_path", nullable = false, length = 1024)
+    @Column(name = "response_path", length = 1024)
     private String responsePath;
+    @Column(name = "adapter_type", nullable = false, length = 32)
+    private String adapterType;
+    @Column(length = 200)
+    private String model;
+    @Column(name = "system_prompt", columnDefinition = "text")
+    private String systemPrompt;
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(nullable = false, columnDefinition = "jsonb")
     private Map<String, String> headers;
@@ -58,12 +64,15 @@ public class TargetConfigurationJpaEntity {
         replace(target);
     }
 
-    public void replace(TargetConfiguration target) {
+    private void replace(TargetConfiguration target) {
         var settings = target.settings();
         name = settings.name();
         url = settings.url().value();
         requestTemplate = settings.requestTemplate();
         responsePath = settings.responsePath();
+        adapterType = settings.adapterType().name();
+        model = settings.model();
+        systemPrompt = settings.systemPrompt();
         headers = settings.headers();
         authType = settings.authType().name();
         authHeaderName = settings.authHeaderName();
@@ -74,7 +83,8 @@ public class TargetConfigurationJpaEntity {
 
     public TargetConfiguration toDomain() {
         var settings = new TargetSettings(name, new TargetUrl(url), requestTemplate, responsePath, headers,
-                AuthType.valueOf(authType), authHeaderName, timeoutMs);
+                AuthType.valueOf(authType), authHeaderName, timeoutMs,
+                com.llmscannerseguridad.domain.target.TargetAdapterType.valueOf(adapterType), model, systemPrompt);
         return new TargetConfiguration(id, projectId, settings,
                 credentialCiphertext == null ? null : new EncryptedCredential(credentialCiphertext),
                 createdAt, updatedAt);

@@ -1,13 +1,13 @@
 import { ProjectDto } from '../app/features/projects/models/project';
-import { TargetConfigurationDto, AuthType } from '../app/features/target/models/target';
+import { TargetConfigurationDto, LegacyTargetConfigurationDto, AuthType } from '../app/features/target/models/target';
 import { ScanDto, EvaluationMetadataDto, TestExecutionMetadataDto, FindingDto, ScanScoreDto } from '../app/features/scans/models/scan';
 import { SecurityReportDto, limitationCodes, reportTestCodes } from '../app/features/scans/models/report';
 import { categories, Severity } from '../app/shared/models/contracts';
 export const id = (index: number) => `00000000-0000-0000-0000-${index.toString().padStart(12, '0')}`;
 export const projectId = id(1); export const scanId = id(2); export const timestamp = '2026-10-10T12:00:00.000000Z';
 export const project: ProjectDto = { id: projectId, name: 'Proyecto sintético', description: null, createdAt: timestamp, updatedAt: timestamp };
-export function target(authType: AuthType = 'NONE', overrides: Partial<TargetConfigurationDto> = {}): TargetConfigurationDto {
-  return { id: id(3), projectId, name: null, url: 'https://synthetic.example.test/chat', method: 'POST', contentType: 'application/json', requestTemplate: '{"message":"{{PROMPT}}"}', promptPlaceholder: '{{PROMPT}}', responsePath: '$.text', headers: {}, timeoutMs: 15000, hasCredentials: authType !== 'NONE', createdAt: timestamp, updatedAt: timestamp, authType, authConfig: authType === 'API_KEY_HEADER' ? { headerName: 'X-API-Key' } : null, ...overrides } as TargetConfigurationDto;
+export function target(authType: AuthType = 'NONE', overrides: Partial<LegacyTargetConfigurationDto> = {}): LegacyTargetConfigurationDto {
+  return { id: id(3), projectId, name: null, url: 'https://synthetic.example.test/chat', method: 'POST', contentType: 'application/json', requestTemplate: '{"message":"{{PROMPT}}"}', promptPlaceholder: '{{PROMPT}}', responsePath: '$.text', headers: {}, timeoutMs: 15000, hasCredentials: authType !== 'NONE', createdAt: timestamp, updatedAt: timestamp, authType, authConfig: authType === 'API_KEY_HEADER' ? { headerName: 'X-API-Key' } : null, ...overrides } as LegacyTargetConfigurationDto;
 }
 export function scan(overrides: Partial<ScanDto> = {}): ScanDto {
   const status = overrides.status ?? 'RUNNING';

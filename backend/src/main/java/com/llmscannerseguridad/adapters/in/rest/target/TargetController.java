@@ -30,22 +30,22 @@ public class TargetController {
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<TargetResponse> configure(@PathVariable("projectId") String projectId,
+    public ResponseEntity<Object> configure(@PathVariable("projectId") String projectId,
             @RequestBody String body) {
         var id = requests.identifier(projectId);
         var view = configure.execute(id, requests.command(body));
         return ResponseEntity.created(URI.create("/api/projects/" + id + "/target"))
-                .body(TargetResponse.from(view));
+                .body(TargetResponse.resourceFrom(view));
     }
 
     @GetMapping
-    public TargetResponse get(@PathVariable("projectId") String projectId) {
-        return TargetResponse.from(get.execute(requests.identifier(projectId)));
+    public Object get(@PathVariable("projectId") String projectId) {
+        return TargetResponse.resourceFrom(get.execute(requests.identifier(projectId)));
     }
 
     @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public TargetResponse update(@PathVariable("projectId") String projectId, @RequestBody String body) {
+    public Object update(@PathVariable("projectId") String projectId, @RequestBody String body) {
         var id = requests.identifier(projectId);
-        return TargetResponse.from(update.execute(id, requests.command(body)));
+        return TargetResponse.resourceFrom(update.execute(id, requests.command(body)));
     }
 }

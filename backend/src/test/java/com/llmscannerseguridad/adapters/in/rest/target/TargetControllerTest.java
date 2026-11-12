@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,6 +12,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
+import com.llmscannerseguridad.adapters.out.crypto.target.AesGcmCredentialEncryptionAdapter;
 import com.llmscannerseguridad.adapters.out.validation.target.JsonTargetConfigurationValidator;
 import com.llmscannerseguridad.adapters.out.validation.target.LocalTargetUrlPolicy;
 import com.llmscannerseguridad.application.project.ProjectRepositoryPort;
@@ -51,7 +53,7 @@ class TargetControllerTest {
         when(projects.findById(projectId)).thenReturn(Optional.of(new Project(projectId, "Proyecto", null, now, now)));
         when(targets.findByProjectId(projectId)).thenAnswer(call -> Optional.ofNullable(saved.get()));
         doAnswer(call -> { saved.set(call.getArgument(0)); return null; }).when(targets).insert(any());
-        doAnswer(call -> { saved.set(call.getArgument(0)); return null; }).when(targets).replace(any());
+        when(targets.replace(any(), any())).thenAnswer(call -> { saved.set(call.getArgument(0)); return true; });
         when(encryption.encrypt(anyString())).thenReturn(new EncryptedCredential(new byte[] {1, 2, 3}));
         var service = new TargetConfigurationService(projects, targets,
                 new JsonTargetConfigurationValidator(new LocalTargetUrlPolicy(false, false, Set.of())),
@@ -64,6 +66,81 @@ class TargetControllerTest {
     private Map<String, Object> input() {
         return new LinkedHashMap<>(Map.of("url", "https://example.test/chat",
                 "requestTemplate", "{\"message\":\"{{PROMPT}}\"}", "responsePath", "$.text", "authType", "NONE"));
+    }
+
+    private Map<String, Object> chatInput() {
+        return new LinkedHashMap<>(Map.of("adapterType", "OPENAI_COMPATIBLE", "endpoint", "https://chat.test/completions",
+                "model", " fixture-model ", "systemPrompt", "synthetic system", "authType", "BEARER_TOKEN",
+                "authConfig", Map.of("secretValue", "synthetic-chat")));
+    }
+
+    @Test
+    void chatWithNullSystemPromptRequiresLocalEncryptionKeyBeforeWriting(CapturedOutput output) throws Exception {
+        var key = new AtomicReference<String>();
+        var service = new TargetConfigurationService(projects, targets,
+                new JsonTargetConfigurationValidator(new LocalTargetUrlPolicy(false, false, Set.of())),
+                new AesGcmCredentialEncryptionAdapter(key::get), Clock.fixed(now, ZoneOffset.UTC), UUID::randomUUID);
+        var controller = MockMvcBuilders.standaloneSetup(new TargetController(service::configure,
+                new GetTargetConfigurationUseCase(projects, targets), service::update))
+                .setControllerAdvice(new TargetExceptionHandler()).build();
+        var fields = chatInput();
+        fields.put("endpoint", "https://api.groq.com/openai/v1/chat/completions");
+        fields.put("model", "qwen/qwen3.8-27b");
+        fields.put("systemPrompt", null);
+        fields.put("timeoutMs", 20000);
+
+        controller.perform(post(route).contentType(MediaType.APPLICATION_JSON).content(body(fields)))
+                .andExpect(status().isInternalServerError()).andExpect(jsonPath("$.code").value("INTERNAL_ERROR"));
+        verify(targets, never()).insert(any());
+
+        key.set(Base64.getEncoder().encodeToString(new byte[32]));
+        controller.perform(post(route).contentType(MediaType.APPLICATION_JSON).content(body(fields)))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.hasCredentials").value(true));
+        assertThat(saved.get().settings().systemPrompt()).isNull();
+        assertThat(saved.get().settings().timeoutMs()).isEqualTo(20000);
+        assertThat(output.getAll()).doesNotContain("synthetic-chat", key.get());
+    }
+
+    @Test
+    void chatContractReadsExplicitColumnsAndPreservesCredentialWithoutLegacyFields() throws Exception {
+        var fields = chatInput();
+        mvc.perform(post(route).contentType(MediaType.APPLICATION_JSON).content(body(fields)))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.adapterType").value("OPENAI_COMPATIBLE"))
+                .andExpect(jsonPath("$.endpoint").value("https://chat.test/completions"))
+                .andExpect(jsonPath("$.model").value("fixture-model"))
+                .andExpect(jsonPath("$.requestTemplate").doesNotExist()).andExpect(jsonPath("$.responsePath").doesNotExist())
+                .andExpect(jsonPath("$.headers").doesNotExist()).andExpect(jsonPath("$.url").doesNotExist())
+                .andExpect(jsonPath("$.authConfig").value(nullValue()));
+        var credential = saved.get().credential();
+        assertThat(saved.get().settings().requestTemplate()).isNull();assertThat(saved.get().settings().responsePath()).isNull();
+        fields.put("authConfig", Map.of());fields.put("model", "new-model");
+        mvc.perform(put(route).contentType(MediaType.APPLICATION_JSON).content(body(fields))).andExpect(status().isOk());
+        assertThat(saved.get().credential()).isSameAs(credential);
+        mvc.perform(get(route)).andExpect(status().isOk()).andExpect(jsonPath("$.model").value("new-model"));
+        mvc.perform(put(route).contentType(MediaType.APPLICATION_JSON).content(body(input())))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("TARGET_TYPE_REQUIRED"));
+    }
+
+    @Test
+    void chatRejectsExtrasMissingModelWrongAuthAndConditionalWriteConflict() throws Exception {
+        for (String field : List.of("requestTemplate", "responsePath", "headers", "temperature")) {
+            var fields=chatInput();fields.put(field,"unaccepted");
+            mvc.perform(post(route).contentType(MediaType.APPLICATION_JSON).content(body(fields)))
+                    .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+        }
+        for(String model:List.of("", " ", "{{PROMPT}}", "m".repeat(201))) {
+            var fields=chatInput();fields.put("model",model);
+            mvc.perform(post(route).contentType(MediaType.APPLICATION_JSON).content(body(fields))).andExpect(status().isBadRequest());
+        }
+        var fields=chatInput();fields.put("authType","NONE");fields.remove("authConfig");
+        mvc.perform(post(route).contentType(MediaType.APPLICATION_JSON).content(body(fields))).andExpect(status().isBadRequest());
+        mvc.perform(post(route).contentType(MediaType.APPLICATION_JSON).content(body(input()))).andExpect(status().isCreated());
+        var before=saved.get();doReturn(false).when(targets).replace(any(),any());
+        mvc.perform(put(route).contentType(MediaType.APPLICATION_JSON).content(body(chatInput())))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("TARGET_TYPE_CHANGED"));
+        mvc.perform(put(route).contentType(MediaType.APPLICATION_JSON).content(body(input())))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("TARGET_TYPE_REQUIRED"));
+        assertThat(saved.get()).isSameAs(before);
     }
 
     private String body(Map<String, Object> fields) {
@@ -207,7 +284,7 @@ class TargetControllerTest {
             invalid(fields, "authConfig.secretValue");
         }
         verify(targets, never()).insert(any());
-        verify(targets, never()).replace(any());
+        verify(targets, never()).replace(any(), any());
         verifyNoInteractions(encryption);
         assertThat(output.getAll()).doesNotContain("marcador-privado", "bad\r\nvalue");
     }

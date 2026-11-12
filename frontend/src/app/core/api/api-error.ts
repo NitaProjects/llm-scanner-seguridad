@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { TimeoutError } from 'rxjs';
 
-export const fieldNames = ['name', 'description', 'url', 'method', 'contentType', 'promptPlaceholder', 'requestTemplate', 'responsePath', 'headers', 'authType', 'authConfig', 'authConfig.headerName', 'authConfig.secretValue', 'timeoutMs'] as const;
+export const fieldNames = ['adapterType', 'endpoint', 'model', 'systemPrompt', 'name', 'description', 'url', 'method', 'contentType', 'promptPlaceholder', 'requestTemplate', 'responsePath', 'headers', 'authType', 'authConfig', 'authConfig.headerName', 'authConfig.secretValue', 'timeoutMs'] as const;
 export type FieldName = typeof fieldNames[number];
 export const fieldCodes = ['REQUIRED', 'INVALID_TYPE', 'TOO_LONG', 'INVALID_FORMAT', 'INVALID_CHARACTER', 'OUT_OF_RANGE', 'NOT_ALLOWED', 'CONFLICT'] as const;
 export interface FieldErrorDto { readonly field: FieldName; readonly code: typeof fieldCodes[number]; readonly message: string }
@@ -10,6 +10,7 @@ const messages = {
   INVALID_PROJECT_ID: 'El identificador del proyecto no es válido.', INVALID_SCAN_ID: 'El identificador del análisis no es válido.',
   PROJECT_NOT_FOUND: 'El proyecto no existe.', SCAN_NOT_FOUND: 'El análisis no existe en este proyecto.',
   TARGET_NOT_CONFIGURED: 'El proyecto no tiene un target configurado.', TARGET_ALREADY_CONFIGURED: 'El target ya está configurado. Carga la configuración existente.',
+  TARGET_TYPE_REQUIRED: 'Consulta el target y selecciona su tipo antes de guardar.', TARGET_TYPE_CHANGED: 'El tipo cambi�. Recarga la configuraci�n antes de guardar.',
   SCAN_ALREADY_ACTIVE: 'Ya existe un análisis activo. Consulta el histórico.', SCAN_DISPATCH_FAILED: 'No se pudo iniciar el procesamiento. Puedes consultar el intento registrado.',
   SCAN_EXECUTION_UNAVAILABLE: 'El servicio de ejecución no está disponible temporalmente.', INTERNAL_ERROR: 'No se ha podido completar la operación.'
 } as const;

@@ -44,7 +44,7 @@ export class TargetPage {
     // El formulario garantiza secretValue en alta autenticada; no se conserva el request en estado.
     const request = this.target().data ? this.api.update(this.projectId(), input) : this.api.create(this.projectId(), input as CreateTargetRequest);
     this.requests.add(request.subscribe({ next: data => { this.saving.set(false); this.target.set(loaded(data)); this.saved.set(true); }, error: (error: ApiClientError) => {
-      this.saving.set(false); this.saveError.set(error); this.editor()?.clearSecret(); this.reconcileRequired.set(error.ambiguousWrite || error.code === 'TARGET_ALREADY_CONFIGURED');
+      this.saving.set(false); this.saveError.set(error); this.editor()?.clearSecret(); this.reconcileRequired.set(error.ambiguousWrite || ['TARGET_ALREADY_CONFIGURED', 'TARGET_TYPE_REQUIRED', 'TARGET_TYPE_CHANGED'].includes(error.code ?? ''));
     } }));
   }
   cancel() { if (this.editor()?.confirmLeave() !== false) { this.editor()?.form.markAsPristine(); void this.router.navigate(['/projects', this.projectId()]); } }

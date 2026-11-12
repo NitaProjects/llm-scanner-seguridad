@@ -74,7 +74,7 @@ class EvaluationEnginePostgresIntegrationTest {
     private List<String> corpus() { return List.of("SAFE","UNKNOWN",EvaluationFixtures.vulnerable("LLM01"),EvaluationFixtures.vulnerable("LLM02"),EvaluationFixtures.vulnerable("LLM08"),EvaluationFixtures.vulnerable("LLM10")); }
     private UUID run(ConfigurableApplicationContext context,UUID project) {
         assertThat(context.getBean(TargetAdapter.class)).isExactlyInstanceOf(
-                com.llmscannerseguridad.adapters.out.execution.securitytest.LegacyRestTargetAdapter.class);
+                RoutingTargetAdapter.class);
         UUID scan=context.getBean(ScanLifecyclePort.class).create(project).id();
         context.getBean(ScanWorkerEntry.class).execute(scan);return scan;
     }

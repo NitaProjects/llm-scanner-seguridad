@@ -1,0 +1,24 @@
+{
+  "date": "2026-11-10",
+  "status": "PASS",
+  "source": "operator prepared terminal and local Surefire XML",
+  "database": "localhost:5432/llm_scanner_seguridad_test",
+  "passed": 3,
+  "failed": 0,
+  "skipped": 0,
+  "testSeconds": "13.47",
+  "tests": [
+    "legacyPutLosesConcurrentConversionWith409AndNoPartialWrite",
+    "migrationPreservesLegacyAndChatColumnsAndRejectsUnknownNullBranches",
+    "chatPipelinePreservesFourEvaluationsFindingsScoreAndReportWithSyntheticFakes"
+  ],
+  "confirmedDate": "2026-11-11",
+  "errors": 0,
+  "regressionReportingMigration": {
+    "total": 3,
+    "passed": 3,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0
+  }
+}

@@ -36,7 +36,7 @@ class TargetUseCasesTest {
         when(projects.findById(projectId)).thenReturn(Optional.of(project));
         when(targets.findByProjectId(projectId)).thenAnswer(call -> Optional.ofNullable(saved.get()));
         doAnswer(call -> { saved.set(call.getArgument(0)); return null; }).when(targets).insert(any());
-        doAnswer(call -> { saved.set(call.getArgument(0)); return null; }).when(targets).replace(any());
+        when(targets.replace(any(), any())).thenAnswer(call -> { saved.set(call.getArgument(0)); return true; });
         when(encryption.encrypt(anyString())).thenAnswer(call -> new EncryptedCredential(new byte[] {1, 2, 3}));
         service = new TargetConfigurationService(projects, targets,
                 new JsonTargetConfigurationValidator(new LocalTargetUrlPolicy(false, false, Set.of())),
@@ -84,7 +84,7 @@ class TargetUseCasesTest {
         assertThatThrownBy(() -> service.configure(projectId, invalid)).isInstanceOf(TargetValidationException.class);
         verifyNoInteractions(encryption);
         verify(targets, never()).insert(any());
-        verify(targets, never()).replace(any());
+        verify(targets, never()).replace(any(), any());
         assertThat(saved.get()).isNull();
         when(encryption.encrypt(anyString())).thenThrow(TargetOperationException.internal());
         assertThatThrownBy(() -> service.configure(projectId,
@@ -138,7 +138,7 @@ class TargetUseCasesTest {
                 command("https://example.test", AuthType.BEARER_TOKEN, null, "otro-sintético", true)))
                 .isInstanceOf(TargetOperationException.class);
         assertThat(saved.get()).isSameAs(beforeFailure);
-        doThrow(TargetOperationException.internal()).when(targets).replace(any());
+        doThrow(TargetOperationException.internal()).when(targets).replace(any(), any());
         assertThatThrownBy(() -> service.update(projectId,
                 command("https://example.test", AuthType.NONE, null, null, false)))
                 .isInstanceOf(TargetOperationException.class);

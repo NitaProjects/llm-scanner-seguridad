@@ -81,8 +81,9 @@ public class SecurityTestExecutionConfiguration {
     }
 
     @Bean(destroyMethod = "")
-    TargetAdapter targetAdapter(TargetInvocationPort invocation) {
-        return new LegacyRestTargetAdapter(invocation);
+    TargetAdapter targetAdapter(TargetInvocationPort invocation, HttpTargetInvocationAdapter transport) {
+        return new com.llmscannerseguridad.application.execution.RoutingTargetAdapter(new LegacyRestTargetAdapter(invocation),
+                new com.llmscannerseguridad.adapters.out.execution.securitytest.OpenAiCompatibleTargetAdapter(transport));
     }
 
     @Bean

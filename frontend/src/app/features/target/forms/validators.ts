@@ -1,5 +1,5 @@
 import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
-import { AuthType, TargetConfigurationDto, UpdateTargetRequest } from '../models/target';
+import { AuthType, TargetAdapterType, TargetConfigurationDto, UpdateTargetRequest, targetEndpoint } from '../models/target';
 const controls = /[\u0000-\u001f\u007f]/;
 const token = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
 const reserved = ['authorization', 'proxy-authorization', 'cookie', 'set-cookie', 'host', 'content-length', 'content-type', 'connection', 'transfer-encoding', 'te', 'trailer', 'upgrade', 'keep-alive', 'proxy-connection', 'forwarded'];
@@ -70,14 +70,20 @@ export function secretError(value: string, authType: AuthType): string | null {
 export function canConserve(original: TargetConfigurationDto | null, authType: AuthType, url: string, headerName: string): boolean {
   if (!original || !original.hasCredentials || authType === 'NONE' || original.authType !== authType) return false;
   try {
-    return new URL(original.url).origin === new URL(url.trim()).origin && (authType !== 'API_KEY_HEADER' || (original.authType === 'API_KEY_HEADER' && original.authConfig.headerName === headerName));
+    return new URL(targetEndpoint(original)).origin === new URL(url.trim()).origin && (authType !== 'API_KEY_HEADER' || (original.authType === 'API_KEY_HEADER' && original.authConfig.headerName === headerName));
   } catch { return false; }
 }
 export interface TargetFormValue {
+  readonly adapterType?: TargetAdapterType; readonly model?: string; readonly systemPrompt?: string;
   readonly name: string; readonly url: string; readonly requestTemplate: string; readonly responsePath: string; readonly timeoutMs: number;
   readonly headers: readonly HeaderPair[]; readonly authType: AuthType; readonly headerName: string; readonly secretValue: string; readonly credentialMode: 'conserve' | 'replace';
 }
 export function targetRequest(value: TargetFormValue, conserve: boolean): UpdateTargetRequest {
+  if (value.adapterType === 'OPENAI_COMPATIBLE') return {
+    adapterType: 'OPENAI_COMPATIBLE', name: value.name.trim() || null, endpoint: value.url.trim(),
+    model: (value.model ?? '').trim(), systemPrompt: value.systemPrompt || null, timeoutMs: value.timeoutMs,
+    authType: 'BEARER_TOKEN', authConfig: conserve ? {} : { secretValue: value.secretValue }
+  };
   const fields = { name: value.name.trim() || null, url: value.url.trim(), requestTemplate: value.requestTemplate, responsePath: value.responsePath.trim(), timeoutMs: value.timeoutMs, headers: Object.fromEntries(value.headers.map(pair => [pair.name, pair.value])) };
   if (value.authType === 'NONE') return { ...fields, authType: 'NONE', authConfig: null };
   const secret = conserve ? {} : { secretValue: value.secretValue };

@@ -13,12 +13,14 @@ import com.llmscannerseguridad.domain.target.AuthType;
 import com.llmscannerseguridad.domain.target.TargetRules;
 import com.llmscannerseguridad.domain.target.TargetSettings;
 import com.llmscannerseguridad.domain.target.TargetUrl;
+import com.llmscannerseguridad.domain.target.TargetAdapterType;
 import com.llmscannerseguridad.domain.target.TargetValidationException;
 import tools.jackson.core.JacksonException;
 
 public final class TargetRequestMapper {
-    private static final Set<String> FIELDS = Set.of("name", "url", "method", "contentType", "requestTemplate",
+    private static final Set<String> FIELDS = Set.of("adapterType", "name", "url", "method", "contentType", "requestTemplate",
             "promptPlaceholder", "responsePath", "headers", "authType", "authConfig", "timeoutMs");
+    private static final Set<String> CHAT_FIELDS = Set.of("adapterType", "name", "endpoint", "model", "systemPrompt", "authType", "authConfig", "timeoutMs");
     private final StrictTargetJson json = new StrictTargetJson();
 
     public UUID identifier(String text) {
@@ -41,13 +43,21 @@ public final class TargetRequestMapper {
         if (!(parsed instanceof Map<?, ?> fields)) {
             throw new InvalidTargetRequestException();
         }
+        TargetAdapterType adapterType = TargetAdapterType.REST_LEGACY;
+        if (fields.containsKey("adapterType")) {
+            try { adapterType = TargetAdapterType.valueOf(text(fields, "adapterType", true)); }
+            catch (IllegalArgumentException error) { throw TargetValidationException.field("adapterType", "NOT_ALLOWED"); }
+        }
+        boolean chat = adapterType == TargetAdapterType.OPENAI_COMPATIBLE;
+        var permitted = chat ? CHAT_FIELDS : FIELDS;
         for (var entry : fields.entrySet()) {
             String field = (String) entry.getKey();
             // Solo rutas del contrato, nunca claves arbitrarias aportadas por el cliente.
             TargetRules.noNullCharacter(field, "url");
-            rejectNullCharacters(entry.getValue(), FIELDS.contains(field) ? field : "url");
+            rejectNullCharacters(entry.getValue(), permitted.contains(field) ? field : "url");
         }
-        if (!FIELDS.containsAll(fields.keySet())) {
+        if (!permitted.containsAll(fields.keySet())) {
+            if (chat) throw TargetValidationException.field("adapterType", "NOT_ALLOWED");
             throw new InvalidTargetRequestException();
         }
         constant(fields, "method", TargetSettings.METHOD);
@@ -121,9 +131,10 @@ public final class TargetRequestMapper {
             timeout = number.intValue();
         }
         var settings = new TargetSettings(text(fields, "name", false),
-                new TargetUrl(text(fields, "url", true)), text(fields, "requestTemplate", true),
-                text(fields, "responsePath", true), headers, type, headerName, timeout);
-        return new TargetCommand(settings, secret, secretPresent);
+                new TargetUrl(text(fields, chat ? "endpoint" : "url", true)), chat ? null : text(fields, "requestTemplate", true),
+                chat ? null : text(fields, "responsePath", true), headers, type, headerName, timeout, adapterType,
+                chat ? text(fields, "model", true) : null, chat ? text(fields, "systemPrompt", false) : null);
+        return new TargetCommand(settings, secret, secretPresent, fields.containsKey("adapterType"));
     }
 
     private static void constant(Map<?, ?> fields, String field, String expected) {

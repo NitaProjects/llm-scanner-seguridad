@@ -6,6 +6,11 @@ import com.llmscannerseguridad.application.reporting.*;
 import com.llmscannerseguridad.application.scan.ScanLifecyclePort;
 import com.llmscannerseguridad.domain.evaluation.Verdict;
 import com.llmscannerseguridad.adapters.reporting.ReportJson;
+import com.llmscannerseguridad.adapters.out.persistence.scoring.PostgresScanScoreRepositoryAdapter;
+import com.llmscannerseguridad.adapters.out.persistence.scoring.PostgresScoringInputAdapter;
+import com.llmscannerseguridad.application.scoring.CalculateScanScoreUseCase;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import static com.llmscannerseguridad.integration.ScoringDatabaseFixture.*;
@@ -15,28 +20,43 @@ import static org.assertj.core.api.Assertions.*;
 class ReportingMigrationIntegrationTest {
     @Test void v6WithLegitimateScoreFindingsAndActiveHistoryUpgradesWithoutBackfill() throws Exception {
         try(var db=new ScanTestDatabase()) {
-            db.migrate("6");var c=db.openSecurity(Map.of("logging.level.root","ERROR","spring.flyway.target","6"),ctx -> ctx.registerBean("v6Lifecycle",ScanLifecyclePort.class,
-                    () -> new com.llmscannerseguridad.config.TransactionalScanLifecycle(
-                        new com.llmscannerseguridad.application.scan.ScanLifecycleService(ctx.getBean(com.llmscannerseguridad.application.project.ProjectRepositoryPort.class),ctx.getBean(com.llmscannerseguridad.application.target.TargetConfigurationRepositoryPort.class),ctx.getBean(com.llmscannerseguridad.application.scan.ScanRepositoryPort.class),java.time.Clock.systemUTC(),UUID::randomUUID),
-                        ctx.getBean(org.springframework.transaction.PlatformTransactionManager.class),ctx.getBean(com.llmscannerseguridad.config.ScanExecutionGate.class)),def -> def.setPrimary(true)));
-            // Composición V6 explícita, sin acceder a tablas de reporting antes de migrar.
-            var scans=c.getBean(com.llmscannerseguridad.application.scan.ScanRepositoryPort.class);
-            var delegate=new com.llmscannerseguridad.application.scan.ScanLifecycleService(c.getBean(com.llmscannerseguridad.application.project.ProjectRepositoryPort.class),c.getBean(com.llmscannerseguridad.application.target.TargetConfigurationRepositoryPort.class),scans,java.time.Clock.systemUTC(),UUID::randomUUID);
-            var lifecycle=new com.llmscannerseguridad.config.TransactionalScanLifecycle(delegate,c.getBean(org.springframework.transaction.PlatformTransactionManager.class),c.getBean(com.llmscannerseguridad.config.ScanExecutionGate.class),c.getBean(com.llmscannerseguridad.application.execution.TestExecutionRepositoryPort.class),c.getBean(com.llmscannerseguridad.application.evaluation.EvaluationRepositoryPort.class),c.getBean(com.llmscannerseguridad.application.scoring.ScanScoreRepositoryPort.class),c.getBean(com.llmscannerseguridad.application.scoring.CalculateScanScoreUseCase.class),scans);
-            var complete=seed(db,true,Verdict.VULNERABLE,Verdict.NOT_VULNERABLE,Verdict.INCONCLUSIVE,Verdict.NOT_VULNERABLE);lifecycle.complete(complete.scan());
+            db.migrate("6");
+            // Preparar historia V6 con el cálculo real JDBC, sin iniciar entidades JPA de V8.
+            var complete=seed(db,true,Verdict.VULNERABLE,Verdict.NOT_VULNERABLE,Verdict.INCONCLUSIVE,Verdict.NOT_VULNERABLE);
+            var source=db.jdbc().getDataSource();
+            var scores=new PostgresScanScoreRepositoryAdapter(source);
+            var calculate=new CalculateScanScoreUseCase(new PostgresScoringInputAdapter(source),java.time.Clock.systemUTC());
+            new TransactionTemplate(new DataSourceTransactionManager(source)).executeWithoutResult(status -> {
+                var score=scores.insert(calculate.execute(scores.lock(complete.scan())));
+                assertThat(new org.springframework.jdbc.core.JdbcTemplate(source).update("update scans set status='COMPLETED',finished_at=? where id=? and status='RUNNING'",
+                        java.sql.Timestamp.from(score.calculatedAt()),complete.scan())).isOne();
+            });
+            assertThat(db.jdbc().queryForObject("select count(*) from scan_scores",Integer.class)).isOne();
             var active=seed(db,true,Verdict.INCONCLUSIVE);
             var tables=List.of("test_cases","test_executions","evaluation_results","findings","scan_scores");var before=new HashMap<String,List<Map<String,Object>>>();
             for(String table:tables)before.put(table,db.jdbc().queryForList("select * from "+table+" order by 1"));
-            var scansBefore=db.jdbc().queryForList("select * from scans order by id");db.closeApplication(c);db.migrate("7");
+            var scansBefore=db.jdbc().queryForList("select * from scans order by id");db.migrate("7");
             for(String table:tables)assertThat(db.jdbc().queryForList("select * from "+table+" order by 1")).isEqualTo(before.get(table));
             var after=db.jdbc().queryForList("select * from scans order by id");for(var row:after){assertThat(row.remove("report_version")).isNull();}assertThat(after).isEqualTo(scansBefore);
             assertThat(db.jdbc().queryForObject("select count(*) from security_reports",Integer.class)).isZero();
-            c=db.openSecurity(Map.of("logging.level.root","ERROR"));var get=c.getBean(GetSecurityReportUseCase.class);
+            var targetsBefore=db.jdbc().queryForList("select * from target_configurations order by id");
+            var scansV7=db.jdbc().queryForList("select * from scans order by id");
+            db.migrate("8");
+            var targetsAfter=db.jdbc().queryForList("select * from target_configurations order by id");
+            for(var row:targetsAfter) {
+                assertThat(row.remove("adapter_type")).isEqualTo("REST_LEGACY");
+                assertThat(row.remove("model")).isNull();
+                assertThat(row.remove("system_prompt")).isNull();
+            }
+            assertThat(targetsAfter).isEqualTo(targetsBefore);
+            for(String table:tables)assertThat(db.jdbc().queryForList("select * from "+table+" order by 1")).isEqualTo(before.get(table));
+            assertThat(db.jdbc().queryForList("select * from scans order by id")).isEqualTo(scansV7);
+            var c=db.openSecurity(Map.of("logging.level.root","ERROR"));var get=c.getBean(GetSecurityReportUseCase.class);
             assertThat(get.execute(complete.project(),complete.scan()).availability()).isEqualTo(ReportAvailability.NOT_APPLICABLE);
             assertThat(get.execute(active.project(),active.scan()).availability()).isEqualTo(ReportAvailability.NOT_APPLICABLE);
         }
     }
-    @Test void v1ToV7AndClosedSqlSchemaNullsTypesRelationsOrderingMetadataLimitsAndFks() throws Exception {
+    @Test void v1ToV8AndClosedSqlSchemaNullsTypesRelationsOrderingMetadataLimitsAndFks() throws Exception {
         try(var db=new ScanTestDatabase()) {
             var c=db.openSecurity(Map.of("logging.level.root","ERROR"));var ids=seed(db,true,Verdict.VULNERABLE);db.jdbc().update("update scans set report_version='report-v1' where id=?",ids.scan());c.getBean(ScanLifecyclePort.class).complete(ids.scan());
             var before=db.jdbc().queryForList("select * from security_reports");
@@ -58,7 +78,7 @@ class ReportingMigrationIntegrationTest {
             assertThatThrownBy(()->db.jdbc().execute("update scans set scoring_version=null where report_version is not null")).isInstanceOf(RuntimeException.class);
             assertThatThrownBy(()->db.jdbc().execute("update scans set evaluation_profile_version=null where report_version is not null")).isInstanceOf(RuntimeException.class);
             assertThatThrownBy(()->db.jdbc().execute("delete from scan_scores")).isInstanceOf(RuntimeException.class);
-            assertThat(db.jdbc().queryForObject("select max(version::integer) from flyway_schema_history where version is not null",Integer.class)).isEqualTo(7);
+            assertThat(db.jdbc().queryForObject("select max(version::integer) from flyway_schema_history where version is not null",Integer.class)).isEqualTo(8);
         }
     }
     @Test void migrationsV1ToV6ArePackagedWithoutChanges() throws Exception {

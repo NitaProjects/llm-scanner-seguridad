@@ -1,6 +1,6 @@
 # Modelo de datos conceptual
 
-El modelo vigente del backend core aprobado e implementado llega hasta V7, con EvaluationResult, ScanScore y SecurityReport separados de las columnas semánticas heredadas sin uso. Los contratos aprobados están actualmente en `openspec/changes/`; `openspec/specs/` aún no contiene specs consolidadas.
+El modelo vigente del backend core aprobado e implementado incorpora V8 para targets tipados; el core de evaluación/scoring/reporting llega hasta V7, con EvaluationResult, ScanScore y SecurityReport separados de las columnas semánticas heredadas sin uso. Los contratos aprobados están actualmente en `openspec/changes/`; `openspec/specs/` aún no contiene specs consolidadas.
 
 Las referencias a V1–V6 describen el alcance histórico de esos incrementos, sin reinterpretar datos previos. Los registros de implementación y validación de cada change conservan la secuencia de comprobaciones; las menciones históricas a migraciones/tests preparados sin ejecución no describen las validaciones técnicas posteriores registradas, por ejemplo en [reporting/tasks.md](../../openspec/changes/reporting/tasks.md#validaciones-ejecutadas).
 
@@ -36,8 +36,11 @@ Recurso único opcional por Project, aprobado en `target-configuration`. V2 crea
 | project_id | UUID | NOT NULL, FK projects(id), UNIQUE uq_target_configurations_project_id |
 | name | VARCHAR(120) | Opcional |
 | url | VARCHAR(2048) | NOT NULL |
-| request_template | TEXT | NOT NULL; hasta 32768 bytes UTF-8 en aplicación |
-| response_path | VARCHAR(1024) | NOT NULL |
+| adapter_type | VARCHAR(32) | NOT NULL, default REST_LEGACY; REST_LEGACY u OPENAI_COMPATIBLE |
+| model | VARCHAR(200) | Obligatorio y no blanco en chat; NULL en legacy |
+| system_prompt | TEXT | Opcional en chat, hasta 16384 bytes UTF-8 y no blanco; NULL en legacy |
+| request_template | TEXT | Obligatorio en legacy; NULL en chat; hasta 32768 bytes UTF-8 en aplicación |
+| response_path | VARCHAR(1024) | Obligatorio en legacy; NULL en chat |
 | headers | JSONB | NOT NULL, objeto no sensible, default {} |
 | auth_type | VARCHAR(20) | NONE, BEARER_TOKEN o API_KEY_HEADER |
 | auth_header_name | VARCHAR(128) | Solo para API_KEY_HEADER |
@@ -48,7 +51,7 @@ Recurso único opcional por Project, aprobado en `target-configuration`. V2 crea
 
 Checks: headers objeto; NONE sin header/blob, Bearer con blob y sin header, API key con ambos. UNIQUE garantiza cardinalidad incluso en creación concurrente. Sin cascada de borrado anticipada. method/contentType/promptPlaceholder son constantes derivadas y no se persisten, tampoco authConfig, secretValue ni hasCredentials.
 
-El material cifrado separa la credencial de la configuración pública. Formato y provisión de clave externa (nunca en PostgreSQL) en ADR-002. Creación/actualización son atómicas, con commit antes del éxito; PUT preserva identidad/createdAt y no retrocede updatedAt. No hay versionado optimista ni detección de cambios perdidos.
+El material cifrado separa la credencial de la configuración pública. Formato y provisión de clave externa (nunca en PostgreSQL) en ADR-002. Creación/actualización son atómicas, con commit antes del éxito; PUT preserva identidad/createdAt y no retrocede updatedAt. V8 añade únicamente tres columnas y checks por rama, retirando NOT NULL físico de plantilla/ruta sin alterar datos legacy. Chat exige Bearer. PUT actualiza todos los campos y credencial en una sentencia condicionada por id/project_id/adapter_type esperado; cero filas produce 409, sin retry ni dirty checking que eluda el predicado. No hay versionado general ni protección frente a cambios perdidos del mismo tipo/ABA.
 
 ### Scan
 

@@ -19,6 +19,12 @@ public final class JsonTargetConfigurationValidator implements ConfigurationVali
     @Override
     public void validate(TargetSettings settings) {
         urls.validate(settings.url());
+        if (settings.adapterType() == com.llmscannerseguridad.domain.target.TargetAdapterType.OPENAI_COMPATIBLE) {
+            String base = new com.llmscannerseguridad.adapters.out.http.target.OpenAiCompatibleCodec()
+                    .render(settings, TargetSettings.PROMPT_PLACEHOLDER);
+            if (TargetRules.bytes(base) > 32768) throw TargetValidationException.field("systemPrompt", "TOO_LONG");
+            return;
+        }
         template(settings.requestTemplate());
         responsePath(settings.responsePath());
     }

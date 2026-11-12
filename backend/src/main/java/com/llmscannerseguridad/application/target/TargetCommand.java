@@ -11,11 +11,17 @@ public final class TargetCommand {
     private final TargetSettings settings;
     private final String secret;
     private final boolean secretPresent;
+    private final boolean adapterTypeExplicit;
 
     public TargetCommand(TargetSettings settings, String secret, boolean secretPresent) {
+        this(settings, secret, secretPresent, false);
+    }
+
+    public TargetCommand(TargetSettings settings, String secret, boolean secretPresent, boolean adapterTypeExplicit) {
         this.settings = Objects.requireNonNull(settings);
         this.secret = secret;
         this.secretPresent = secretPresent;
+        this.adapterTypeExplicit = adapterTypeExplicit;
         if (secretPresent) {
             if (settings.authType() == AuthType.NONE) {
                 throw TargetValidationException.field("authConfig", "NOT_ALLOWED");
@@ -31,6 +37,8 @@ public final class TargetCommand {
     public boolean hasNewSecret() {
         return secretPresent;
     }
+
+    public boolean adapterTypeExplicit() { return adapterTypeExplicit; }
 
     public String secretForEncryption() {
         return secret;

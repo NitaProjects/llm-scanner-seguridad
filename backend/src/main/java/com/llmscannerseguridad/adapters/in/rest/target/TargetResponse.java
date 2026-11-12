@@ -10,6 +10,19 @@ public record TargetResponse(UUID id, UUID projectId, String name, String url, S
         String requestTemplate, String promptPlaceholder, String responsePath, Map<String, String> headers,
         String authType, Map<String, String> authConfig, boolean hasCredentials, int timeoutMs,
         String createdAt, String updatedAt) {
+    public static Object resourceFrom(TargetView view) {
+        if (view.settings().adapterType() == com.llmscannerseguridad.domain.target.TargetAdapterType.REST_LEGACY) return from(view);
+        var s = view.settings();
+        return new ChatTargetResponse(view.id(), view.projectId(), s.name(), "OPENAI_COMPATIBLE", s.url().value(),
+                s.model(), s.systemPrompt(), "BEARER_TOKEN", null, view.hasCredentials(), s.timeoutMs(),
+                view.createdAt().toString(), view.updatedAt().toString());
+    }
+
+    public record ChatTargetResponse(UUID id, UUID projectId, String name, String adapterType, String endpoint,
+            String model, String systemPrompt, String authType, Object authConfig, boolean hasCredentials,
+            int timeoutMs, String createdAt, String updatedAt) {
+        @Override public String toString() { return "ChatTargetResponse[id=" + id + "]"; }
+    }
     public static TargetResponse from(TargetView view) {
         var settings = view.settings();
         return new TargetResponse(view.id(), view.projectId(), settings.name(), settings.url().value(),

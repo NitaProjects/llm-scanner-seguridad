@@ -42,6 +42,8 @@ public class TargetExceptionHandler {
                     "El proyecto no tiene target configurado.");
             case TARGET_ALREADY_CONFIGURED -> error(HttpStatus.CONFLICT, "TARGET_ALREADY_CONFIGURED",
                     "El proyecto ya tiene target configurado.");
+            case TARGET_TYPE_REQUIRED -> error(HttpStatus.CONFLICT, "TARGET_TYPE_REQUIRED", "Consulta el target y selecciona explícitamente su tipo.");
+            case TARGET_TYPE_CHANGED -> error(HttpStatus.CONFLICT, "TARGET_TYPE_CHANGED", "El tipo del target cambió. Consulta su configuración antes de guardar.");
             case INTERNAL_ERROR -> internal();
         };
     }

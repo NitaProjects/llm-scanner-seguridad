@@ -56,13 +56,7 @@ public final class TargetJsonProcessor {
     }
 
     public String extract(String body, String path) {
-        Object value;
-        try {
-            value = json.readValue(body, Object.class);
-            unicode(value);
-        } catch (RuntimeException error) {
-            throw new JsonFailure(ExecutionError.RESPONSE_INVALID_JSON);
-        }
+        Object value = parseResponse(body);
         for (Object segment : validator.pathSegments(path)) {
             if (segment instanceof String key && value instanceof Map<?, ?> map && map.containsKey(key)) {
                 value = map.get(key);
@@ -72,10 +66,19 @@ public final class TargetJsonProcessor {
                 throw new JsonFailure(ExecutionError.RESPONSE_PATH_NOT_FOUND);
             }
         }
-        if (!(value instanceof String text)) {
-            throw new JsonFailure(ExecutionError.RESPONSE_NOT_TEXT);
-        }
+        if (!(value instanceof String text)) throw new JsonFailure(ExecutionError.RESPONSE_NOT_TEXT);
         return text;
+    }
+
+    public Object parseResponse(String body) {
+        Object value;
+        try {
+            value = json.readValue(body, Object.class);
+            unicode(value);
+        } catch (RuntimeException error) {
+            throw new JsonFailure(ExecutionError.RESPONSE_INVALID_JSON);
+        }
+        return value;
     }
 
     private void unicode(Object value) {

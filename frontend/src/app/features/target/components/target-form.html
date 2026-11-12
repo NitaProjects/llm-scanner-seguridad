@@ -1,9 +1,17 @@
 <form [formGroup]="form" (ngSubmit)="submit()" class="card" aria-label="Configuración del target">
   <fieldset [disabled]="busy() || blocked()"><legend>Conexión</legend>
+    <div class="field"><label for="target-adapter">Tipo de integración</label><select id="target-adapter" data-field="adapterType" formControlName="adapterType"><option value="REST_LEGACY">REST JSON</option><option value="OPENAI_COMPATIBLE">OpenAI-compatible</option></select><small class="field-error">{{ fieldError('adapterType') }}</small></div>
     <div class="field"><label for="target-name">Nombre (opcional)</label><input id="target-name" data-field="name" formControlName="name" aria-describedby="target-name-error" /><small id="target-name-error" class="field-error">{{ fieldError('name') }}</small></div>
-    <div class="field"><label for="target-url">URL</label><input id="target-url" data-field="url" type="url" formControlName="url" aria-describedby="target-url-help target-url-error" /><small id="target-url-help">URL HTTP/HTTPS absoluta. No incluyas credenciales en la URL.</small><small id="target-url-error" class="field-error">{{ fieldError('url') }}</small></div>
+    <div class="field"><label for="target-url">{{ isChat() ? 'Endpoint' : 'URL' }}</label><input id="target-url" data-field="url" type="url" formControlName="url" aria-describedby="target-url-help target-url-error" /><small id="target-url-help">URL HTTP/HTTPS absoluta. No incluyas credenciales en la URL.</small><small id="target-url-error" class="field-error">{{ fieldError('url') }}</small></div>
     <div class="field"><label for="target-timeout">Tiempo de espera (ms)</label><input id="target-timeout" data-field="timeoutMs" type="number" min="1000" max="60000" step="1" formControlName="timeoutMs" aria-describedby="target-timeout-error" /><small id="target-timeout-error" class="field-error">{{ fieldError('timeoutMs') }}</small></div>
   </fieldset>
+  @if (isChat()) {
+    <fieldset [disabled]="busy() || blocked()"><legend>Chat</legend>
+      <div class="field"><label for="target-model">Modelo</label><input id="target-model" data-field="model" formControlName="model" /><small class="field-error">{{ fieldError('model') }}</small></div>
+      <div class="field"><label for="target-system">System prompt (opcional)</label><textarea id="target-system" data-field="systemPrompt" formControlName="systemPrompt" rows="4"></textarea><small class="field-error">{{ fieldError('systemPrompt') }}</small></div>
+      <p class="muted">Integración chat; criterios de evaluación v1 limitados a escenarios sintéticos autorizados. Usa únicamente instrucciones sintéticas no sensibles. Cada prueba es independiente, sin streaming.</p>
+    </fieldset>
+  } @else {
   <fieldset [disabled]="busy() || blocked()"><legend>Petición</legend>
     <p class="request-constants">Método: <strong>POST</strong> · Content-Type: <strong>application/json</strong> · Placeholder: <code [textContent]="'{{PROMPT}}'"></code></p>
     <div class="field"><label for="target-template">Plantilla de petición JSON</label><textarea id="target-template" data-field="requestTemplate" rows="7" formControlName="requestTemplate" spellcheck="false" aria-describedby="template-help template-error"></textarea><small id="template-help">Un objeto JSON con el placeholder como valor completo de una cadena. El backend comprueba también claves duplicadas. No incluyas secretos.</small><small id="template-error" class="field-error">{{ fieldError('requestTemplate') }}</small></div>
@@ -17,9 +25,10 @@
   <fieldset [disabled]="busy() || blocked()"><legend>Respuesta</legend>
     <div class="field"><label for="target-response-path">Ruta de respuesta (responsePath)</label><input id="target-response-path" data-field="responsePath" formControlName="responsePath" aria-describedby="response-help response-error" /><small id="response-help">Ejemplos: $.response.text · $.choices[0].message.content · $["response-text"]. El backend valida la gramática admitida.</small><small id="response-error" class="field-error">{{ fieldError('responsePath') }}</small></div>
   </fieldset>
+  }
   <fieldset [disabled]="busy() || blocked()"><legend>Autenticación</legend>
     <p>{{ original()?.hasCredentials ? 'Credencial configurada' : 'Sin credencial configurada' }}</p>
-    <div class="field"><label for="target-auth-type">Tipo de autenticación</label><select id="target-auth-type" data-field="authType" formControlName="authType" aria-describedby="auth-error"><option value="NONE">Sin autenticación</option><option value="BEARER_TOKEN">Bearer token</option><option value="API_KEY_HEADER">API key en cabecera</option></select><small id="auth-error" class="field-error">{{ fieldError('authType') }}</small></div>
+    @if (!isChat()) { <div class="field"><label for="target-auth-type">Tipo de autenticación</label><select id="target-auth-type" data-field="authType" formControlName="authType" aria-describedby="auth-error"><option value="NONE">Sin autenticación</option><option value="BEARER_TOKEN">Bearer token</option><option value="API_KEY_HEADER">API key en cabecera</option></select><small id="auth-error" class="field-error">{{ fieldError('authType') }}</small></div> } @else { <p>Bearer token</p> }
     @if (form.controls.authType.value === 'API_KEY_HEADER') { <div class="field"><label for="auth-header">Nombre de cabecera de autenticación</label><input id="auth-header" data-field="authConfig.headerName" formControlName="headerName" aria-describedby="auth-header-error" /><small id="auth-header-error" class="field-error">{{ fieldError('authConfig.headerName') }}</small></div> }
     @if (form.controls.authType.value !== 'NONE') {
       @if (retainAvailable()) { <div class="field"><label for="credential-mode">Credencial</label><select id="credential-mode" formControlName="credentialMode" (change)="clearSecret()"><option value="conserve">Conservar credencial</option><option value="replace">Reemplazar credencial</option></select></div> }

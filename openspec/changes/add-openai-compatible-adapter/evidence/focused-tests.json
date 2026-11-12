@@ -1,0 +1,10 @@
+{
+  "date": "2026-11-10",
+  "command": "mvnw.cmd -o -Dtest=OpenAiCompatibleContractTest,OpenAiCompatibleTargetAdapterTest,TargetControllerTest test",
+  "passed": 41,
+  "failed": 0,
+  "skipped": 0,
+  "exitCode": 0,
+  "openApiYamlParsed": true,
+  "note": "Final focused run after codec/domain review; no database or external provider calls."
+}

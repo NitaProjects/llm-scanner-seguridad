@@ -1,0 +1,14 @@
+{
+  "date": "2026-11-10",
+  "testsCommand": "npm test -- --watch=false",
+  "passed": 166,
+  "failed": 0,
+  "skipped": 0,
+  "filesPassed": 11,
+  "testExitCode": 0,
+  "buildCommand": "npm run build -- --configuration production",
+  "build": "PASS",
+  "buildExitCode": 0,
+  "initialBundleKb": 286.67,
+  "output": "frontend/dist/frontend/browser"
+}

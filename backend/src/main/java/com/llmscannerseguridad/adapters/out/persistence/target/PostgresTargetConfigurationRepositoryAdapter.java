@@ -63,12 +63,28 @@ public class PostgresTargetConfigurationRepositoryAdapter implements TargetConfi
     }
 
     @Override
-    public void replace(TargetConfiguration target) {
+    public boolean replace(TargetConfiguration target, com.llmscannerseguridad.domain.target.TargetAdapterType expectedAdapterType) {
         try {
-            var entity = find(target.projectId()).orElseThrow(() ->
-                    new TargetOperationException(TargetOperationException.Reason.TARGET_NOT_CONFIGURED));
-            entity.replace(target);
-            entityManager.flush();
+            var s = target.settings();
+            int changed = entityManager.createQuery("""
+                    update TargetConfigurationJpaEntity t set t.name=:name, t.url=:url,
+                        t.requestTemplate=:template, t.responsePath=:path, t.headers=:headers,
+                        t.authType=:auth, t.authHeaderName=:header, t.credentialCiphertext=:credential,
+                        t.timeoutMs=:timeout, t.updatedAt=:updated, t.adapterType=:type,
+                        t.model=:model, t.systemPrompt=:system
+                    where t.id=:id and t.projectId=:project and t.adapterType=:expected
+                    """).setParameter("name", s.name()).setParameter("url", s.url().value())
+                    .setParameter("template", s.requestTemplate()).setParameter("path", s.responsePath())
+                    .setParameter("headers", s.headers()).setParameter("auth", s.authType().name())
+                    .setParameter("header", s.authHeaderName())
+                    .setParameter("credential", target.credential() == null ? null : target.credential().bytes())
+                    .setParameter("timeout", s.timeoutMs()).setParameter("updated", target.updatedAt())
+                    .setParameter("type", s.adapterType().name()).setParameter("model", s.model())
+                    .setParameter("system", s.systemPrompt()).setParameter("id", target.id())
+                    .setParameter("project", target.projectId()).setParameter("expected", expectedAdapterType.name())
+                    .executeUpdate();
+            entityManager.clear();
+            return changed == 1;
         } catch (TargetOperationException error) {
             throw error;
         } catch (RuntimeException error) {

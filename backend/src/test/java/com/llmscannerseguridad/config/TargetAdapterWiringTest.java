@@ -50,7 +50,7 @@ class TargetAdapterWiringTest {
                 .withBean(GenerateReportUseCase.class, () -> mock(GenerateReportUseCase.class))
                 .run(context -> {
                     assertThat(context).hasNotFailed().hasSingleBean(TargetAdapter.class);
-                    assertThat(context.getBean(TargetAdapter.class)).isExactlyInstanceOf(LegacyRestTargetAdapter.class);
+                    assertThat(context.getBean(TargetAdapter.class)).isExactlyInstanceOf(RoutingTargetAdapter.class);
                     assertThat(context.getBeansOfType(HttpTargetInvocationAdapter.class)).hasSize(1);
                     var invocation = context.getBean(CountingInvocation.class);
                     assertThat(context.getBean(TargetInvocationPort.class)).isSameAs(invocation);
