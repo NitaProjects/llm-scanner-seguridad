@@ -7,6 +7,8 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.*;
 import com.llmscannerseguridad.domain.securitytest.SecurityTest;
+import com.llmscannerseguridad.domain.evaluation.RuleSignal;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import tools.jackson.core.StreamReadConstraints;
 import tools.jackson.core.StreamReadFeature;
 import tools.jackson.core.json.JsonFactory;
@@ -22,7 +24,23 @@ public final class EvaluationJson {
                     DeserializationFeature.USE_BIG_INTEGER_FOR_INTS, DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
                     DeserializationFeature.FAIL_ON_MISSING_CREATOR_PROPERTIES)
             .disable(MapperFeature.ALLOW_COERCION_OF_SCALARS)
-            .disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT).build();
+            .disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT)
+            .addMixIn(RuleSignal.class, SignalJson.class).build();
+    private abstract static class SignalJson {
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        abstract RuleSignal.FullMatch fullMatch();
+    }
+
+    public static List<RuleSignal> readSignals(String text) {
+        if (!(parse(text) instanceof List<?> signals)) throw invalid();
+        return signals.stream().map(signal -> {
+            if (!(signal instanceof Map<?, ?> fields)) throw invalid();
+            var compatible = new LinkedHashMap<String, Object>();
+            fields.forEach((key, value) -> compatible.put((String) key, value));
+            compatible.putIfAbsent("fullMatch", null);
+            return MAPPER.readValue(write(compatible), RuleSignal.class);
+        }).toList();
+    }
     private EvaluationJson() { }
     public static Object parse(String text) {
         var value = MAPPER.readValue(text, Object.class);

@@ -26,7 +26,10 @@ public final class LocalEvaluationScenarioAdapter implements EvaluationScenarioP
         if (file == null) return null;
         try (var stream = Files.newInputStream(file)) {
             String text = EvaluationJson.read(stream, 262144);
-            EvaluationJson.parse(text);
+            Object parsed = EvaluationJson.parse(text);
+            if (parsed instanceof Map<?, ?> root && java.math.BigInteger.TWO.equals(root.get("schemaVersion"))) {
+                return snapshotV2(root, projectId, targetId, targetUpdatedAt, tests);
+            }
             var manifest = EvaluationJson.MAPPER.readValue(text, Manifest.class);
             if (manifest.schemaVersion() != 1 || manifest.scenarios() == null || manifest.scenarios().size() > 16) throw EvaluationJson.invalid();
             var ids = new HashSet<String>();
@@ -47,6 +50,118 @@ public final class LocalEvaluationScenarioAdapter implements EvaluationScenarioP
                     enabled && allowedScenarios.contains(selected.scenarioId()) && selected.exportPolicy().enabled()
                         && provider.equalsIgnoreCase(selected.exportPolicy().provider()), provider, entries);
         } catch (Exception error) { throw EvaluationJson.invalid(); }
+    }
+
+    private Scenario snapshotV2(Map<?, ?> root, UUID projectId, UUID targetId, Instant updatedAt,
+            List<EvaluationPlan.Item> tests) {
+        fields(root, Set.of("schemaVersion", "scenarios"), Set.of());
+        if (!(root.get("scenarios") instanceof List<?> scenarios) || scenarios.size() > 16) throw EvaluationJson.invalid();
+        var ids = new HashSet<String>();
+        Scenario selected = null;
+        for (var value : scenarios) {
+            var scenario = fields(value, Set.of("scenarioId", "revision", "projectId", "targetConfigurationId", "targetUpdatedAt", "entries"), Set.of("exportPolicy"));
+            String id = EvaluationJson.string(scenario.get("scenarioId"));
+            String revision = EvaluationJson.string(scenario.get("revision"));
+            if (!id.matches("[A-Za-z0-9-]{1,64}") || !ids.add(id) || !revision.matches("[A-Za-z0-9.-]{1,32}")) throw EvaluationJson.invalid();
+            var binding = new Binding(uuid(scenario.get("projectId")), uuid(scenario.get("targetConfigurationId")),
+                    Instant.parse(EvaluationJson.string(scenario.get("targetUpdatedAt"))));
+            if (binding.targetUpdatedAt().getNano() % 1000 != 0) throw EvaluationJson.invalid();
+            boolean export = false;
+            if (scenario.containsKey("exportPolicy")) {
+                var policy = fields(scenario.get("exportPolicy"), Set.of("enabled", "provider"), Set.of());
+                if (!(policy.get("enabled") instanceof Boolean active) || !(policy.get("provider") instanceof String name)
+                        || !"OPENAI".equalsIgnoreCase(name)) throw EvaluationJson.invalid();
+                export = active && enabled && allowedScenarios.contains(id) && name.equalsIgnoreCase(provider);
+            }
+            if (!(scenario.get("entries") instanceof List<?> values) || values.isEmpty() || values.size() > 4) throw EvaluationJson.invalid();
+            var entries = new HashMap<String, Entry>();
+            int contextBytes = 0;
+            for (var item : values) {
+                var entry = fields(item, Set.of("securityTestCode", "securityTestRevision", "context"), Set.of("exportableResponses"));
+                String code = EvaluationJson.string(entry.get("securityTestCode"));
+                int testRevision = EvaluationJson.integer(entry.get("securityTestRevision"));
+                var test = tests.stream().filter(t -> t.securityTestCode().equals(code) && t.securityTestRevision() == testRevision)
+                        .findFirst().orElseThrow(EvaluationJson::invalid);
+                var context = contextV2(entry.get("context"), test);
+                contextBytes += EvaluationJson.bytes(EvaluationJson.write(context));
+                var responses = entry.containsKey("exportableResponses") ? strings(entry.get("exportableResponses")) : List.<String>of();
+                if (contextBytes > 32768 || responses.size() > 64 || entries.putIfAbsent(code, new Entry(code, testRevision, context, responses)) != null) {
+                    throw EvaluationJson.invalid();
+                }
+            }
+            if (binding.equals(new Binding(projectId, targetId, updatedAt))) {
+                if (selected != null) throw EvaluationJson.invalid();
+                selected = new Scenario(id, revision, EvaluationJson.hash(EvaluationJson.canonical(root)), export, provider, entries, binding);
+            }
+        }
+        return selected;
+    }
+
+    private SyntheticContext contextV2(Object value, EvaluationPlan.Item test) {
+        var required = switch (test.category()) {
+            case LLM01 -> "restriction";
+            case LLM02 -> "reservedValue";
+            case LLM08 -> "hiddenContext";
+            case LLM10 -> "outputContract";
+        };
+        var optional = new HashSet<>(Set.of("publicValues", "expectedSafeResponses"));
+        if (test.category().name().equals("LLM01")) optional.addAll(Set.of("actionMarker", "markerViolationConfirmed"));
+        if (test.category().name().equals("LLM08")) optional.add("hiddenAnchors");
+        var fields = fields(value, Set.of(required), optional);
+        var publicValues = optionalStrings(fields, "publicValues");
+        var safe = optionalStrings(fields, "expectedSafeResponses");
+        return switch (test.category()) {
+            case LLM01 -> {
+                String marker = fields.containsKey("actionMarker") ? literal(fields.get("actionMarker")) : null;
+                Object confirmed = fields.containsKey("markerViolationConfirmed") ? fields.get("markerViolationConfirmed") : false;
+                if (!(confirmed instanceof Boolean flag) || flag && marker == null) throw EvaluationJson.invalid();
+                yield new SyntheticContext(null, null, List.of(), publicValues, literal(fields.get(required)), marker, flag, safe, null, false, null, null);
+            }
+            case LLM02 -> new SyntheticContext(literal(fields.get(required)), null, List.of(), publicValues, null, null, false, safe, null, false, null, null);
+            case LLM08 -> new SyntheticContext(null, literal(fields.get(required)), optionalStrings(fields, "hiddenAnchors"), publicValues, null, null, false, safe, null, false, null, null);
+            case LLM10 -> new SyntheticContext(null, null, List.of(), publicValues, null, null, false, safe, contractV2(fields.get(required)), false, null, null);
+        };
+    }
+
+    private SyntheticContext.OutputContract contractV2(Object value) {
+        var contract = fields(value, Set.of("securityRelevant"), Set.of("allowedKeys", "requiredKeys", "propertyTypes", "forbiddenLiterals"));
+        if (!Boolean.TRUE.equals(contract.get("securityRelevant")) || !contract.containsKey("allowedKeys")) throw EvaluationJson.invalid();
+        var allowed = strings(contract.get("allowedKeys"));
+        var required = optionalStrings(contract, "requiredKeys");
+        var types = new HashMap<String, SyntheticContext.ValueType>();
+        if (contract.containsKey("propertyTypes")) {
+            if (!(contract.get("propertyTypes") instanceof Map<?, ?> properties)) throw EvaluationJson.invalid();
+            properties.forEach((key, type) -> types.put(literal(key), SyntheticContext.ValueType.valueOf(EvaluationJson.string(type))));
+        }
+        return new SyntheticContext.OutputContract(optionalStrings(contract, "forbiddenLiterals"), required, allowed, types, true);
+    }
+
+    private static Map<?, ?> fields(Object value, Set<String> required, Set<String> optional) {
+        if (!(value instanceof Map<?, ?> map) || !map.keySet().containsAll(required)
+                || map.keySet().stream().anyMatch(key -> !required.contains(key) && !optional.contains(key))) throw EvaluationJson.invalid();
+        return map;
+    }
+
+    private static UUID uuid(Object value) {
+        String text = EvaluationJson.string(value);
+        var id = UUID.fromString(text);
+        if (!id.toString().equalsIgnoreCase(text)) throw EvaluationJson.invalid();
+        return id;
+    }
+
+    private static String literal(Object value) {
+        String text = EvaluationJson.string(value);
+        if (text.isBlank() || text.indexOf('\0') >= 0) throw EvaluationJson.invalid();
+        return text;
+    }
+
+    private static List<String> strings(Object value) {
+        if (!(value instanceof List<?> list)) throw EvaluationJson.invalid();
+        return list.stream().map(LocalEvaluationScenarioAdapter::literal).toList();
+    }
+
+    private static List<String> optionalStrings(Map<?, ?> fields, String key) {
+        return fields.containsKey(key) ? strings(fields.get(key)) : List.of();
     }
     private void validate(ManifestScenario scenario, List<EvaluationPlan.Item> tests) {
         if (scenario.scenarioId() == null || !scenario.scenarioId().matches("[A-Za-z0-9-]{1,64}")

@@ -15,8 +15,14 @@ public interface EvaluationScenarioPort {
         @Override public String toString() { return "ScenarioEntry[protegida]"; }
     }
     record Scenario(String scenarioId, String revision, String manifestHash, boolean exportAuthorized,
-            String exportProvider, Map<String, Entry> entries) {
+            String exportProvider, Map<String, Entry> entries, Binding binding) {
+        public Scenario(String scenarioId, String revision, String manifestHash, boolean exportAuthorized,
+                String exportProvider, Map<String, Entry> entries) {
+            this(scenarioId, revision, manifestHash, exportAuthorized, exportProvider, entries, null);
+        }
         public Scenario { entries = Map.copyOf(entries); }
+        public boolean v2() { return binding != null; }
         @Override public String toString() { return "EvaluationScenario[protegido]"; }
     }
+    record Binding(UUID projectId, UUID targetConfigurationId, Instant targetUpdatedAt) { }
 }

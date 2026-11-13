@@ -11,6 +11,8 @@ public interface EvaluationPreparationPort {
         public EvaluationError reason() { return reason; }
     }
     record Prepared(EvaluationResult result, EvaluationCriteria criteria, SyntheticContext context,
-            EvaluatorInput input, OutcomeReason insufficiency) { }
+            EvaluatorInput input, OutcomeReason insufficiency) {
+        public boolean requestLlm() { return input != null; }
+    }
     Prepared prepare(EvaluationResult pending, TestExecution execution, SecurityTest test);
 }

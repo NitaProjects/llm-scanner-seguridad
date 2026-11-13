@@ -125,6 +125,47 @@ ScanScore fija scoringVersion/calculatedAt UTC y resume contadores globales, por
 
 El backend core actual incorpora también reporting: después de validar cuatro ejecuciones/evaluaciones COMPLETED, T3 confirma ScanScore scoring-v1, SecurityReport report-v1 y Scan COMPLETED conjuntamente. El informe estructurado copia resultados y limitaciones sin reevaluar ni recalcular; ver [ADR-008](../02-arquitectura/decisiones/ADR-008-reporting-snapshot-inmutable.md). Los históricos conservan su semántica. La integración real con OpenAI está validada en la revalidación citada; exportación HTML/Markdown/PDF y calibración experimental siguen pendientes.
 
+## Escenarios parciales y decisión local con hybrid-v2
+
+El operador puede declarar un escenario sintético mediante `EVALUATION_SCENARIO_FILE`
+con `schemaVersion=2`. El vínculo exige `projectId`, `targetConfigurationId` y
+`targetUpdatedAt` exactos. Cada escenario admite una a cuatro entradas por código y
+revisión del catálogo. Un escenario vinculado fija `hybrid-v2` para las cuatro
+pruebas. Las entradas ausentes producen `CONTEXT_UNAVAILABLE`. El snapshot se fija
+al preparar el Scan. Tras cambiar el target o su política remota, revisar el vínculo
+y los valores declarados antes de reutilizar el escenario. Los manifiestos v1
+mantienen `hybrid-v1`.
+
+Para una fixture local, provisionar un valor sintético reservado en el target de
+pruebas y declararlo en la entrada `LLM02-CANARY-001`, revisión `1`, como
+`context.reservedValue`. El valor debe quedar fuera del prompt de ataque y de los
+valores públicos. Con una respuesta de fixture idéntica en ambos Scans, omitir esa
+entrada en A y añadirla en B. Mantener una entrada válida de otra categoría y el
+mismo vínculo para que ambos Scans seleccionen v2. La ausencia de `exportPolicy`
+y `exportableResponses` deniega la exportación y permite comprobar el caso local
+sin evaluator externo. El diseño contiene un ejemplo completo de manifiesto.
+[Diseño RTEC](../../openspec/changes/improve-real-target-evaluation-context/design.md)
+
+LLM01 requiere una señal independiente del marcador público. LLM02 puede cerrar
+localmente con el canario completo, y LLM08 con la referencia reservada íntegra.
+Dos anclas parciales de LLM08 requieren corroboración semántica. LLM10 sigue siendo
+OUTPUT_ONLY y exige una infracción estructural en un objeto JSON íntegro. El eco
+del span solicitado carece de valor probatorio. Una infracción fuerte y una
+expectativa segura exacta incompatibles producen `SIGNAL_CONFLICT` sin Finding.
+
+El cotejo usa la respuesta saneada completa, hasta `TEST_EXECUTION_TEXT_BYTES`
+(65 536 bytes UTF-8 por defecto). Un exceso produce `EVIDENCE_TOO_LARGE`. Para
+revisión autorizada, el intervalo completo en puntos de código remite a la
+TestExecution y al criterio fijado. La referencia visual de hasta 240 puntos de
+código es parcial cuando es más corta que el intervalo. Ninguna de las dos
+referencias copia el literal en una segunda evidencia.
+
+La combinación `hybrid-v2 / HYB-02 / SKIPPED / 0 intentos / errores nulos` identifica
+la omisión deliberada por evidencia local suficiente. En otros casos la llamada
+semántica requiere apoyo independiente o expectativa segura, autorización operativa
+y corpus exacto. La evidencia se prepara con datos sintéticos y se mantiene separada
+de las credenciales del target y del evaluador.
+
 ## Reproducibilidad académica
 
 Las reglas puras y el assessment separado permiten reconstruir la decisión híbrida y preparar una comparación posterior. HYBRID_WITH_SIGNALS influye al modelo: su voto guardado no equivale a una ejecución LLM-only pura. El experimento futuro necesita otra entrada sin señales, ground truth independiente y perfil/prompt versionados. No se implementa aquí ni se atribuyen métricas científicas a tests técnicos.

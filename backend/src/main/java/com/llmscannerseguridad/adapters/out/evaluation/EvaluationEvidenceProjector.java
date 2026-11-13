@@ -7,17 +7,26 @@ import com.llmscannerseguridad.application.evaluation.*;
 import com.llmscannerseguridad.domain.evaluation.*;
 import com.llmscannerseguridad.domain.execution.TestExecution;
 import com.llmscannerseguridad.domain.securitytest.SecurityTest;
+import com.llmscannerseguridad.adapters.out.execution.securitytest.ExecutionLimits;
 
 public final class EvaluationEvidenceProjector implements EvaluationPreparationPort {
+    private static final String INERT_SPAN = "<span data-scanner=\"demo\">SCANNER_OUTPUT_DEMO</span>";
+    // Limita el trabajo adicional por rama. El parser acota aparte la profundidad de objetos y listas.
+    private static final int MAX_EMBEDDED_JSON_LAYERS = 4;
     public record Snapshot(EvaluationCriteria criteria, SyntheticContext context, String manifestHash,
             boolean exportAuthorized, String promptTemplateId, String promptHash, String schemaId,
             String schemaHash, String serializerVersion, int maxOutputTokens) { }
+    public record BoundSnapshot(String policy, EvaluationScenarioPort.Binding binding, Snapshot snapshot) { }
     private final ConcurrentHashMap<UUID, EvaluationScenarioPort.Entry> exportCorpus = new ConcurrentHashMap<>();
     private final EvaluatorSettings settings;
     private final EvaluatorMessages messages;
     private final Clock clock;
+    private final int textBytes;
     public EvaluationEvidenceProjector(EvaluatorSettings settings, EvaluatorMessages messages, Clock clock) {
-        this.settings = settings; this.messages = messages; this.clock = clock;
+        this(settings, messages, clock, ExecutionLimits.defaults());
+    }
+    public EvaluationEvidenceProjector(EvaluatorSettings settings, EvaluatorMessages messages, Clock clock, ExecutionLimits limits) {
+        this.settings = settings; this.messages = messages; this.clock = clock; this.textBytes = limits.textBytes();
     }
     public EvaluationResult.Configuration configuration(UUID id, EvaluationCriteria criteria,
             EvaluationScenarioPort.Scenario scenario) {
@@ -25,12 +34,14 @@ public final class EvaluationEvidenceProjector implements EvaluationPreparationP
         var snapshot = new Snapshot(criteria, entry == null ? null : entry.context(),
                 scenario == null ? null : scenario.manifestHash(), scenario != null && scenario.exportAuthorized(),
                 "evaluator-prompt-v1", messages.promptHash(), "evaluator-output-v1", messages.schemaHash(), "serializer-v1", settings.maxOutputTokens());
-        var serialized = EvaluationJson.canonical(snapshot);
-        // Reserva adicional para señales/assessment y escapes de la proyección máxima.
-        if (EvaluationJson.bytes(serialized) + settings.evidenceBytes() * 2 + 8192 > settings.recordBytes()) throw EvaluationJson.invalid();
+        boolean v2 = scenario != null && scenario.v2();
+        String policy = v2 ? "hybrid-v2" : "hybrid-v1";
+        var serialized = EvaluationJson.canonical(v2 ? new BoundSnapshot(policy, scenario.binding(), snapshot) : snapshot);
+        // V1 conserva la reserva de proyección máxima. V2 comprueba la proyección solo si la necesita.
+        if (EvaluationJson.bytes(serialized) + (v2 ? 0 : settings.evidenceBytes() * 2 + 8192) > settings.recordBytes()) throw EvaluationJson.invalid();
         var configuration = new EvaluationResult.Configuration(criteria.criteriaId(), criteria.criteriaVersion(),
                 scenario == null ? null : scenario.scenarioId(), scenario == null ? null : scenario.revision(),
-                EvaluationResult.PROFILE, "hybrid-v1", "confidence-v1", "severity-v1", "evaluator-prompt-v1",
+                EvaluationResult.PROFILE, policy, "confidence-v1", "severity-v1", "evaluator-prompt-v1",
                 "evaluator-output-v1", "HYBRID_WITH_SIGNALS", serialized, EvaluationJson.hash(serialized),
                 settings.provider(), settings.model(), EvaluationJson.write(Map.of("max_output_tokens", settings.maxOutputTokens())));
         if (entry != null) exportCorpus.put(id, entry);
@@ -43,12 +54,26 @@ public final class EvaluationEvidenceProjector implements EvaluationPreparationP
         if (!EvaluationJson.hash(EvaluationJson.canonical(EvaluationJson.parse(config.configurationSnapshot()))).equals(config.configurationHash())) {
             throw EvaluationJson.invalid();
         }
-        var snapshot = EvaluationJson.MAPPER.readValue(config.configurationSnapshot(), Snapshot.class);
+        boolean v2 = "hybrid-v2".equals(config.policyVersion());
+        Snapshot snapshot;
+        if (v2) {
+            var bound = EvaluationJson.MAPPER.readValue(config.configurationSnapshot(), BoundSnapshot.class);
+            if (!config.policyVersion().equals(bound.policy()) || bound.binding() == null
+                    || !execution.targetConfigurationId().equals(bound.binding().targetConfigurationId())
+                    || !execution.targetUpdatedAt().equals(bound.binding().targetUpdatedAt())
+                    || !execution.id().equals(pending.testExecutionId()) || !execution.scanId().equals(pending.scanId())
+                    || !execution.securityTestId().equals(test.id()) || !pending.securityTestId().equals(test.id())
+                    || execution.status() != com.llmscannerseguridad.domain.execution.ExecutionStatus.COMPLETED) throw EvaluationJson.invalid();
+            snapshot = bound.snapshot();
+        } else {
+            snapshot = EvaluationJson.MAPPER.readValue(config.configurationSnapshot(), Snapshot.class);
+        }
         if (snapshot.criteria() == null || !snapshot.criteria().securityTestCode().equals(test.code())
                 || snapshot.criteria().securityTestRevision() != test.revision() || snapshot.criteria().category() != test.category()) {
             throw new EvaluationPreparationPort.Failure(EvaluationError.CRITERIA_UNAVAILABLE);
         }
         if (!snapshot.promptHash().equals(messages.promptHash()) || !snapshot.schemaHash().equals(messages.schemaHash())) throw EvaluationJson.invalid();
+        if (v2) return prepareV2(pending, execution, test, snapshot);
         var context = snapshot.context();
         var corpus = exportCorpus.get(pending.id());
         String response = execution.responseText();
@@ -72,7 +97,7 @@ public final class EvaluationEvidenceProjector implements EvaluationPreparationP
         String serialized = input == null ? null : messages.request(input, settings);
         int inputBytes = EvaluationJson.bytes(serialized);
         if (reason == null && inputBytes > settings.inputBytes()) { reason = OutcomeReason.EVIDENCE_TOO_LARGE; complete = false; input = null; }
-        String projection = input == null ? null : EvaluationJson.canonical(input);
+        String projection = input == null ? null : messages.projection(input);
         if (EvaluationJson.bytes(projection) + EvaluationJson.bytes(config.configurationSnapshot())
                 + EvaluationJson.bytes(EvaluationJson.write(signals)) + 8192 > settings.recordBytes()) throw EvaluationJson.invalid();
         var evidence = new EvaluationResult.Evidence(projection, complete, execution.responseRedacted(), inputBytes,
@@ -81,6 +106,127 @@ public final class EvaluationEvidenceProjector implements EvaluationPreparationP
                 : new EvaluationResult.LlmComponent(LlmStatus.SKIPPED, null, 0, null, null, null, null, null, null, null, null, null, null);
         var running = pending.start(clock.instant(), execution.finishedAt(), signals, evidence, component);
         return new Prepared(running, snapshot.criteria(), context, input, reason);
+    }
+
+    private Prepared prepareV2(EvaluationResult pending, TestExecution execution, SecurityTest test, Snapshot snapshot) {
+        var criteria = snapshot.criteria();
+        var context = snapshot.context();
+        String response = execution.responseText();
+        int bytes = EvaluationJson.bytes(response);
+        boolean complete = response != null && bytes <= textBytes;
+        boolean redacted = execution.responseRedacted();
+        OutcomeReason reason = bytes > textBytes ? OutcomeReason.EVIDENCE_TOO_LARGE
+                : context == null ? OutcomeReason.CONTEXT_UNAVAILABLE : applicability(criteria, context);
+        if (reason == null && !complete) reason = OutcomeReason.EVIDENCE_INCOMPLETE;
+        var signals = new DeterministicRules().evaluate(criteria, context, test.prompt(),
+                complete ? response : "", complete && reason == null,
+                complete && reason == null && !redacted && criteria.category().name().equals("LLM10") ? shape(response) : null,
+                redacted, true);
+        boolean strong = matched(signals, RuleSignal.Strength.STRONG_POSITIVE);
+        boolean safe = matched(signals, RuleSignal.Strength.STRONG_NEGATIVE);
+        boolean support = matched(signals, RuleSignal.Strength.SUPPORTING_POSITIVE);
+        int snapshotBytes = EvaluationJson.bytes(pending.configuration().configurationSnapshot());
+        if (snapshotBytes + EvaluationJson.bytes(EvaluationJson.write(signals)) + 8192 > settings.recordBytes()) {
+            reason = OutcomeReason.EVIDENCE_TOO_LARGE;
+            complete = false;
+            signals = List.of();
+        }
+        if (reason == null && strong && safe) reason = OutcomeReason.SIGNAL_CONFLICT;
+        if (reason == null && !strong && redacted && (response.contains("[REDACTED_CREDENTIAL]")
+                || signals.stream().anyMatch(signal -> signal.reasonCode().equals("EVIDENCE_REDACTED")))) {
+            reason = OutcomeReason.EVIDENCE_INCOMPLETE;
+            complete = false;
+        }
+        EvaluatorInput input = null;
+        int inputBytes = 0;
+        String projection = null;
+        if (reason == null && !strong) {
+            var corpus = exportCorpus.get(pending.id());
+            if (!safe && !support) reason = OutcomeReason.INSUFFICIENT_EVIDENCE;
+            else if (!snapshot.exportAuthorized()) reason = OutcomeReason.EXPORT_NOT_AUTHORIZED;
+            else if (corpus == null || !corpus.exportableResponses().contains(response)) reason = OutcomeReason.EVIDENCE_NOT_EXPORTABLE;
+            else if (bytes > settings.evidenceBytes()) reason = OutcomeReason.EVIDENCE_TOO_LARGE;
+            else {
+                var candidate = EvaluatorInput.semantic(criteria, SemanticProjection.from(criteria, test.prompt(), context, signals, response));
+                String candidateProjection = messages.projection(candidate);
+                // Inspeccionar los mismos campos que se envían en los mensajes developer y user.
+                if (blocksSpanExport(EvaluationJson.parse(candidateProjection), MAX_EMBEDDED_JSON_LAYERS)) reason = OutcomeReason.EVIDENCE_NOT_EXPORTABLE;
+                else {
+                    inputBytes = EvaluationJson.bytes(messages.request(candidate, settings));
+                    if (inputBytes > settings.inputBytes() || snapshotBytes + EvaluationJson.bytes(candidateProjection)
+                            + EvaluationJson.bytes(EvaluationJson.write(signals)) + 8192 > settings.recordBytes()) reason = OutcomeReason.EVIDENCE_TOO_LARGE;
+                    else { input = candidate; projection = candidateProjection; }
+                }
+            }
+        }
+        var evidence = new EvaluationResult.Evidence(projection, complete, redacted, inputBytes, bytes,
+                projection == null ? null : EvaluationJson.hash(projection));
+        var component = input != null ? EvaluationResult.LlmComponent.pending()
+                : new EvaluationResult.LlmComponent(LlmStatus.SKIPPED, null, 0, null, null, null, null, null, null, null, null, null, null);
+        return new Prepared(pending.start(clock.instant(), execution.finishedAt(), signals, evidence, component),
+                criteria, context, input, reason);
+    }
+
+    private static boolean blocksEmbeddedJson(String text, int layersRemaining) {
+        String candidate = text.stripLeading();
+        if (candidate.isEmpty() || "\"{[".indexOf(candidate.charAt(0)) < 0) return false;
+        Object decoded;
+        try { decoded = EvaluationJson.parse(text); }
+        catch (RuntimeException invalidJson) { return true; }
+        // Una capa decodificable adicional queda fuera del límite de inspección.
+        return layersRemaining == 0 || blocksSpanExport(decoded, layersRemaining - 1);
+    }
+
+    private static boolean blocksSpanExport(Object value, int layersRemaining) {
+        return switch (value) {
+            case String text -> blocksEscapedSpanExport(text, layersRemaining) || blocksEmbeddedJson(text, layersRemaining);
+            case Map<?, ?> map -> map.entrySet().stream().anyMatch(entry ->
+                    blocksSpanExport(entry.getKey(), layersRemaining) || blocksSpanExport(entry.getValue(), layersRemaining));
+            case List<?> list -> list.stream().anyMatch(item -> blocksSpanExport(item, layersRemaining));
+            case null, default -> false;
+        };
+    }
+
+    private static boolean blocksEscapedSpanExport(String text, int layersRemaining) {
+        for (int layer = 0; layer < layersRemaining; layer++) {
+            if (text.contains(INERT_SPAN)) return true;
+            if (text.indexOf('\\') < 0) return false;
+            String decoded = decodeSpanEscapes(text);
+            if (decoded.equals(text)) return false;
+            text = decoded;
+        }
+        // En el límite solo se comprueba estabilidad, sin inspeccionar otra capa.
+        return text.contains(INERT_SPAN) || text.indexOf('\\') >= 0 && !decodeSpanEscapes(text).equals(text);
+    }
+
+    // Vista de búsqueda. Solo interpreta escapes JSON capaces de formar el span
+    // o una capa adicional de escapes. El texto que se proyecta no se modifica.
+    private static String decodeSpanEscapes(String text) {
+        var decoded = new StringBuilder(text.length());
+        for (int i = 0; i < text.length(); i++) {
+            char current = text.charAt(i);
+            if (current == '\\' && i + 1 < text.length()) {
+                char escape = text.charAt(i + 1);
+                if (escape == '\\' || escape == '"' || escape == '/') {
+                    decoded.append(escape);
+                    i++;
+                    continue;
+                }
+                if (escape == 'u' && i + 5 < text.length()
+                        && HexFormat.isHexDigit(text.charAt(i + 2)) && HexFormat.isHexDigit(text.charAt(i + 3))
+                        && HexFormat.isHexDigit(text.charAt(i + 4)) && HexFormat.isHexDigit(text.charAt(i + 5))) {
+                    decoded.append((char) HexFormat.fromHexDigits(text, i + 2, i + 6));
+                    i += 5;
+                    continue;
+                }
+            }
+            decoded.append(current);
+        }
+        return decoded.toString();
+    }
+
+    private static boolean matched(List<RuleSignal> signals, RuleSignal.Strength strength) {
+        return signals.stream().anyMatch(signal -> signal.strength() == strength);
     }
     private OutcomeReason applicability(EvaluationCriteria criteria, SyntheticContext context) {
         for (var key : criteria.requiredContextKeys()) {

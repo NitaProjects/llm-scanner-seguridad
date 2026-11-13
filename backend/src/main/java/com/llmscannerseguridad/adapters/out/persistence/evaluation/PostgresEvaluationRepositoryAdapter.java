@@ -114,6 +114,9 @@ public final class PostgresEvaluationRepositoryAdapter implements EvaluationRepo
                         settings.tariffValid() ? settings.pricingVersion() : null, settings.tariffValid() ? settings.estimateVersion() : null, null);
             }
             var running = replaceComponent(prepared, component);
+            if (running.configuration() != null && "hybrid-v2".equals(running.configuration().policyVersion())) {
+                running = running.withEvidence(running.evidence().withoutProjection());
+            }
             if (update(running, "status = 'PENDING'") != 1) return Optional.empty();
             return Optional.of(running);
         });
@@ -265,7 +268,7 @@ public final class PostgresEvaluationRepositoryAdapter implements EvaluationRepo
                 rs.getObject("input_bytes",Integer.class),rs.getObject("evidence_bytes",Integer.class),rs.getString("input_hash"));
         return new EvaluationResult(rs.getObject("id",UUID.class),rs.getObject("test_execution_id",UUID.class),rs.getObject("scan_id",UUID.class),rs.getObject("test_case_id",UUID.class),
                 enumeration(rs,"category",SecurityCategory.class),enumeration(rs,"status",EvaluationStatus.class),time(rs,"created_at"),time(rs,"started_at"),time(rs,"finished_at"),
-                enumeration(rs,"error_reason",EvaluationError.class),d,List.of(json(rs,"deterministic_signals",RuleSignal[].class)),llm,c,evidence,
+                enumeration(rs,"error_reason",EvaluationError.class),d,EvaluationJson.readSignals(rs.getString("deterministic_signals")),llm,c,evidence,
                 rs.getString("reasoning_summary"),rs.getString("recommendation"),rs.getString("evidence_summary"));
     }
     @Override public EvaluationListing listEvaluations(UUID scanId) {

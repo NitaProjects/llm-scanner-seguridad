@@ -286,6 +286,135 @@ class EvaluationEnginePostgresIntegrationTest {
             }
         }
     }
+    @Test void hybridV2PersistsOnlyTheSemanticProjectionSentToTheEvaluator() throws Exception {
+        try (var db = new ScanTestDatabase()) {
+            Path file = directory.resolve("minimal-projection.json");
+            String left = "synthetic anchor alpha", right = "synthetic anchor bravo";
+            String partial = left + " / " + right;
+            var calls = new AtomicInteger();
+            var sent = new java.util.concurrent.atomic.AtomicReference<String>();
+            var context = open(db, file, calls, input -> {
+                assertThat(db.jdbc().queryForObject("""
+                        select count(*) from evaluation_results where status='RUNNING' and llm_attempt_count=1
+                        and evidence_projection is null and input_hash is null
+                        """, Integer.class)).isEqualTo(1);
+                sent.set(new EvaluatorMessages().request(input, EvaluationFixtures.settings()));
+                return success(input, Verdict.VULNERABLE);
+            }, category -> "LLM08".equals(category) ? partial : "SAFE", Map.of());
+            UUID project = target(db, context);
+            var target = context.getBean(com.llmscannerseguridad.application.target.TargetConfigurationRepositoryPort.class)
+                    .findByProjectId(project).orElseThrow();
+            var entry = Map.of("securityTestCode", "LLM08-CONTEXT-001", "securityTestRevision", 1,
+                    "context", Map.of("hiddenContext", left + " LOCAL_ONLY_MATCH_METADATA. " + right,
+                            "hiddenAnchors", List.of(left, right), "publicValues", List.of("LOCAL_ONLY_PUBLIC_VALUE")),
+                    "exportableResponses", List.of(partial));
+            Files.writeString(file, EvaluationJson.write(Map.of("schemaVersion", 2, "scenarios", List.of(Map.of(
+                    "scenarioId", "synthetic-demo", "revision", "1", "projectId", project, "targetConfigurationId", target.id(),
+                    "targetUpdatedAt", target.updatedAt().toString(), "entries", List.of(entry),
+                    "exportPolicy", Map.of("enabled", true, "provider", "OPENAI"))))));
+            UUID scan = run(context, project);
+            assertThat(context.getBean(GetScanUseCase.class).execute(project, scan).status()).isEqualTo(ScanStatus.COMPLETED);
+            assertThat(calls).hasValue(1);
+            var repo = context.getBean(EvaluationRepositoryPort.class);
+            var llm08 = repo.listEvaluations(scan).items().stream().filter(e -> e.category().name().equals("LLM08")).findFirst().orElseThrow();
+            assertThat(llm08.decisionCode()).isEqualTo("HYB-03");
+            var saved = repo.findByExecution(llm08.testExecutionId()).orElseThrow();
+            assertThat(saved.configuration().configurationSnapshot()).contains("LOCAL_ONLY_PUBLIC_VALUE", "LOCAL_ONLY_MATCH_METADATA");
+            assertThat(saved.deterministicSignals()).anySatisfy(s -> assertThat(s.references()).hasSize(2));
+            var messages = (List<?>) ((Map<?, ?>) EvaluationJson.parse(sent.get())).get("input");
+            var trusted = EvaluationJson.parse((String) ((Map<?, ?>) messages.get(1)).get("content"));
+            var data = EvaluationJson.parse((String) ((Map<?, ?>) messages.get(2)).get("content"));
+            String projection = saved.evidence().projection();
+            assertThat(EvaluationJson.parse(projection)).isEqualTo(Map.of("trusted", trusted, "data", data));
+            assertThat(projection).contains(left, right).doesNotContain("LOCAL_ONLY_PUBLIC_VALUE", "LOCAL_ONLY_MATCH_METADATA", "references", "redacted");
+            assertThat(saved.evidence().inputHash()).isEqualTo(EvaluationJson.hash(projection));
+            assertThat(repo.listFindings(scan)).hasSize(1);
+        }
+    }
+
+    @Test void hybridV2BudgetDenialClearsProjectionAndHashWhileV1KeepsHistoricalSnapshot() throws Exception {
+        for (boolean v2 : List.of(true, false)) {
+            try (var db = new ScanTestDatabase()) {
+                Path file = directory.resolve("budget-" + v2 + ".json");
+                var calls = new AtomicInteger();
+                var context = open(db, file, calls, input -> success(input, Verdict.NOT_VULNERABLE), ignored -> "SAFE",
+                        Map.of("EVALUATOR_MAX_ESTIMATED_COST_USD", "0.001"));
+                UUID project = target(db, context);
+                if (!v2) manifest(db, context, project, file, List.of("SAFE"));
+                else {
+                    var entry = Map.of("securityTestCode", "LLM02-CANARY-001", "securityTestRevision", 1,
+                            "context", Map.of("reservedValue", "SYNTHETIC_RESERVED", "expectedSafeResponses", List.of("SAFE")),
+                            "exportableResponses", List.of("SAFE"));
+                    writeV2Manifest(context, project, file, entry);
+                }
+                UUID scan = run(context, project);
+                assertThat(calls).hasValue(0);
+                assertThat(context.getBean(GetScanUseCase.class).execute(project, scan).status()).isEqualTo(ScanStatus.COMPLETED);
+                var repo = context.getBean(EvaluationRepositoryPort.class);
+                var evaluations = repo.listEvaluations(scan).items();
+                var llm01 = evaluations.stream().filter(e -> e.category().name().equals("LLM01")).findFirst().orElseThrow();
+                assertThat(llm01.llmErrorReason()).isEqualTo(v2 ? null : LlmError.EVALUATOR_BUDGET_EXCEEDED);
+                var llm02 = evaluations.stream().filter(e -> e.category().name().equals("LLM02")).findFirst().orElseThrow();
+                var saved = repo.findByExecution(llm02.testExecutionId()).orElseThrow();
+                assertThat(saved.llm().status()).isEqualTo(LlmStatus.SKIPPED);
+                assertThat(saved.llm().errorReason()).isEqualTo(v2 ? LlmError.EVALUATOR_BUDGET_EXCEEDED : LlmError.EVALUATOR_SUPPRESSED);
+                assertThat(saved.llm().attemptCount()).isZero();
+                assertThat(saved.llm().reservedCostUsd()).isNull();
+                assertThat(saved.decision().degraded()).isTrue();
+                assertThat(repo.listFindings(scan)).isEmpty();
+                if (v2) {
+                    assertThat(saved.evidence().projection()).isNull();
+                    assertThat(saved.evidence().inputHash()).isNull();
+                    assertThat(saved.evidence().inputBytes()).isZero();
+                } else {
+                    assertThat(saved.evidence().projection()).contains("SAFE");
+                    assertThat(saved.evidence().inputHash()).isEqualTo(EvaluationJson.hash(saved.evidence().projection()));
+                }
+            }
+        }
+    }
+
+    @Test void hybridV2AuthorizedInertEchoPersistsNoFindingProjectionOrReservation() throws Exception {
+        try (var db = new ScanTestDatabase()) {
+            Path file = directory.resolve("inert-span.json");
+            String response = EvaluationJson.write(Map.of("message", "<span data-scanner=\"demo\">SCANNER_OUTPUT_DEMO</span>"));
+            var calls = new AtomicInteger();
+            var context = open(db, file, calls, input -> success(input, Verdict.NOT_VULNERABLE),
+                    category -> "LLM10".equals(category) ? response : "SAFE", Map.of());
+            UUID project = target(db, context);
+            var entry = Map.of("securityTestCode", "LLM10-MARKUP-001", "securityTestRevision", 1,
+                    "context", Map.of("expectedSafeResponses", List.of(response), "outputContract",
+                            Map.of("allowedKeys", List.of("message"), "requiredKeys", List.of("message"),
+                                    "propertyTypes", Map.of("message", "STRING"), "securityRelevant", true)),
+                    "exportableResponses", List.of(response));
+            writeV2Manifest(context, project, file, entry);
+            UUID scan = run(context, project);
+            assertThat(calls).hasValue(0);
+            assertThat(context.getBean(GetScanUseCase.class).execute(project, scan).status()).isEqualTo(ScanStatus.COMPLETED);
+            var repo = context.getBean(EvaluationRepositoryPort.class);
+            var llm10 = repo.listEvaluations(scan).items().stream().filter(e -> e.category().name().equals("LLM10")).findFirst().orElseThrow();
+            assertThat(llm10.finalVerdict()).isEqualTo(Verdict.INCONCLUSIVE);
+            assertThat(llm10.outcomeReason()).isEqualTo(OutcomeReason.EVIDENCE_NOT_EXPORTABLE);
+            assertThat(llm10.findingId()).isNull();
+            var saved = repo.findByExecution(llm10.testExecutionId()).orElseThrow();
+            assertThat(saved.llm().status()).isEqualTo(LlmStatus.SKIPPED);
+            assertThat(saved.llm().attemptCount()).isZero();
+            assertThat(saved.llm().reservedCostUsd()).isNull();
+            assertThat(saved.evidence().projection()).isNull();
+            assertThat(saved.evidence().inputHash()).isNull();
+            assertThat(repo.listFindings(scan)).isEmpty();
+        }
+    }
+
+    private void writeV2Manifest(ConfigurableApplicationContext context, UUID project, Path file, Map<String, ?> entry) throws Exception {
+        var target = context.getBean(com.llmscannerseguridad.application.target.TargetConfigurationRepositoryPort.class)
+                .findByProjectId(project).orElseThrow();
+        Files.writeString(file, EvaluationJson.write(Map.of("schemaVersion", 2, "scenarios", List.of(Map.of(
+                "scenarioId", "synthetic-demo", "revision", "1", "projectId", project, "targetConfigurationId", target.id(),
+                "targetUpdatedAt", target.updatedAt().toString(), "entries", List.of(entry),
+                "exportPolicy", Map.of("enabled", true, "provider", "OPENAI"))))));
+    }
+
     @Test void missingContextAndUnknownEvidenceNeverCallProviderOrCopyPrivateText() throws Exception {
         for(boolean missing:List.of(true,false)) {
             try(var db=new ScanTestDatabase()) {

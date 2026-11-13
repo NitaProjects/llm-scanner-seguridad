@@ -113,6 +113,7 @@ class OpenAiTransportTest {
             try(var adapter=adapter((body,budget)->{calls.incrementAndGet();assertThat(body).doesNotContain("synthetic-fixture-key");
                 return new OpenAiEvaluatorAdapter.HttpReply(status,EvaluationFixtures.response(input,Verdict.VULNERABLE));},time)) {
                 var outcome=adapter.evaluate(input,budget(time));assertThat(calls).hasValue(1);
+                assertThat(outcome.dispatched()).isTrue();
                 assertThat(outcome.errorReason()).isEqualTo(status==200?null:OpenAiEvaluatorAdapter.classify(status));
             }
         }
@@ -123,9 +124,24 @@ class OpenAiTransportTest {
             try(var adapter=new OpenAiEvaluatorAdapter(EvaluationFixtures.settings(),new EvaluatorMessages(),()->absent,
                     (body,budget)->{calls.incrementAndGet();throw new AssertionError("El transporte debe permanecer bloqueado");},
                     new EvaluatorInvocationGate(1000,time::get,time::addAndGet))) {
-                assertThat(adapter.evaluate(input,budget(time)).errorReason()).isEqualTo(LlmError.EVALUATOR_CONFIGURATION_INVALID);
+                var outcome = adapter.evaluate(input,budget(time));
+                assertThat(outcome.errorReason()).isEqualTo(LlmError.EVALUATOR_CONFIGURATION_INVALID);
+                assertThat(outcome.dispatched()).isFalse();
                 assertThat(calls).hasValue(0);
             }
+        }
+    }
+    @Test void expiredBudgetAtInvocationGateNeverDispatchesPreparedBody() {
+        var time = new AtomicLong();
+        var calls = new AtomicInteger();
+        try (var adapter = adapter((body, budget) -> {
+            calls.incrementAndGet();
+            throw new AssertionError("El presupuesto agotado no permite enviar el cuerpo");
+        }, time)) {
+            var outcome = adapter.evaluate(input, new EvaluationCallBudget(() -> 0L, 20000, time::get));
+            assertThat(outcome.errorReason()).isEqualTo(LlmError.EVALUATOR_TIMEOUT);
+            assertThat(outcome.dispatched()).isFalse();
+            assertThat(calls).hasValue(0);
         }
     }
     @Test void timeoutConnectionDnsInvalidUtf8AndLateResponsesHaveClosedErrors() {

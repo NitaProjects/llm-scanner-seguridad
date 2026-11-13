@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.Set;
 import javax.sql.DataSource;
 import com.llmscannerseguridad.adapters.out.evaluation.*;
+import com.llmscannerseguridad.adapters.out.execution.securitytest.ExecutionLimits;
 import com.llmscannerseguridad.adapters.out.persistence.evaluation.PostgresEvaluationRepositoryAdapter;
 import com.llmscannerseguridad.application.evaluation.*;
 import com.llmscannerseguridad.application.scan.GetScanUseCase;
@@ -43,8 +44,8 @@ public class EvaluationConfiguration {
                 Arrays.stream(env.getProperty("EVALUATOR_ALLOWED_SCENARIOS","").split(",")).map(String::strip)
                     .filter(s->!s.isEmpty()).collect(java.util.stream.Collectors.toSet()));
     }
-    @Bean EvaluationEvidenceProjector evaluationEvidenceProjector(EvaluatorSettings settings,EvaluatorMessages messages) {
-        return new EvaluationEvidenceProjector(settings,messages,Clock.systemUTC());
+    @Bean EvaluationEvidenceProjector evaluationEvidenceProjector(EvaluatorSettings settings,EvaluatorMessages messages,ExecutionLimits limits) {
+        return new EvaluationEvidenceProjector(settings,messages,Clock.systemUTC(),limits);
     }
     @Bean EvaluationRepositoryPort evaluationRepositoryPort(DataSource source,PlatformTransactionManager manager,
             EvaluationCriteriaCatalogPort catalog,EvaluationScenarioPort scenarios,EvaluationEvidenceProjector projector,EvaluatorSettings settings) {

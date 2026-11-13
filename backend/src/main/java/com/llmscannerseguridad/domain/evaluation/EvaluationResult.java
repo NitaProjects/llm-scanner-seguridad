@@ -23,6 +23,7 @@ public record EvaluationResult(UUID id, UUID testExecutionId, UUID scanId, UUID 
     }
     public record Evidence(String projection, boolean complete, boolean redacted, Integer inputBytes,
             Integer evidenceBytes, String inputHash) {
+        public Evidence withoutProjection() { return new Evidence(null, complete, redacted, 0, evidenceBytes, null); }
         @Override public String toString() { return "EvaluationEvidence[protegida]"; }
     }
     public record LlmComponent(LlmStatus status, LlmError errorReason, int attemptCount,
@@ -92,6 +93,11 @@ public record EvaluationResult(UUID id, UUID testExecutionId, UUID scanId, UUID 
         return new EvaluationResult(id, testExecutionId, scanId, securityTestId, category, EvaluationStatus.COMPLETED,
                 createdAt, startedAt, latest(now, startedAt), null, finalDecision, deterministicSignals,
                 component, configuration, evidence, summary, mitigation, evidenceText);
+    }
+    public EvaluationResult withEvidence(Evidence observed) {
+        return new EvaluationResult(id, testExecutionId, scanId, securityTestId, category, status,
+                createdAt, startedAt, finishedAt, errorReason, decision, deterministicSignals, llm,
+                configuration, observed, reasoningSummary, recommendation, evidenceSummary);
     }
     public EvaluationResult fail(Instant now, EvaluationError reason) {
         if (!status.active()) throw new IllegalStateException("Resultado terminal inmutable.");

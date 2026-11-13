@@ -46,13 +46,17 @@ public final class EvaluateExecutionUseCase {
             repository.abortExecution(execution.id(), EvaluationError.EVALUATION_INTERNAL_ERROR);
             throw ScanOperationException.internal();
         }
-        var claimed = repository.claim(prepared.result(), prepared.insufficiency() == null);
+        var claimed = repository.claim(prepared.result(), prepared.requestLlm());
         if (claimed.isEmpty()) return;
         var running = claimed.get();
         var component = running.llm();
+        boolean v2 = running.configuration() != null && "hybrid-v2".equals(running.configuration().policyVersion());
+        if (v2) running = running.withEvidence(running.evidence().withoutProjection());
         try {
             if (component.attemptCount() == 1) {
-                var outcome = evaluator.evaluate(prepared.input(), budget);
+                var outcome = v2 && (budget.remainingNanos() <= 0 || Thread.currentThread().isInterrupted())
+                        ? EvaluatorOutcome.notDispatched(LlmError.EVALUATOR_TIMEOUT) : evaluator.evaluate(prepared.input(), budget);
+                if (v2 && outcome.dispatched()) running = running.withEvidence(prepared.result().evidence());
                 if (budget.scanExpired() || Thread.currentThread().isInterrupted()) {
                     repository.finish(running.fail(clock.instant(), budget.scanExpired()
                             ? EvaluationError.SCAN_BUDGET_EXCEEDED : EvaluationError.EVALUATION_INTERRUPTED));
