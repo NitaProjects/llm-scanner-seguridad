@@ -85,3 +85,52 @@ Integración chat; criterios de evaluación v1 limitados a escenarios sintético
 autorizados. Sin contexto/corpus aplicable, cuatro inconclusos y score 0 no prueban
 seguridad. No hay habilitación automática del evaluator. La aceptación Groq/OpenRouter
 pertenece a una fase posterior autorizada; no se ejecuta en los tests normales.
+### Respuestas SSE y JSONL por binding operativo
+
+`TARGET_STREAM_BINDINGS_FILE` señala un manifiesto JSON local opcional. El worker
+lo valida y fija el binding durante la preparación del Scan. Cada entrada debe
+coincidir con `projectId`, `targetConfigurationId` y `targetUpdatedAt` exactos de
+un target `REST_LEGACY`. La ausencia de un binding conserva el flujo habitual.
+Para retirar un binding, quitar su entrada o desconfigurar el fichero. Un fichero
+configurado ilegible, una entrada ambigua o un vínculo desactualizado para ese
+target bloquean la preparación antes de red.
+
+```json
+{
+  "schemaVersion": 1,
+  "bindings": [{
+    "projectId": "10000000-0000-4000-8000-000000000001",
+    "targetConfigurationId": "10000000-0000-4000-8000-000000000002",
+    "targetUpdatedAt": "2026-11-14T09:00:00Z",
+    "mediaType": "text/event-stream",
+    "contentEvent": "content",
+    "errorEvent": "error",
+    "terminalEvent": "end",
+    "textPath": "$.text",
+    "mode": "DELTA"
+  }]
+}
+```
+
+Para JSONL, elegir `application/x-ndjson` o `application/jsonl`. Los frames son
+objetos por línea. Para discriminar eventos JSONL declarar `eventPath`, por
+ejemplo `$.type`. En SSE se usa el campo `event` y se unen los campos `data` por
+salto de línea. `textPath` emplea los selectores restringidos de `responsePath`.
+`DELTA` concatena y `SNAPSHOT` sustituye el texto anterior. `contentEvent` y
+`errorEvent` son opcionales. Se declara exactamente uno entre `terminalEvent`
+y `terminalLiteral`. Este último compara el `data` SSE completo o una línea
+JSONL que sea un objeto válido, sin el delimitador.
+
+El binding fija un único `Accept` con su media type y reemplaza cualquier valor
+ordinario. El nombre del header de credencial y los nombres declarados como
+sensibles o reservados en `reservedHeaders` no pueden reclamar `Accept`, sin
+distinción de mayúsculas. El manifiesto admite solo nombres en esa lista. La
+colisión se rechaza antes de DNS, descifrado y envío.
+
+La petición usa el POST JSON, credencial, autorización y presupuesto existentes.
+Aplican el menor plazo entre timeout del target y presupuesto restante, las cotas
+efectivas de entidad/texto/evidencia, 32 KiB por frame o línea y 1 024 unidades
+lógicas. Los heartbeats y registros ignorados cuentan. Solo una respuesta
+ensamblada tras terminal y redactada llega a evaluación. Los contadores, bytes,
+duración, terminal y error quedan en diagnóstico técnico DEBUG. Los frames
+crudos no se guardan en el resultado.

@@ -1,5 +1,7 @@
 ## Why
 
+El [roadmap de protocolos](roadmap.md) es el índice vigente para los cinco próximos changes. Los artefactos de esta epic conservan la planificación original. La implementación y aceptación se revisan en cada change enlazado.
+
 El contrato v1 de POST JSON con sustitución de `{{PROMPT}}` y extracción de texto excluye aplicaciones autorizadas con chat compatible con OpenAI, streaming y sesiones. Además, los criterios y permisos de exportación del evaluador v1 dependen de escenarios sintéticos: generalizar el transporte sin abordar esa frontera no convierte el scanner en una herramienta de evaluación real.
 
 ## What Changes

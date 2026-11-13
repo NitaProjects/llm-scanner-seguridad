@@ -1,3 +1,5 @@
+> Plan histórico de la epic. El [roadmap vigente](roadmap.md) remite a los cinco changes que se aprueban y aplican de forma independiente.
+
 ## 1. Revisión y límites de implementación
 
 - [ ] 1.1 Obtener aprobación explícita de las decisiones propuestas y del corte a implementar (D0 recomendado primero); verificar que quede registrado el alcance autorizado, sin asumir que READY FOR REVIEW equivale a aprobación.

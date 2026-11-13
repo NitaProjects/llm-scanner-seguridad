@@ -36,6 +36,7 @@ public final class ExecuteSecurityTestsUseCase implements ScanWorkPort {
         long enteredNanos = ticker.getAsLong();
         var enteredAt = clock.instant();
         var plan = executions.prepare(scanId);
+        var selectedAdapter = plan.integration() == null ? adapter : plan.integration();
         var budget = new ScanBudget(plan.scanStartedAt(), budgetMs, enteredAt, enteredNanos, ticker);
         boolean failed = false;
         for (int i = 0; i < plan.tests().size(); i++) {
@@ -45,7 +46,7 @@ public final class ExecuteSecurityTestsUseCase implements ScanWorkPort {
                 result = budget.remainingNanos() == 0
                         ? InvocationResult.failure(ExecutionError.SCAN_BUDGET_EXCEEDED)
                         : LegacyInvocationResultProjection.toLegacy(
-                                adapter.interact(plan.target(), plan.tests().get(i).prompt(), budget));
+                                selectedAdapter.interact(plan.target(), plan.tests().get(i).prompt(), budget));
             } catch (RuntimeException error) {
                 result = InvocationResult.failure(ExecutionError.EXECUTION_INTERNAL_ERROR);
             }

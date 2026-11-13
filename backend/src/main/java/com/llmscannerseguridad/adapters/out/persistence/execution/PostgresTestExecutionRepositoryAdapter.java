@@ -12,6 +12,7 @@ import com.llmscannerseguridad.application.execution.ExecutionPlan;
 import com.llmscannerseguridad.application.execution.InvocationResult;
 import com.llmscannerseguridad.application.execution.SecurityTestCatalogPort;
 import com.llmscannerseguridad.application.execution.TestExecutionRepositoryPort;
+import com.llmscannerseguridad.application.execution.TargetIntegrationPort;
 import com.llmscannerseguridad.application.scan.ScanOperationException;
 import com.llmscannerseguridad.application.scan.ScanRepositoryPort;
 import com.llmscannerseguridad.application.target.TargetConfigurationRepositoryPort;
@@ -34,6 +35,7 @@ public class PostgresTestExecutionRepositoryAdapter implements TestExecutionRepo
     private final SecurityTestCatalogPort catalog;
     private final ExecutionLimits limits;
     private final Clock clock;
+    private final TargetIntegrationPort integrations;
     private final TransactionTemplate transaction;
     private final com.llmscannerseguridad.application.evaluation.EvaluationRepositoryPort evaluations;
 
@@ -47,6 +49,13 @@ public class PostgresTestExecutionRepositoryAdapter implements TestExecutionRepo
             TargetConfigurationRepositoryPort targets, SecurityTestCatalogPort catalog, ExecutionLimits limits,
             PlatformTransactionManager manager, Clock clock,
             com.llmscannerseguridad.application.evaluation.EvaluationRepositoryPort evaluations) {
+        this(entityManager, scans, targets, catalog, limits, manager, clock, evaluations, target -> null);
+    }
+
+    public PostgresTestExecutionRepositoryAdapter(EntityManager entityManager, ScanRepositoryPort scans,
+            TargetConfigurationRepositoryPort targets, SecurityTestCatalogPort catalog, ExecutionLimits limits,
+            PlatformTransactionManager manager, Clock clock,
+            com.llmscannerseguridad.application.evaluation.EvaluationRepositoryPort evaluations, TargetIntegrationPort integrations) {
         this.entityManager = entityManager;
         this.scans = scans;
         this.targets = targets;
@@ -54,6 +63,7 @@ public class PostgresTestExecutionRepositoryAdapter implements TestExecutionRepo
         this.limits = limits;
         this.clock = clock;
         this.evaluations = evaluations;
+        this.integrations = integrations;
         transaction = new TransactionTemplate(manager);
         transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
@@ -78,9 +88,10 @@ public class PostgresTestExecutionRepositoryAdapter implements TestExecutionRepo
                 throw ScanOperationException.internal();
             }
             var target = targets.findByProjectId(scan.projectId()).orElseThrow(ScanOperationException::internal);
+            var integration = integrations.resolve(target);
             var rows = tests.stream().map(test -> TestExecution.pending(UUID.randomUUID(), scanId, test.id(),
                     target.id(), target.updatedAt())).toList();
-            var plan = new ExecutionPlan(tests, rows, target, scan.startedAt());
+            var plan = new ExecutionPlan(tests, rows, target, scan.startedAt(), integration);
             rows.forEach(row -> entityManager.persist(new TestExecutionJpaEntity(row)));
             entityManager.flush();
             if (evaluations != null && evaluations.profile(scanId) != null) {

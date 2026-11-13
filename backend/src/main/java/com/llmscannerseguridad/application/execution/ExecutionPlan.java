@@ -8,7 +8,11 @@ import com.llmscannerseguridad.domain.securitytest.SecurityTest;
 import com.llmscannerseguridad.domain.target.TargetConfiguration;
 
 public record ExecutionPlan(List<SecurityTest> tests, List<TestExecution> executions,
-        TargetConfiguration target, Instant scanStartedAt) {
+        TargetConfiguration target, Instant scanStartedAt, TargetAdapter integration) {
+    public ExecutionPlan(List<SecurityTest> tests, List<TestExecution> executions,
+            TargetConfiguration target, Instant scanStartedAt) {
+        this(tests, executions, target, scanStartedAt, null);
+    }
     public ExecutionPlan {
         tests = List.copyOf(tests);
         executions = List.copyOf(executions);

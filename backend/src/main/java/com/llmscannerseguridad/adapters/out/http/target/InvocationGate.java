@@ -19,34 +19,48 @@ public final class InvocationGate {
     }
 
     public void acquire(ScanBudget budget) {
+        acquire(budget, Long.MAX_VALUE);
+    }
+
+    void acquire(ScanBudget budget, long deadline) {
         boolean acquired = false;
         try {
-            acquired = semaphore.tryAcquire(budget.remainingNanos(), TimeUnit.NANOSECONDS);
+            acquired = semaphore.tryAcquire(remaining(budget, deadline), TimeUnit.NANOSECONDS);
             if (!acquired) {
-                throw new InvocationFailure(ExecutionError.SCAN_BUDGET_EXCEEDED);
+                throw expired(budget, deadline);
             }
             long wait = finished ? intervalNanos - (System.nanoTime() - previousFinished) : 0;
             if (wait > 0) {
-                if (wait >= budget.remainingNanos()) {
-                    throw new InvocationFailure(ExecutionError.SCAN_BUDGET_EXCEEDED);
+                if (wait >= remaining(budget, deadline)) {
+                    throw expired(budget, deadline);
                 }
                 TimeUnit.NANOSECONDS.sleep(wait);
             }
-            if (budget.remainingNanos() == 0) {
-                throw new InvocationFailure(ExecutionError.SCAN_BUDGET_EXCEEDED);
+            if (remaining(budget, deadline) == 0) {
+                throw expired(budget, deadline);
             }
         } catch (InterruptedException error) {
             Thread.currentThread().interrupt();
             if (acquired) {
                 semaphore.release();
             }
-            throw new InvocationFailure(ExecutionError.EXECUTION_INTERNAL_ERROR);
+            throw new InvocationFailure(deadline == Long.MAX_VALUE ? ExecutionError.EXECUTION_INTERNAL_ERROR : ExecutionError.EXECUTION_INTERRUPTED);
         } catch (RuntimeException error) {
             if (acquired) {
                 semaphore.release();
             }
             throw error;
         }
+    }
+
+    private static long remaining(ScanBudget budget, long deadline) {
+        return deadline == Long.MAX_VALUE ? budget.remainingNanos()
+                : Math.min(budget.remainingNanos(), Math.max(0, deadline - System.nanoTime()));
+    }
+
+    private static InvocationFailure expired(ScanBudget budget, long deadline) {
+        return new InvocationFailure(deadline != Long.MAX_VALUE && deadline - System.nanoTime() < budget.remainingNanos()
+                ? ExecutionError.TARGET_TIMEOUT : ExecutionError.SCAN_BUDGET_EXCEEDED);
     }
 
     public void release() {

@@ -1,6 +1,7 @@
 package com.llmscannerseguridad.config;
 
 import java.net.InetAddress;
+import java.nio.file.Path;
 import java.time.Clock;
 import java.util.Arrays;
 import java.util.Set;
@@ -9,6 +10,7 @@ import com.llmscannerseguridad.adapters.out.execution.securitytest.ExecutionLimi
 import com.llmscannerseguridad.adapters.out.execution.securitytest.LegacyRestTargetAdapter;
 import com.llmscannerseguridad.adapters.out.http.target.BoundedDnsResolver;
 import com.llmscannerseguridad.adapters.out.http.target.HttpTargetInvocationAdapter;
+import com.llmscannerseguridad.adapters.out.http.target.LocalStreamingBindings;
 import com.llmscannerseguridad.adapters.out.http.target.TargetDestinationPolicy;
 import com.llmscannerseguridad.adapters.out.persistence.execution.PostgresSecurityTestCatalogAdapter;
 import com.llmscannerseguridad.adapters.out.persistence.execution.PostgresTestExecutionRepositoryAdapter;
@@ -20,6 +22,7 @@ import com.llmscannerseguridad.application.execution.SecurityTestCatalogPort;
 import com.llmscannerseguridad.application.execution.TestExecutionRepositoryPort;
 import com.llmscannerseguridad.application.execution.TargetAdapter;
 import com.llmscannerseguridad.application.execution.TargetInvocationPort;
+import com.llmscannerseguridad.application.execution.TargetIntegrationPort;
 import com.llmscannerseguridad.application.scan.GetScanUseCase;
 import com.llmscannerseguridad.application.scan.ScanRepositoryPort;
 import com.llmscannerseguridad.application.target.CredentialDecryptionPort;
@@ -92,11 +95,17 @@ public class SecurityTestExecutionConfiguration {
     }
 
     @Bean
+    TargetIntegrationPort targetIntegrationPort(Environment environment, HttpTargetInvocationAdapter transport) {
+        String file = environment.getProperty("TARGET_STREAM_BINDINGS_FILE", "");
+        return new LocalStreamingBindings(file.isBlank() ? null : Path.of(file), transport);
+    }
+
+    @Bean
     TestExecutionRepositoryPort testExecutionRepositoryPort(EntityManager entityManager, ScanRepositoryPort scans,
             TargetConfigurationRepositoryPort targets, SecurityTestCatalogPort catalog,
             ExecutionLimits limits, PlatformTransactionManager manager,
-            com.llmscannerseguridad.application.evaluation.EvaluationRepositoryPort evaluations) {
-        return new PostgresTestExecutionRepositoryAdapter(entityManager, scans, targets, catalog, limits, manager, Clock.systemUTC(), evaluations);
+            com.llmscannerseguridad.application.evaluation.EvaluationRepositoryPort evaluations, TargetIntegrationPort integrations) {
+        return new PostgresTestExecutionRepositoryAdapter(entityManager, scans, targets, catalog, limits, manager, Clock.systemUTC(), evaluations, integrations);
     }
 
     @Bean
