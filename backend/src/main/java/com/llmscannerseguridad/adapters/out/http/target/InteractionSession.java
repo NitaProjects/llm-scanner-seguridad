@@ -1,5 +1,7 @@
 package com.llmscannerseguridad.adapters.out.http.target;
 
+import java.net.URI;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -25,6 +27,9 @@ final class InteractionSession implements AutoCloseable {
 
     private final TargetUrl origin;
     private final Map<String, Value> values = new HashMap<>();
+    private final Map<Capture, Map<String, WorkflowCookie>> workflowCookies = new LinkedHashMap<>();
+    private final Set<String> retiredCookieValues = new HashSet<>();
+    private final Set<String> forwardedHeaderValues = new HashSet<>();
     private boolean closed;
 
     InteractionSession(TargetUrl origin) { this.origin = origin; }
@@ -34,9 +39,34 @@ final class InteractionSession implements AutoCloseable {
         captureValues(json, response, declarations);
     }
 
-    void captureJson(Object json, List<Capture> declarations) {
-        if (declarations.stream().anyMatch(capture -> capture.source() != Source.JSON)) throw malformed();
-        captureValues(json, null, declarations);
+    void captureWorkflow(Object json, ClassicHttpResponse response, List<Capture> declarations, TargetUrl source) {
+        if (closed || !origin.sameOrigin(source)) throw malformed();
+        URI uri = URI.create(source.value());
+        Instant now = Instant.now();
+        // Un Set-Cookie posterior puede invalidar un handle, pero nunca autoriza uno nuevo.
+        for (var entry : workflowCookies.entrySet()) {
+            var seen = new HashSet<String>();
+            for (var header : response.getHeaders("Set-Cookie")) {
+                var cookie = WorkflowCookie.parse(header.getValue(), entry.getKey().selector(), uri, now, entry.getKey().maxBytes());
+                if (cookie != null) {
+                    if (!seen.add(cookie.path())) throw malformed();
+                    var previous = entry.getValue().remove(cookie.path());
+                    if (previous != null) retiredCookieValues.add(previous.value());
+                    retiredCookieValues.add(cookie.value());
+                }
+            }
+        }
+        for (var capture : declarations) {
+            if (capture.source() != Source.COOKIE) continue;
+            var cookies = new LinkedHashMap<String, WorkflowCookie>();
+            for (var header : response.getHeaders("Set-Cookie")) {
+                var cookie = WorkflowCookie.parse(header.getValue(), capture.selector(), uri, now, capture.maxBytes());
+                if (cookie != null && (cookies.size() >= 16 || cookies.putIfAbsent(cookie.path(), cookie) != null)) throw malformed();
+            }
+            if (cookies.isEmpty() && capture.required()) throw new InvocationFailure(ExecutionError.RESPONSE_PATH_NOT_FOUND);
+            workflowCookies.put(capture, cookies);
+        }
+        captureValues(json, response, declarations.stream().filter(capture -> capture.source() != Source.COOKIE).toList());
     }
 
     private void captureValues(Object json, ClassicHttpResponse response, List<Capture> declarations) {
@@ -59,10 +89,33 @@ final class InteractionSession implements AutoCloseable {
         Value value = values.get(name);
         if (closed || value == null || value.sensitive() || value.source() != Source.JSON
                 || !origin.sameOrigin(destination) || values.values().stream().anyMatch(other ->
-                        other.sensitive() && value.data().toString().contains(other.data().toString()))) {
+                        other.sensitive() && value.data().toString().contains(other.data().toString()))
+                || workflowCookieSecrets().stream().anyMatch(secret -> !secret.isEmpty() && value.data().toString().contains(secret))) {
             throw new InvocationFailure(ExecutionError.TARGET_CONFIGURATION_INVALID);
         }
         return value.data();
+    }
+
+    String credential(Capture capture, TargetUrl destination, Instant now) {
+        if (closed || !capture.sensitive() || !origin.sameOrigin(destination)) throw unavailable();
+        if (capture.source() == Source.COOKIE) {
+            var cookies = workflowCookies.getOrDefault(capture, Map.of()).values().stream()
+                    .filter(cookie -> cookie.applies(URI.create(destination.value()), now)).toList();
+            if (cookies.size() != 1) throw unavailable();
+            return cookies.getFirst().value();
+        }
+        Value value = values.get(capture.name());
+        if (value == null || !value.origin().equals(destination.origin())) throw unavailable();
+        String text = value.data().toString();
+        forwardedHeaderValues.add(text);
+        forwardedHeaderValues.add(text.strip());
+        return text;
+    }
+
+    private Set<String> workflowCookieSecrets() {
+        var secrets = new HashSet<>(retiredCookieValues);
+        workflowCookies.values().forEach(cookies -> cookies.values().forEach(cookie -> secrets.add(cookie.value())));
+        return secrets;
     }
 
     private Value jsonValue(Capture capture, Object node) {
@@ -121,8 +174,14 @@ final class InteractionSession implements AutoCloseable {
         var secrets = new HashSet<String>();
         addSecret(secrets, credential);
         for (Value value : values.values()) {
-            if (value.sensitive()) addSecret(secrets, value.data().toString());
+            if (value.sensitive()) {
+                String text = value.data().toString();
+                addSecret(secrets, text);
+                if (value.source() == Source.HEADER) addSecret(secrets, text.strip());
+            }
         }
+        workflowCookieSecrets().forEach(secret -> addSecret(secrets, secret));
+        forwardedHeaderValues.forEach(secret -> addSecret(secrets, secret));
         return text -> redactMatches(text, secrets);
     }
 
@@ -157,6 +216,13 @@ final class InteractionSession implements AutoCloseable {
         return result.append(text, copied, text.length()).toString();
     }
 
-    @Override public void close() { values.clear(); closed = true; }
+    @Override public void close() {
+        values.clear();
+        workflowCookies.clear();
+        retiredCookieValues.clear();
+        forwardedHeaderValues.clear();
+        closed = true;
+    }
+    private static InvocationFailure unavailable() { return new InvocationFailure(ExecutionError.CREDENTIAL_UNAVAILABLE); }
     private static InvocationFailure malformed() { return new InvocationFailure(ExecutionError.RESPONSE_FORMAT_ERROR); }
 }

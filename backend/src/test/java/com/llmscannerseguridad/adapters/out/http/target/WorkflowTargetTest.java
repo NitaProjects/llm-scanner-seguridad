@@ -78,7 +78,7 @@ class WorkflowTargetTest {
             for (String destination : List.of("http://target-a.example:443/path", "https://target-b.example/path", "https://target-a.example:444/path")) {
                 var result = transport.invokeWorkflow(target, "probe", budget(30000), "{}", "$.text", null,
                         new HttpTargetInvocationAdapter.SessionExchange("POST", new TargetUrl(destination), Long.MAX_VALUE, null, session),
-                        new HttpTargetInvocationAdapter.WorkflowExchange(transport.workflowBudget(), Map.of(), new HttpTargetInvocationAdapter.StepMetrics()));
+                        new HttpTargetInvocationAdapter.WorkflowExchange(transport.workflowBudget(), Map.of(), new HttpTargetInvocationAdapter.StepMetrics(), List.of()));
                 assertThat(result.errorReason()).isEqualTo(ExecutionError.TARGET_CONFIGURATION_INVALID);
                 assertThat(result.responseText()).isNull();
             }
@@ -304,7 +304,7 @@ class WorkflowTargetTest {
                 new EncryptedCredential(new byte[] {1}), now, now);
     }
 
-    private static final class Logs implements AutoCloseable {
+    static final class Logs implements AutoCloseable {
         private final Logger logger = (Logger) LoggerFactory.getLogger(LocalWorkflowBindings.class);
         private final Level previous = logger.getLevel();
         private final ListAppender<ILoggingEvent> events = new ListAppender<>();

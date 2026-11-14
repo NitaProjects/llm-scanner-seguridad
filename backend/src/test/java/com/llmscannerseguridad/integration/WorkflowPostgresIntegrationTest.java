@@ -32,6 +32,8 @@ import org.junit.jupiter.api.io.TempDir;
 @EnabledIfEnvironmentVariable(named = "SCAN_TEST_DB_URL", matches = "jdbc:postgresql://localhost:5432/llm_scanner_seguridad_test")
 @Timeout(90)
 class WorkflowPostgresIntegrationTest {
+    private static final String COOKIE = "fixture-session-cookie";
+    private static final String CSRF = "fixture-csrf-handle";
     @TempDir Path directory;
 
     @Test void workflowClosesScanAndLegacyHistoryRemainsReadableWithoutBinding() throws Exception {
@@ -51,14 +53,17 @@ class WorkflowPostgresIntegrationTest {
                     legacy.incrementAndGet();
                     response = "{\"text\":\"respuesta histórica\"}";
                 } else if (path.equals("/api/chats")) {
+                    exchange.getResponseHeaders().add("Set-Cookie", "fixture=" + COOKIE + "; Path=/api; HttpOnly");
+                    exchange.getResponseHeaders().add("X-CSRF-Token", CSRF);
                     response = "{\"chatId\":\"chat-" + chats.incrementAndGet() + "\",\"privateValue\":\"fixture-private-value\"}";
-                } else if (path.equals("/api/chats/chat-" + chats.get() + "/sessions")) {
+                } else if (path.equals("/api/chats/chat-" + chats.get() + "/sessions") && credentialsPresent(exchange)) {
                     response = "{\"sessionId\":\"session-" + sessions.incrementAndGet() + "\"}";
                 } else if (path.equals("/api/chats/chat-" + chats.get() + "/sessions/session-" + sessions.get() + "/answer")
-                        && "text/event-stream".equals(exchange.getRequestHeaders().getFirst("Accept")) && request.contains("\"prompt\":")) {
+                        && "text/event-stream".equals(exchange.getRequestHeaders().getFirst("Accept")) && request.contains("\"prompt\":")
+                        && credentialsPresent(exchange)) {
                     answers.incrementAndGet();
                     media = "text/event-stream";
-                    response = "data: {\"delta\":\"respuesta terminal fixture-private-value\"}\n\ndata: [DONE]\n\n";
+                    response = "data: {\"delta\":\"respuesta terminal fixture-private-value " + COOKIE + " " + CSRF + "\"}\n\ndata: [DONE]\n\n";
                     status = 201;
                 } else {
                     exchange.sendResponseHeaders(400, -1);
@@ -89,7 +94,7 @@ class WorkflowPostgresIntegrationTest {
             var previousScore = app.getBean(GetScanScoreUseCase.class).execute(project, previous.id()).score();
             Files.writeString(file, EvaluationJson.write(Map.of("schemaVersion", 1, "bindings", List.of(Map.of(
                     "projectId", project, "targetConfigurationId", target.id(), "targetUpdatedAt", target.updatedAt().toString(),
-                    "workflowId", "fixture", "revision", 1, "steps", steps())))));
+                    "workflowId", "fixture", "revision", 1, "allowedDynamicHeaders", List.of("X-CSRF-Token"), "steps", steps())))));
             var scan = app.getBean(ScanLifecyclePort.class).create(project);
             app.getBean(ScanWorkerEntry.class).execute(scan.id());
             assertThat(chats).hasValue(4);
@@ -102,9 +107,9 @@ class WorkflowPostgresIntegrationTest {
             assertThat(executions.findByScanId(previous.id())).hasSize(4).allSatisfy(e -> assertThat(e.responseText()).isEqualTo("respuesta histórica"));
             assertThat(executions.findByScanId(scan.id())).hasSize(4).allSatisfy(e -> {
                 assertThat(e.httpStatus()).isEqualTo(201);
-                assertThat(e.responseText()).isEqualTo("respuesta terminal [REDACTED_CREDENTIAL]");
+                assertThat(e.responseText()).isEqualTo("respuesta terminal [REDACTED_CREDENTIAL] [REDACTED_CREDENTIAL] [REDACTED_CREDENTIAL]");
                 assertThat(e.responseRedacted()).isTrue();
-                assertThat(e.requestBody()).contains("\"prompt\"").doesNotContain("fixture-private-value", "chat-", "session-", "chatId", "sessionId");
+                assertThat(e.requestBody()).contains("\"prompt\"").doesNotContain("fixture-private-value", "chat-", "session-", "chatId", "sessionId", COOKIE, CSRF);
             });
             assertThat(reader.getBean(EvaluationRepositoryPort.class).listEvaluations(scan.id()).items()).hasSize(4)
                     .allSatisfy(e -> assertThat(e.status()).isEqualTo(EvaluationStatus.COMPLETED));
@@ -114,22 +119,43 @@ class WorkflowPostgresIntegrationTest {
             assertThat(reports.execute(project, scan.id()).report().reportVersion()).isEqualTo("report-v1");
             assertThat(scores.execute(project, previous.id()).score()).usingRecursiveComparison().isEqualTo(previousScore);
             assertThat(reports.execute(project, previous.id()).report()).usingRecursiveComparison().isEqualTo(previousReport);
+            for (String table : List.of("test_executions", "evaluation_results", "findings", "scan_scores", "security_reports")) {
+                Integer exposed = db.jdbc().queryForObject("select count(*) from " + table
+                        + " as row_data where strpos(to_jsonb(row_data)::text, ?) > 0 or strpos(to_jsonb(row_data)::text, ?) > 0",
+                        Integer.class, COOKIE, CSRF);
+                assertThat(exposed).as(table).isZero();
+            }
         } finally {
             server.stop(0);
         }
     }
 
     private static List<Map<String, Object>> steps() {
+        var credentials = List.of(Map.of("capture", "sessionHandle", "destination", "COOKIE", "name", "fixture"),
+                Map.of("capture", "csrfHandle", "destination", "HEADER", "name", "X-CSRF-Token"));
         return List.of(Map.of("id", "chat", "method", "POST", "path", "/api/chats", "body", Map.of(),
                         "dependsOn", List.of(), "response", Map.of("type", "JSON"),
-                        "captures", List.of(capture("chatId", "$.chatId", false), capture("privateHandle", "$.privateValue", true))),
+                        "captures", List.of(capture("chatId", "$.chatId", false), capture("privateHandle", "$.privateValue", true),
+                                transportCapture("sessionHandle", "COOKIE", "fixture"), transportCapture("csrfHandle", "HEADER", "X-CSRF-Token"))),
                 Map.of("id", "session", "method", "POST", "path", "/api/chats/{{chatId}}/sessions", "body", Map.of(),
                         "dependsOn", List.of("chat"), "response", Map.of("type", "JSON"),
+                        "credentialBindings", credentials,
                         "captures", List.of(capture("sessionId", "$.sessionId", false))),
                 Map.of("id", "answer", "method", "POST", "path", "/api/chats/{{chatId}}/sessions/{{sessionId}}/answer",
                         "body", Map.of("prompt", "{{PROMPT}}"), "dependsOn", List.of("chat", "session"),
+                        "credentialBindings", credentials,
                         "response", Map.of("type", "SSE", "stream", Map.of("mediaType", "text/event-stream",
                                 "textPath", "$.delta", "mode", "DELTA", "terminalLiteral", "[DONE]"))));
+    }
+
+    private static boolean credentialsPresent(com.sun.net.httpserver.HttpExchange exchange) {
+        return ("fixture=" + COOKIE).equals(exchange.getRequestHeaders().getFirst("Cookie"))
+                && CSRF.equals(exchange.getRequestHeaders().getFirst("X-CSRF-Token"));
+    }
+
+    private static Map<String, Object> transportCapture(String name, String source, String selector) {
+        return Map.of("name", name, "source", source, "selector", selector, "type", "STRING",
+                "required", true, "sensitive", true, "maxBytes", 128);
     }
 
     private static Map<String, Object> capture(String name, String path, boolean sensitive) {

@@ -38,6 +38,15 @@ final class ControlledHttpsServer implements AutoCloseable {
     }
 
     ControlledHttpsServer(String hostname) throws Exception {
+        this(hostname, exchange -> {
+            byte[] bytes = "{\"text\":\"ok\"}".getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, bytes.length);
+            exchange.getResponseBody().write(bytes);
+        });
+    }
+
+    ControlledHttpsServer(String hostname, com.sun.net.httpserver.HttpHandler handler) throws Exception {
         var generator = KeyPairGenerator.getInstance("RSA");
         generator.initialize(2048);
         var pair = generator.generateKeyPair();
@@ -84,10 +93,7 @@ final class ControlledHttpsServer implements AutoCloseable {
             session.getRequestedServerNames().stream().filter(SNIHostName.class::isInstance)
                     .map(SNIHostName.class::cast).findFirst().ifPresent(nameValue -> sniHostname.set(nameValue.getAsciiName()));
             try (exchange) {
-                byte[] bytes = "{\"text\":\"ok\"}".getBytes(StandardCharsets.UTF_8);
-                exchange.getResponseHeaders().set("Content-Type", "application/json");
-                exchange.sendResponseHeaders(200, bytes.length);
-                exchange.getResponseBody().write(bytes);
+                handler.handle(exchange);
             }
         });
         server.start();

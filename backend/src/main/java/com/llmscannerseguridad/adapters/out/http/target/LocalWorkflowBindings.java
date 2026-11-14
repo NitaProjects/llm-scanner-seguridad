@@ -33,7 +33,7 @@ public final class LocalWorkflowBindings implements TargetIntegrationPort {
     private record Workflow(List<Step> steps) { }
     private record Step(String id, String method, String path, String body, Map<String, String> headers,
             List<String> dependsOn, Guard guard, List<InteractionSession.Capture> captures,
-            String responsePath, StreamBinding stream) { }
+            String responsePath, StreamBinding stream, List<CredentialBinding> credentials) { }
     private record Guard(String name, String operator, Object expected) {
         boolean allows(InteractionSession session, TargetUrl base) {
             if (session.value(name) == null) return false;
@@ -64,7 +64,7 @@ public final class LocalWorkflowBindings implements TargetIntegrationPort {
             Workflow selected = null;
             for (Object item : entries) {
                 var entry = object(item, Set.of("projectId", "targetConfigurationId", "targetUpdatedAt",
-                        "workflowId", "revision", "steps"), Set.of());
+                        "workflowId", "revision", "steps"), Set.of("allowedDynamicHeaders"));
                 UUID id = uuid(entry, "targetConfigurationId");
                 UUID project = uuid(entry, "projectId");
                 Instant updated = Instant.parse(string(entry, "targetUpdatedAt", 64));
@@ -83,6 +83,11 @@ public final class LocalWorkflowBindings implements TargetIntegrationPort {
                     merged.putAll(settings.headers());
                     merged.putAll(step.headers());
                     TargetRules.headers(merged, settings.authHeaderName());
+                    for (var credential : step.credentials()) {
+                        if (credential.destination() == CredentialBinding.Destination.HEADER
+                                && (merged.containsKey(credential.name()) || credential.name().equalsIgnoreCase(settings.authHeaderName())
+                                    || step.stream() != null && step.stream().reservedHeaders().contains(credential.name()))) throw invalid();
+                    }
                 }
                 selected = workflow;
             }
@@ -98,14 +103,21 @@ public final class LocalWorkflowBindings implements TargetIntegrationPort {
     private static Workflow workflow(Map<?, ?> entry) {
         if (!(entry.get("steps") instanceof List<?> raw) || raw.isEmpty() || raw.size() > MAX_STEPS) throw invalid();
         var previous = new LinkedHashMap<String, Step>();
+        var allowedHeaders = new HashSet<String>();
+        if (entry.containsKey("allowedDynamicHeaders")) {
+            if (!(entry.get("allowedDynamicHeaders") instanceof List<?> headers) || headers.size() > 20) throw invalid();
+            for (Object value : headers) {
+                if (!(value instanceof String name) || !allowedHeaders.add(CredentialBinding.headerName(name))) throw invalid();
+            }
+        }
         var captureNames = new HashSet<String>();
         for (int i = 0; i < raw.size(); i++) {
             var fields = object(raw.get(i), Set.of("id", "method", "path", "dependsOn", "response"),
-                    Set.of("body", "captures", "guard", "headers"));
+                    Set.of("body", "captures", "guard", "headers", "credentialBindings"));
             String id = identifier(fields, "id");
             try {
                 boolean terminal = i == raw.size() - 1;
-                var step = step(id, fields, previous, terminal);
+                var step = step(id, fields, previous, terminal, allowedHeaders);
                 if (previous.putIfAbsent(id, step) != null) throw invalid();
                 for (var capture : step.captures()) {
                     if (!captureNames.add(capture.name().toLowerCase(Locale.ROOT))) throw invalid();
@@ -118,7 +130,7 @@ public final class LocalWorkflowBindings implements TargetIntegrationPort {
         return new Workflow(List.copyOf(previous.values()));
     }
 
-    private static Step step(String id, Map<?, ?> fields, Map<String, Step> previous, boolean terminal) {
+    private static Step step(String id, Map<?, ?> fields, Map<String, Step> previous, boolean terminal, Set<String> allowedHeaders) {
         String method = string(fields, "method", 4);
         if (!Set.of("GET", "POST").contains(method) || method.equals("GET") == fields.containsKey("body")
                 || terminal && (!method.equals("POST") || fields.containsKey("guard") || fields.containsKey("captures"))) throw invalid();
@@ -140,7 +152,6 @@ public final class LocalWorkflowBindings implements TargetIntegrationPort {
             if (terminal) VALIDATOR.template(body);
         }
         var captures = parseCaptures(fields.containsKey("captures") ? fields.get("captures") : List.of());
-        if (captures.stream().anyMatch(capture -> capture.source() != InteractionSession.Source.JSON)) throw invalid();
         Guard guard = fields.containsKey("guard") ? guard(fields.get("guard"), available) : null;
         var response = object(fields.get("response"), Set.of("type"), Set.of("textPath", "stream"));
         String type = string(response, "type", 5);
@@ -159,7 +170,34 @@ public final class LocalWorkflowBindings implements TargetIntegrationPort {
             if (type.equals("SSE") != stream.mediaType().equals("text/event-stream")) throw invalid();
         }
         var headers = headers(fields.containsKey("headers") ? fields.get("headers") : Map.of());
-        return new Step(id, method, path, body, headers, List.copyOf(dependsOn), guard, captures, responsePath, stream);
+        var credentials = credentials(fields.containsKey("credentialBindings") ? fields.get("credentialBindings") : List.of(),
+                available, allowedHeaders);
+        return new Step(id, method, path, body, headers, List.copyOf(dependsOn), guard, captures, responsePath, stream, credentials);
+    }
+
+    private static List<CredentialBinding> credentials(Object value, List<InteractionSession.Capture> available,
+            Set<String> allowedHeaders) {
+        if (!(value instanceof List<?> raw) || raw.size() > 16) throw invalid();
+        var result = new ArrayList<CredentialBinding>();
+        var headerNames = new HashSet<String>();
+        var cookieNames = new HashSet<String>();
+        for (Object item : raw) {
+            var declaration = object(item, Set.of("capture", "destination", "name"), Set.of());
+            String captureName = string(declaration, "capture", 32);
+            var capture = available.stream().filter(c -> c.name().equals(captureName) && c.sensitive())
+                    .findFirst().orElseThrow(LocalWorkflowBindings::invalid);
+            var destination = CredentialBinding.Destination.valueOf(string(declaration, "destination", 6));
+            String name = string(declaration, "name", 128);
+            if (destination == CredentialBinding.Destination.HEADER) {
+                name = CredentialBinding.headerName(name);
+                if (!allowedHeaders.contains(name) || !headerNames.add(name)
+                        || capture.source() == InteractionSession.Source.HEADER
+                        && Set.of("authorization", "proxy-authorization").contains(capture.selector().toLowerCase(Locale.ROOT))) throw invalid();
+            } else if (capture.source() != InteractionSession.Source.COOKIE || !capture.selector().equals(name)
+                    || !cookieNames.add(name)) throw invalid();
+            result.add(new CredentialBinding(capture, destination, name));
+        }
+        return List.copyOf(result);
     }
 
     private static Map<String, String> headers(Object value) {
@@ -220,11 +258,12 @@ public final class LocalWorkflowBindings implements TargetIntegrationPort {
                     }
                     TargetUrl destination = destination(base, resolvePath(step.path(), session, base));
                     var exchange = new HttpTargetInvocationAdapter.SessionExchange(step.method(), destination, deadline,
-                            terminal ? null : (body, response) -> session.captureJson(transport.parseSessionResponse(body),
-                                    step.captures()), session);
+                            terminal ? null : (body, response) -> session.captureWorkflow(transport.parseSessionResponse(body),
+                                    response, step.captures(), destination), session);
                     preparationMs = elapsed(started);
                     result = transport.invokeWorkflow(target, prompt, budget, step.body(), step.responsePath(),
-                            step.stream(), exchange, new HttpTargetInvocationAdapter.WorkflowExchange(limits, step.headers(), metrics));
+                            step.stream(), exchange, new HttpTargetInvocationAdapter.WorkflowExchange(limits, step.headers(), metrics,
+                                    step.credentials()));
                 } catch (InvocationFailure error) {
                     preparationMs = elapsed(started);
                     result = InvocationResult.failure(error.reason);

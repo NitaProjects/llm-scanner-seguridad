@@ -259,3 +259,57 @@ ordinal, ID, estado, código, duración, contadores y flags de redacción. El
 resultado guarda únicamente la evidencia del paso terminal según el contrato
 actual. El contexto local se libera al terminar, fallar o cancelar. Acordar
 un TTL con el target para los recursos creados durante las pruebas.
+
+#### Credenciales efímeras por paso
+
+Un workflow v1 puede declarar `allowedDynamicHeaders` en su entrada de
+`bindings`. Cada paso consumidor puede declarar `credentialBindings` con
+`capture`, `destination` y `name`. La captura debe proceder de una dependencia
+directa anterior. Las fuentes son JSON escalar, HEADER explícito o COOKIE por
+nombre. Toda fuente de `credentialBindings` requiere `sensitive: true`,
+incluidas las capturas JSON. Estas capturas quedan excluidas de los slots de
+URL y body. Los valores consumidos en cabeceras se redactan si reaparecen
+en la evidencia.
+
+```json
+{
+  "allowedDynamicHeaders": ["X-CSRF-Token", "X-Session-Id"]
+}
+```
+
+Ejemplo de campos del paso consumidor que depende del bootstrap:
+
+```json
+{
+  "dependsOn": ["bootstrap"],
+  "credentialBindings": [
+    {"capture": "sessionHandle", "destination": "COOKIE", "name": "session"},
+    {"capture": "csrfHandle", "destination": "HEADER", "name": "X-CSRF-Token"}
+  ]
+}
+```
+
+El bootstrap declara `sessionHandle` con `source: "COOKIE"` y
+`selector: "session"`, y `csrfHandle` con `source: "HEADER"` y
+`selector: "X-CSRF-Token"`. Ambos usan `type: "STRING"`, `sensitive: true`
+y el límite `maxBytes` de la captura. Cada cookie conserva su nombre
+original. Un paso que no declare un binding no recibe ese valor.
+
+El transporte y el binding de streaming controlan sus propias cabeceras.
+La autenticación del target conserva sus cabeceras. Los valores dinámicos
+no pueden colisionar con esas cabeceras ni con las del target o del paso.
+`Cookie` se compone únicamente a partir de bindings de cookie aplicables.
+La resolución ocurre tras la autorización, el pinning DNS/IP y la conexión
+con TLS cuando corresponde. El flujo conserva el origen exacto y cero
+redirecciones. HTTP con credenciales se limita a la excepción local de
+demo existente. `Secure` exige HTTPS también en esa excepción.
+
+Se aceptan cookies host-only. `Domain` se rechaza. El path coincide por
+segmento y usa el directorio de captura por defecto. `Max-Age` tiene
+precedencia sobre `Expires`. Dos cookies con el mismo nombre y rutas distintas
+pueden capturarse. Si ambas aplican al mismo consumidor se rechaza por
+ambigüedad. Un `Set-Cookie` posterior invalida el valor anterior para esa
+ruta. Solo una captura declarada puede autorizar un reemplazo. Una
+credencial requerida ausente, vencida o incompatible aborta antes de enviar.
+`HttpOnly` y `SameSite` se conservan como atributos internos. El contexto y
+los valores descartados para redacción se eliminan al cerrar la interacción.

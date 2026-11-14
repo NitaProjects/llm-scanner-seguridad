@@ -10,6 +10,7 @@ import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -33,6 +34,7 @@ import org.apache.hc.client5.http.config.ConnectionConfig;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.config.TlsConfig;
 import org.apache.hc.client5.http.impl.DefaultSchemePortResolver;
+import org.apache.hc.client5.http.impl.ChainElement;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.impl.io.BasicHttpClientConnectionManager;
 import org.apache.hc.client5.http.impl.io.ManagedHttpClientConnectionFactory;
@@ -111,7 +113,8 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
         return json.render(target.settings(), prompt, slots);
     }
 
-    record WorkflowExchange(WorkflowBudget budget, Map<String, String> headers, StepMetrics metrics) { }
+    record WorkflowExchange(WorkflowBudget budget, Map<String, String> headers, StepMetrics metrics,
+            List<CredentialBinding> credentials) { }
 
     static final class StepMetrics {
         int bytes;
@@ -164,7 +167,8 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
             var destination = session == null ? settings.url() : session.destination();
             boolean demo = destinations.authorize(destination);
             URI uri = URI.create(destination.value());
-            if (settings.authType() != AuthType.NONE && uri.getScheme().equalsIgnoreCase("http") && !demo) {
+            if ((settings.authType() != AuthType.NONE || workflow != null && !workflow.credentials().isEmpty())
+                    && uri.getScheme().equalsIgnoreCase("http") && !demo) {
                 throw new InvocationFailure(ExecutionError.TARGET_TRANSPORT_REJECTED);
             }
             String rendered;
@@ -216,11 +220,27 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
             }
             request.setHeader("Accept-Encoding", "identity");
             request.setHeader("Connection", "close");
-            try (manager; var client = HttpClients.custom().setConnectionManager(manager)
+            var clientBuilder = HttpClients.custom().setConnectionManager(manager)
                     .setRoutePlanner(new DefaultRoutePlanner(DefaultSchemePortResolver.INSTANCE))
                     .disableAutomaticRetries().disableRedirectHandling().disableCookieManagement()
                     .disableContentCompression().disableAuthCaching().disableConnectionState()
-                    .setConnectionReuseStrategy((req, response, context) -> false).build()) {
+                    .setConnectionReuseStrategy((req, response, context) -> false);
+            if (workflow != null && !workflow.credentials().isEmpty()) {
+                // ConnectExec ya conectó al destino fijado y completó la validación TLS.
+                clientBuilder.addExecInterceptorAfter(ChainElement.CONNECT.name(), "workflow-credentials", (outgoing, scope, chain) -> {
+                    checkStream(deadline, budget);
+                    materialize(outgoing, settings, session, workflow);
+                    try {
+                        return chain.proceed(outgoing, scope);
+                    } finally {
+                        for (var bindingEntry : workflow.credentials()) {
+                            outgoing.removeHeaders(bindingEntry.destination() == CredentialBinding.Destination.COOKIE
+                                    ? "Cookie" : bindingEntry.name());
+                        }
+                    }
+                });
+            }
+            try (manager; var client = clientBuilder.build()) {
                 EphemeralCredential credential = null;
                 try {
                     String secret = null;
@@ -240,9 +260,12 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
                     }
                     boolean bootstrap = session != null && session.capture() != null;
                     var evidence = bootstrap ? null : evidence(rendered, null, secret, session);
-                    safeRequest = evidence == null ? null : evidence.request();
-                    requestRedacted = evidence != null && evidence.requestRedacted();
-                    evidenceLimit(safeRequest, null);
+                    if (evidence != null) evidenceLimit(evidence.request(), null);
+                    // El resultado de fallo nunca guarda un body preparado antes de resolver los headers efímeros.
+                    if (evidence != null && (workflow == null || workflow.credentials().isEmpty())) {
+                        safeRequest = evidence.request();
+                        requestRedacted = evidence.requestRedacted();
+                    }
                     if (bounded) checkStream(deadline, budget); else check(deadline, budget);
                     var cancellation = scheduler.schedule(() -> {
                         request.cancel();
@@ -283,6 +306,9 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
                         }
                         // No cerrar el stream mediante drain: se cierra la conexión en finally.
                         String text;
+                        if (workflow != null && !bootstrap) {
+                            session.context().captureWorkflow(null, response, List.of(), destination);
+                        }
                         InputStream input = entity.getContent();
                         if (workflow != null) input = workflow.budget().countResponse(input, workflow.metrics());
                         if (collector != null) text = collector.collect(input);
@@ -363,6 +389,40 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
     private TargetJsonProcessor.Evidence evidence(String request, String text, String secret, SessionExchange session) {
         if (session == null) return json.redact(request, text, secret);
         return json.sanitize(request, text, session.context().redactor(secret));
+    }
+
+    private static void materialize(org.apache.hc.core5.http.ClassicHttpRequest request,
+            com.llmscannerseguridad.domain.target.TargetSettings settings, SessionExchange session, WorkflowExchange workflow) {
+        var outgoing = new java.util.LinkedHashMap<String, String>();
+        var cookies = new java.util.StringJoiner("; ");
+        var now = java.time.Instant.now();
+        for (var binding : workflow.credentials()) {
+            String value = session.context().credential(binding.source(), session.destination(), now);
+            if (binding.destination() == CredentialBinding.Destination.COOKIE) {
+                cookies.add(binding.name() + "=" + value);
+            } else {
+                if (request.containsHeader(binding.name()) || TargetRules.controls(value)
+                        || !StandardCharsets.ISO_8859_1.newEncoder().canEncode(value)) {
+                    throw new InvocationFailure(ExecutionError.CREDENTIAL_UNAVAILABLE);
+                }
+                outgoing.put(binding.name(), value);
+            }
+        }
+        var combined = new java.util.TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
+        combined.putAll(settings.headers());
+        combined.putAll(workflow.headers());
+        combined.putAll(outgoing);
+        try {
+            TargetRules.headers(combined, settings.authHeaderName());
+        } catch (com.llmscannerseguridad.domain.target.TargetValidationException error) {
+            throw new InvocationFailure(ExecutionError.REQUEST_TOO_LARGE);
+        }
+        if (cookies.length() > 4096 || combined.entrySet().stream()
+                .mapToInt(entry -> TargetRules.bytes(entry.getKey()) + TargetRules.bytes(entry.getValue())).sum() + cookies.length() > 16384) {
+            throw new InvocationFailure(ExecutionError.REQUEST_TOO_LARGE);
+        }
+        outgoing.forEach(request::setHeader);
+        if (cookies.length() != 0) request.setHeader("Cookie", cookies.toString());
     }
 
     Object parseSessionResponse(String body) { return json.parseResponse(body); }
