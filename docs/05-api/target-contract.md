@@ -134,3 +134,52 @@ lógicas. Los heartbeats y registros ignorados cuentan. Solo una respuesta
 ensamblada tras terminal y redactada llega a evaluación. Los contadores, bytes,
 duración, terminal y error quedan en diagnóstico técnico DEBUG. Los frames
 crudos no se guardan en el resultado.
+
+### Sesión efímera de target
+
+`TARGET_SESSION_BINDINGS_FILE` indica un manifiesto local opcional con
+`schemaVersion: 1` y `bindings`. El worker fija el binding para el Scan por
+`projectId`, `targetConfigurationId` y `targetUpdatedAt` exactos de un target
+REST_LEGACY. Un mismo target puede tener un binding de sesión o de streaming.
+Cada prueba abre un contexto nuevo. Ejecuta un bootstrap JSON GET o POST,
+seguido del POST de prompt con el template del target. Ambas peticiones
+comparten el timeout del target y el presupuesto restante del Scan.
+
+Ejemplo de entrada en `bindings`:
+
+```json
+{
+  "projectId": "10000000-0000-4000-8000-000000000001",
+  "targetConfigurationId": "10000000-0000-4000-8000-000000000002",
+  "targetUpdatedAt": "2026-11-14T09:00:00Z",
+  "bootstrap": {"method": "GET", "path": "/bootstrap"},
+  "promptPath": "/chats/{{chatId}}/sessions/{{sessionId}}",
+  "captures": [
+    {"name": "chatId", "source": "JSON", "selector": "$.chatId", "type": "STRING", "required": true, "sensitive": false, "maxBytes": 256},
+    {"name": "sessionId", "source": "JSON", "selector": "$.session.id", "type": "STRING", "required": true, "sensitive": false, "maxBytes": 256}
+  ]
+}
+```
+
+El POST de bootstrap admite un objeto JSON estático en `body`. Si falta
+`promptPath`, el POST final usa la URL configurada. Los slots ocupan un segmento
+completo de la ruta o un valor string completo del template, por ejemplo
+`"session":"{{sessionId}}"`. Se sustituyen una vez como segmentos UTF-8
+codificados o nodos JSON tipados. El scanner rechaza variables ausentes,
+traversal, delimitadores y percent encoding en segmentos.
+
+Cada binding admite hasta 16 capturas de hasta 4 KiB UTF-8 por valor. Los
+nombres empiezan por letra ASCII, admiten letras y dígitos y tienen hasta 32
+caracteres. Los nombres reservados y duplicados se rechazan sin distinguir
+mayúsculas. Las fuentes son JSON con selector restringido y tipo STRING,
+INTEGER o BOOLEAN, HEADER con nombre explícito y COOKIE con nombre explícito
+en Set-Cookie. HEADER y COOKIE requieren STRING y sensibilidad activa. Sus
+valores, origen y atributos de cookie quedan en memoria. Los valores sensibles
+se excluyen de los slots, se redactan en la evidencia final y no se reenvían
+como headers o cookies.
+
+El contexto se elimina al completar, fallar o cancelar la prueba. La evidencia
+persistida corresponde al POST final y contiene su estado HTTP y texto saneado.
+Los IDs no sensibles usados en el cuerpo final pueden aparecer en esa evidencia.
+El bootstrap queda fuera. La limpieza de sesiones remotas depende del TTL
+acordado con el target.

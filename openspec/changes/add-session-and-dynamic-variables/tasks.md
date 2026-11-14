@@ -1,9 +1,0 @@
-## 1. Implementación tras aprobación del change
-
-- [ ] 1.1 Validar las dos llamadas y los tipos/extracciones JSON, header y cookie con límites. Verificar duplicados, variables requeridas y clasificación sensible (SES-01).
-- [ ] 1.2 Conectar el bootstrap al POST final mediante slots codificados y un contexto por prueba. Verificar dos llamadas como máximo, mismo presupuesto, origen fijo y ausencia de reenvío de cookies (SES-01/02).
-
-## 2. Aceptación
-
-- [ ] 2.1 Verificar fallos antes de red dependiente, bloqueo de traversal, redacción, expiración del scope tras error/cancelación y ausencia de fuga a una segunda prueba (SES-02).
-- [ ] 2.2 Verificar que los cuatro resultados usan el contrato actual y actualizar la descripción de sesión operativa afectada (SES-01/02).

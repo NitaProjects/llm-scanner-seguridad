@@ -23,8 +23,11 @@ import com.llmscannerseguridad.domain.execution.ExecutionError;
 import com.llmscannerseguridad.domain.target.AuthType;
 import com.llmscannerseguridad.domain.target.TargetConfiguration;
 import com.llmscannerseguridad.domain.target.TargetRules;
+import com.llmscannerseguridad.domain.target.TargetUrl;
 import org.apache.hc.client5.http.DnsResolver;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
+import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.client5.http.config.ConnectionConfig;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.config.TlsConfig;
@@ -85,26 +88,44 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
 
     public InvocationResult invokeWithResponseExtractor(TargetConfiguration target, String prompt, ScanBudget budget,
             java.util.function.Function<String, String> requestRenderer, TargetResponseTextExtractor extractor) {
-        return exchange(target, prompt, budget, requestRenderer, extractor, null);
+        return exchange(target, prompt, budget, requestRenderer, extractor, null, null);
     }
 
     InvocationResult invokeStream(TargetConfiguration target, String prompt, ScanBudget budget, StreamBinding binding) {
         if (!binding.permits(target.settings())) return InvocationResult.failure(ExecutionError.TARGET_CONFIGURATION_INVALID);
-        return exchange(target, prompt, budget, value -> json.render(target.settings(), value), null, binding);
+        return exchange(target, prompt, budget, value -> json.render(target.settings(), value), null, binding, null);
+    }
+
+    record SessionExchange(String method, TargetUrl destination, long deadline,
+            java.util.function.BiConsumer<String, ClassicHttpResponse> capture,
+            InteractionSession context) { }
+
+    InvocationResult invokeSession(TargetConfiguration target, String prompt, ScanBudget budget,
+            java.util.function.Function<String, String> render, SessionExchange step) {
+        if (!target.settings().url().sameOrigin(step.destination())) return InvocationResult.failure(ExecutionError.TARGET_CONFIGURATION_INVALID);
+        return exchange(target, prompt, budget, render, body -> json.extract(body, target.settings().responsePath()), null, step);
+    }
+
+    String renderSession(TargetConfiguration target, String prompt, java.util.function.Function<String, Object> slots) {
+        return json.render(target.settings(), prompt, slots);
     }
 
     private InvocationResult exchange(TargetConfiguration target, String prompt, ScanBudget budget,
-            java.util.function.Function<String, String> requestRenderer, TargetResponseTextExtractor extractor, StreamBinding binding) {
+            java.util.function.Function<String, String> requestRenderer, TargetResponseTextExtractor extractor, StreamBinding binding,
+            SessionExchange session) {
         long entered = System.nanoTime();
+        boolean bounded = binding != null || session != null;
+        long timeout = TimeUnit.MILLISECONDS.toNanos(target.settings().timeoutMs());
+        long fixedDeadline = session == null ? entered + timeout : session.deadline();
         try {
-            if (binding == null) gate.acquire(budget);
-            else gate.acquire(budget, entered + TimeUnit.MILLISECONDS.toNanos(target.settings().timeoutMs()));
+            if (bounded) gate.acquire(budget, fixedDeadline);
+            else gate.acquire(budget);
         } catch (InvocationFailure error) {
             return InvocationResult.failure(error.reason);
         }
         long started = System.nanoTime();
         long allowed = Math.min(TimeUnit.MILLISECONDS.toNanos(target.settings().timeoutMs()), budget.remainingNanos());
-        long targetDeadline = (binding == null ? started : entered) + TimeUnit.MILLISECONDS.toNanos(target.settings().timeoutMs());
+        long targetDeadline = bounded ? fixedDeadline : started + timeout;
         boolean scanLimited = started + allowed < targetDeadline;
         long deadline = Math.min(started + allowed, targetDeadline);
         var collector = binding == null ? null : new StreamCollector(binding, json, limits, () -> checkStream(deadline, budget));
@@ -114,10 +135,11 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
         boolean requestRedacted = false;
         byte[] body = null;
         try {
-            if (binding == null) check(deadline, budget); else checkStream(deadline, budget);
+            if (bounded) checkStream(deadline, budget); else check(deadline, budget);
             var settings = target.settings();
-            boolean demo = destinations.authorize(settings.url());
-            URI uri = URI.create(settings.url().value());
+            var destination = session == null ? settings.url() : session.destination();
+            boolean demo = destinations.authorize(destination);
+            URI uri = URI.create(destination.value());
             if (settings.authType() != AuthType.NONE && uri.getScheme().equalsIgnoreCase("http") && !demo) {
                 throw new InvocationFailure(ExecutionError.TARGET_TRANSPORT_REJECTED);
             }
@@ -134,7 +156,7 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
             String host = uri.getHost().replace("[", "").replace("]", "");
             var address = destinations.select(dns.resolve(host,
                     Math.min(TimeUnit.MILLISECONDS.toNanos(limits.dnsMs()), deadline - System.nanoTime())), demo);
-            if (binding == null) check(deadline, budget); else checkStream(deadline, budget);
+            if (bounded) checkStream(deadline, budget); else check(deadline, budget);
             var resolver = new DnsResolver() {
                 @Override public InetAddress[] resolve(String ignored) { return new InetAddress[] {address}; }
                 @Override public String resolveCanonicalHostname(String original) { return original; }
@@ -152,13 +174,13 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
                     .setSocketTimeout(Timeout.ofMilliseconds(Math.min(limits.connectMs(), remainingMs))).build());
             manager.setTlsConfig(TlsConfig.custom()
                     .setHandshakeTimeout(Timeout.ofMilliseconds(Math.min(limits.connectMs(), remainingMs))).build());
-            var request = new HttpPost(uri);
+            var request = session == null ? new HttpPost(uri) : new HttpUriRequestBase(session.method(), uri);
             request.setVersion(HttpVersion.HTTP_1_1);
             request.setConfig(RequestConfig.custom().setRedirectsEnabled(false).setAuthenticationEnabled(false)
                     .setContentCompressionEnabled(false).setProtocolUpgradeEnabled(false)
                     .setResponseTimeout(Timeout.ofMilliseconds(remainingMs))
                     .setConnectionRequestTimeout(Timeout.ofMilliseconds(remainingMs)).build());
-            request.setEntity(new ByteArrayEntity(body, ContentType.APPLICATION_JSON));
+            if (session == null || !session.method().equals("GET")) request.setEntity(new ByteArrayEntity(body, ContentType.APPLICATION_JSON));
             settings.headers().forEach(request::setHeader);
             if (binding != null) {
                 request.removeHeaders("Accept");
@@ -190,17 +212,18 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
                         request.setHeader(settings.authType() == AuthType.BEARER_TOKEN ? "Authorization" : settings.authHeaderName(),
                                 settings.authType() == AuthType.BEARER_TOKEN ? "Bearer " + secret : secret);
                     }
-                    var evidence = json.redact(rendered, null, secret);
-                    safeRequest = evidence.request();
-                    requestRedacted = evidence.requestRedacted();
+                    boolean bootstrap = session != null && session.capture() != null;
+                    var evidence = bootstrap ? null : evidence(rendered, null, secret, session);
+                    safeRequest = evidence == null ? null : evidence.request();
+                    requestRedacted = evidence != null && evidence.requestRedacted();
                     evidenceLimit(safeRequest, null);
-                    check(deadline, budget);
+                    if (bounded) checkStream(deadline, budget); else check(deadline, budget);
                     var cancellation = scheduler.schedule(() -> {
                         request.cancel();
                         manager.close(CloseMode.IMMEDIATE);
                     }, Math.max(0, deadline - System.nanoTime()), TimeUnit.NANOSECONDS);
                     Thread caller = Thread.currentThread();
-                    var interruption = binding == null ? null : scheduler.scheduleWithFixedDelay(() -> {
+                    var interruption = !bounded ? null : scheduler.scheduleWithFixedDelay(() -> {
                         if (caller.isInterrupted()) {
                             request.cancel();
                             manager.close(CloseMode.IMMEDIATE);
@@ -232,17 +255,26 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
                             throw new InvocationFailure(ExecutionError.RESPONSE_TOO_LARGE);
                         }
                         // No cerrar el stream mediante drain: se cierra la conexión en finally.
-                        String text = binding == null ? extractor.extract(readResponse(entity.getContent(), deadline, budget))
-                                : collector.collect(entity.getContent());
+                        String text;
+                        if (collector != null) text = collector.collect(entity.getContent());
+                        else {
+                            String decoded = readResponse(entity.getContent(), deadline, budget);
+                            if (bootstrap) {
+                                session.capture().accept(decoded, response);
+                                checkStream(deadline, budget);
+                                return new InvocationResult(httpStatus, elapsed(started), null, null, null, false, false);
+                            }
+                            text = extractor.extract(decoded);
+                        }
                         if (text.getBytes(StandardCharsets.UTF_8).length > limits.textBytes()) {
                             throw new InvocationFailure(ExecutionError.EVIDENCE_LIMIT_EXCEEDED);
                         }
-                        evidence = json.redact(rendered, text, secret);
-                        if (binding != null && TargetRules.bytes(evidence.response()) > limits.textBytes()) {
+                        evidence = evidence(rendered, text, secret, session);
+                        if (bounded && TargetRules.bytes(evidence.response()) > limits.textBytes()) {
                             throw new InvocationFailure(ExecutionError.EVIDENCE_LIMIT_EXCEEDED);
                         }
                         evidenceLimit(evidence.request(), evidence.response());
-                        if (binding == null) check(deadline, budget); else checkStream(deadline, budget);
+                        if (bounded) checkStream(deadline, budget); else check(deadline, budget);
                         return new InvocationResult(httpStatus, elapsed(started), null, evidence.request(), evidence.response(),
                                 evidence.requestRedacted(), evidence.responseRedacted());
                     } finally {
@@ -265,8 +297,8 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
             streamError = error.reason();
             return failure(error.reason(), httpStatus, started, deadline, scanLimited, budget, safeRequest, requestRedacted);
         } catch (InvocationFailure error) {
-            streamError = binding != null && Thread.currentThread().isInterrupted() ? ExecutionError.EXECUTION_INTERRUPTED
-                    : binding != null && error.reason == ExecutionError.DNS_RESOLUTION_FAILED && System.nanoTime() >= deadline
+            streamError = bounded && Thread.currentThread().isInterrupted() ? ExecutionError.EXECUTION_INTERRUPTED
+                    : bounded && error.reason == ExecutionError.DNS_RESOLUTION_FAILED && System.nanoTime() >= deadline
                             ? ExecutionError.TARGET_TIMEOUT : error.reason;
             return failure(streamError, httpStatus, started, deadline, scanLimited, budget, safeRequest, requestRedacted);
         } catch (SocketTimeoutException error) {
@@ -279,7 +311,7 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
             streamError = ExecutionError.RESPONSE_FORMAT_ERROR;
             return failure(ExecutionError.RESPONSE_FORMAT_ERROR, httpStatus, started, deadline, scanLimited, budget, safeRequest, requestRedacted);
         } catch (IOException error) {
-            streamError = binding != null && Thread.currentThread().isInterrupted() ? ExecutionError.EXECUTION_INTERRUPTED
+            streamError = bounded && Thread.currentThread().isInterrupted() ? ExecutionError.EXECUTION_INTERRUPTED
                     : binding != null && httpStatus != null && System.nanoTime() < deadline ? ExecutionError.RESPONSE_FORMAT_ERROR
                     : ExecutionError.TARGET_CONNECTION_FAILED;
             return failure(streamError, httpStatus, started, deadline, scanLimited, budget, safeRequest, requestRedacted);
@@ -297,6 +329,13 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
             }
         }
     }
+
+    private TargetJsonProcessor.Evidence evidence(String request, String text, String secret, SessionExchange session) {
+        if (session == null) return json.redact(request, text, secret);
+        return json.sanitize(request, text, session.context().redactor(secret));
+    }
+
+    Object parseSessionResponse(String body) { return json.parseResponse(body); }
 
     private InvocationResult failure(ExecutionError error, Integer http, long started, long deadline, boolean scanLimited,
             ScanBudget budget, String request, boolean redacted) {

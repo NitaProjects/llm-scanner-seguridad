@@ -11,6 +11,7 @@ import com.llmscannerseguridad.adapters.out.execution.securitytest.LegacyRestTar
 import com.llmscannerseguridad.adapters.out.http.target.BoundedDnsResolver;
 import com.llmscannerseguridad.adapters.out.http.target.HttpTargetInvocationAdapter;
 import com.llmscannerseguridad.adapters.out.http.target.LocalStreamingBindings;
+import com.llmscannerseguridad.adapters.out.http.target.LocalSessionBindings;
 import com.llmscannerseguridad.adapters.out.http.target.TargetDestinationPolicy;
 import com.llmscannerseguridad.adapters.out.persistence.execution.PostgresSecurityTestCatalogAdapter;
 import com.llmscannerseguridad.adapters.out.persistence.execution.PostgresTestExecutionRepositoryAdapter;
@@ -97,7 +98,15 @@ public class SecurityTestExecutionConfiguration {
     @Bean
     TargetIntegrationPort targetIntegrationPort(Environment environment, HttpTargetInvocationAdapter transport) {
         String file = environment.getProperty("TARGET_STREAM_BINDINGS_FILE", "");
-        return new LocalStreamingBindings(file.isBlank() ? null : Path.of(file), transport);
+        var streaming = new LocalStreamingBindings(file.isBlank() ? null : Path.of(file), transport);
+        String sessionFile = environment.getProperty("TARGET_SESSION_BINDINGS_FILE", "");
+        var sessions = new LocalSessionBindings(sessionFile.isBlank() ? null : Path.of(sessionFile), transport);
+        return target -> {
+            var stream = streaming.resolve(target);
+            var session = sessions.resolve(target);
+            if (stream != null && session != null) throw new IllegalArgumentException("Bindings de target incompatibles.");
+            return session == null ? stream : session;
+        };
     }
 
     @Bean

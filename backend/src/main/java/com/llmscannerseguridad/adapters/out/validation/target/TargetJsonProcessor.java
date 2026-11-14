@@ -33,24 +33,28 @@ public final class TargetJsonProcessor {
     }
 
     public String render(TargetSettings settings, String prompt) {
+        return render(settings, prompt, value -> value);
+    }
+
+    public String render(TargetSettings settings, String prompt, java.util.function.Function<String, Object> slots) {
         validator.template(settings.requestTemplate());
         validator.responsePath(settings.responsePath());
-        Object prepared = replace(requestJson.readValue(settings.requestTemplate(), Object.class), prompt);
+        Object prepared = replace(requestJson.readValue(settings.requestTemplate(), Object.class), prompt, slots);
         unicode(prepared);
         return requestJson.writeValueAsString(prepared);
     }
 
-    private Object replace(Object value, String prompt) {
+    private Object replace(Object value, String prompt, java.util.function.Function<String, Object> slots) {
         if (value instanceof String text) {
-            return text.equals(TargetSettings.PROMPT_PLACEHOLDER) ? prompt : text;
+            return text.equals(TargetSettings.PROMPT_PLACEHOLDER) ? prompt : slots.apply(text);
         }
         if (value instanceof Map<?, ?> map) {
             var copy = new LinkedHashMap<String, Object>();
-            map.forEach((key, item) -> copy.put((String) key, replace(item, prompt)));
+            map.forEach((key, item) -> copy.put((String) key, replace(item, prompt, slots)));
             return copy;
         }
         if (value instanceof List<?> list) {
-            return list.stream().map(item -> replace(item, prompt)).toList();
+            return list.stream().map(item -> replace(item, prompt, slots)).toList();
         }
         return value;
     }
@@ -92,35 +96,39 @@ public final class TargetJsonProcessor {
     }
 
     public Evidence redact(String request, String response, String secret) {
+        return sanitize(request, response, value -> redactText(value, secret));
+    }
+
+    public Evidence sanitize(String request, String response, java.util.function.UnaryOperator<String> redactor) {
         String safeRequest;
         try {
-            safeRequest = requestJson.writeValueAsString(redactNode(requestJson.readValue(request, Object.class), secret));
+            safeRequest = requestJson.writeValueAsString(redactNode(requestJson.readValue(request, Object.class), redactor));
         } catch (RuntimeException error) {
             throw new JsonFailure(ExecutionError.EVIDENCE_LIMIT_EXCEEDED);
         }
-        String safeResponse = response == null ? null : redactText(response, secret);
+        String safeResponse = response == null ? null : redactor.apply(response);
         return new Evidence(safeRequest, safeResponse, !safeRequest.equals(request),
                 response != null && !safeResponse.equals(response));
     }
 
-    private Object redactNode(Object value, String secret) {
+    private Object redactNode(Object value, java.util.function.UnaryOperator<String> redactor) {
         if (value instanceof String text) {
-            return redactText(text, secret);
+            return redactor.apply(text);
         }
         if (value instanceof Map<?, ?> map) {
             var copy = new LinkedHashMap<String, Object>();
             for (var entry : map.entrySet()) {
-                String key = redactText((String) entry.getKey(), secret);
+                String key = redactor.apply((String) entry.getKey());
                 if (copy.containsKey(key)) {
                     throw new JsonFailure(ExecutionError.EVIDENCE_LIMIT_EXCEEDED);
                 }
-                copy.put(key, redactNode(entry.getValue(), secret));
+                copy.put(key, redactNode(entry.getValue(), redactor));
             }
             return copy;
         }
         if (value instanceof List<?> list) {
             var copy = new ArrayList<Object>();
-            list.forEach(item -> copy.add(redactNode(item, secret)));
+            list.forEach(item -> copy.add(redactNode(item, redactor)));
             return copy;
         }
         return value;
