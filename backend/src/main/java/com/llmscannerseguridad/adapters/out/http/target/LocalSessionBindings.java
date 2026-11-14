@@ -30,7 +30,7 @@ public final class LocalSessionBindings implements TargetIntegrationPort {
     private final Path file;
     private final HttpTargetInvocationAdapter transport;
     private final StrictTargetJson json = new StrictTargetJson();
-    private final JsonTargetConfigurationValidator paths = new JsonTargetConfigurationValidator(new LocalTargetUrlPolicy(false, false, Set.of()));
+    private static final JsonTargetConfigurationValidator PATHS = new JsonTargetConfigurationValidator(new LocalTargetUrlPolicy(false, false, Set.of()));
 
     private record Binding(String method, String bootstrapPath, String bootstrapBody, String promptPath,
             List<InteractionSession.Capture> captures) { }
@@ -106,7 +106,15 @@ public final class LocalSessionBindings implements TargetIntegrationPort {
         var body = JsonMapper.shared().writeValueAsString(bootstrap.containsKey("body") ? bootstrap.get("body") : Map.of());
         if (containsSlot(bootstrap.get("body"))) throw invalid();
         if (TargetRules.bytes(body) > 32768) throw invalid();
-        if (!(entry.get("captures") instanceof List<?> raw) || raw.isEmpty() || raw.size() > 16) throw invalid();
+        var captures = parseCaptures(entry.get("captures"));
+        if (captures.isEmpty()) throw invalid();
+        String promptPath = entry.containsKey("promptPath") ? string(entry, "promptPath", 2048) : null;
+        if (promptPath != null) validatePath(promptPath, captures);
+        return new Binding(method, path, body, promptPath, captures);
+    }
+
+    static List<InteractionSession.Capture> parseCaptures(Object value) {
+        if (!(value instanceof List<?> raw) || raw.size() > 16) throw invalid();
         var names = new HashSet<String>();
         var selectors = new HashSet<CaptureSelector>();
         var captures = new ArrayList<InteractionSession.Capture>();
@@ -119,7 +127,7 @@ public final class LocalSessionBindings implements TargetIntegrationPort {
             var type = InteractionSession.Type.valueOf(string(declaration, "type", 7));
             if (!(declaration.get("required") instanceof Boolean required) || !(declaration.get("sensitive") instanceof Boolean sensitive)
                     || !(declaration.get("maxBytes") instanceof Integer max) || max < 1 || max > MAX_VALUE_BYTES) throw invalid();
-            List<Object> segments = source == InteractionSession.Source.JSON ? List.copyOf(paths.pathSegments(selector)) : List.of();
+            List<Object> segments = source == InteractionSession.Source.JSON ? List.copyOf(PATHS.pathSegments(selector)) : List.of();
             Object canonical = switch (source) {
                 case JSON -> segments;
                 case HEADER -> selector.toLowerCase(Locale.ROOT);
@@ -133,9 +141,7 @@ public final class LocalSessionBindings implements TargetIntegrationPort {
                             .anyMatch(segment -> segment instanceof String key && reserved(key.replaceAll("[-_]", "").toLowerCase(Locale.ROOT)))) throw invalid();
             captures.add(new InteractionSession.Capture(name, source, selector, segments, type, max, required, sensitive));
         }
-        String promptPath = entry.containsKey("promptPath") ? string(entry, "promptPath", 2048) : null;
-        if (promptPath != null) validatePath(promptPath, captures);
-        return new Binding(method, path, body, promptPath, List.copyOf(captures));
+        return List.copyOf(captures);
     }
 
     private record CaptureSelector(InteractionSession.Source source, Object canonical) { }
@@ -152,7 +158,7 @@ public final class LocalSessionBindings implements TargetIntegrationPort {
         return node instanceof String text && hasBraces(text);
     }
 
-    private static void validateSlots(Object node, List<InteractionSession.Capture> captures) {
+    static void validateSlots(Object node, List<InteractionSession.Capture> captures) {
         if (node instanceof Map<?, ?> map) map.forEach((key, value) -> {
             if (containsSlot(key)) throw invalid();
             validateSlots(value, captures);
@@ -161,7 +167,7 @@ public final class LocalSessionBindings implements TargetIntegrationPort {
         else if (node instanceof String text && hasBraces(text) && !text.equals(TargetSettings.PROMPT_PLACEHOLDER)) validateSlot(text, captures);
     }
 
-    private static void validatePath(String path, List<InteractionSession.Capture> captures) {
+    static void validatePath(String path, List<InteractionSession.Capture> captures) {
         if (!path.startsWith("/") || path.startsWith("//")) throw invalid();
         for (String segment : path.split("/", -1)) {
             if (hasBraces(segment)) validateSlot(segment, captures);
@@ -175,7 +181,7 @@ public final class LocalSessionBindings implements TargetIntegrationPort {
                 && c.source() == InteractionSession.Source.JSON && !c.sensitive())) throw invalid();
     }
 
-    private static String resolvePath(String path, InteractionSession session, TargetUrl base) {
+    static String resolvePath(String path, InteractionSession session, TargetUrl base) {
         var resolved = new StringJoiner("/");
         for (String segment : path.split("/", -1)) {
             Object value = resolveNode(segment, session, base);
@@ -199,34 +205,34 @@ public final class LocalSessionBindings implements TargetIntegrationPort {
         return encoded.toString();
     }
 
-    private static Object resolveNode(String text, InteractionSession session, TargetUrl base) {
+    static Object resolveNode(String text, InteractionSession session, TargetUrl base) {
         if (!hasBraces(text)) return text;
         var matcher = SLOT.matcher(text);
         if (!matcher.matches()) throw invalid();
         return session.identifier(matcher.group(1), base);
     }
 
-    private static TargetUrl destination(TargetUrl base, String path) {
+    static TargetUrl destination(TargetUrl base, String path) {
         URI uri = URI.create(base.value());
         return new TargetUrl(uri.getScheme() + "://" + uri.getRawAuthority() + path);
     }
 
     private static boolean hasBraces(String text) { return text.contains("{{") || text.contains("}}"); }
 
-    private static Map<?, ?> object(Object value, Set<String> required, Set<String> optional) {
+    static Map<?, ?> object(Object value, Set<String> required, Set<String> optional) {
         if (!(value instanceof Map<?, ?> map) || !map.keySet().containsAll(required)
                 || map.keySet().stream().anyMatch(key -> !required.contains(key) && !optional.contains(key))) throw invalid();
         return map;
     }
 
-    private static UUID uuid(Map<?, ?> map, String field) {
+    static UUID uuid(Map<?, ?> map, String field) {
         String value = string(map, field, 36);
         var id = UUID.fromString(value);
         if (!id.toString().equalsIgnoreCase(value)) throw invalid();
         return id;
     }
 
-    private static String string(Map<?, ?> fields, String key, int max) {
+    static String string(Map<?, ?> fields, String key, int max) {
         if (!(fields.get(key) instanceof String text) || text.isBlank() || text.length() > max
                 || TargetRules.controls(text) || SecurityTest.invalidUnicode(text)) throw invalid();
         return text;

@@ -39,7 +39,11 @@ public final class TargetJsonProcessor {
     public String render(TargetSettings settings, String prompt, java.util.function.Function<String, Object> slots) {
         validator.template(settings.requestTemplate());
         validator.responsePath(settings.responsePath());
-        Object prepared = replace(requestJson.readValue(settings.requestTemplate(), Object.class), prompt, slots);
+        return renderTemplate(settings.requestTemplate(), prompt, slots);
+    }
+
+    public String renderTemplate(String template, String prompt, java.util.function.Function<String, Object> slots) {
+        Object prepared = replace(requestJson.readValue(template, Object.class), prompt, slots);
         unicode(prepared);
         return requestJson.writeValueAsString(prepared);
     }

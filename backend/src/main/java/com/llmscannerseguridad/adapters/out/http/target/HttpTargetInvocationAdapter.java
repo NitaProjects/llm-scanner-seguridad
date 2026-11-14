@@ -10,6 +10,7 @@ import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import com.llmscannerseguridad.adapters.out.execution.securitytest.ExecutionLimits;
@@ -88,12 +89,12 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
 
     public InvocationResult invokeWithResponseExtractor(TargetConfiguration target, String prompt, ScanBudget budget,
             java.util.function.Function<String, String> requestRenderer, TargetResponseTextExtractor extractor) {
-        return exchange(target, prompt, budget, requestRenderer, extractor, null, null);
+        return exchange(target, prompt, budget, requestRenderer, extractor, null, null, null);
     }
 
     InvocationResult invokeStream(TargetConfiguration target, String prompt, ScanBudget budget, StreamBinding binding) {
         if (!binding.permits(target.settings())) return InvocationResult.failure(ExecutionError.TARGET_CONFIGURATION_INVALID);
-        return exchange(target, prompt, budget, value -> json.render(target.settings(), value), null, binding, null);
+        return exchange(target, prompt, budget, value -> json.render(target.settings(), value), null, binding, null, null);
     }
 
     record SessionExchange(String method, TargetUrl destination, long deadline,
@@ -103,16 +104,39 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
     InvocationResult invokeSession(TargetConfiguration target, String prompt, ScanBudget budget,
             java.util.function.Function<String, String> render, SessionExchange step) {
         if (!target.settings().url().sameOrigin(step.destination())) return InvocationResult.failure(ExecutionError.TARGET_CONFIGURATION_INVALID);
-        return exchange(target, prompt, budget, render, body -> json.extract(body, target.settings().responsePath()), null, step);
+        return exchange(target, prompt, budget, render, body -> json.extract(body, target.settings().responsePath()), null, step, null);
     }
 
     String renderSession(TargetConfiguration target, String prompt, java.util.function.Function<String, Object> slots) {
         return json.render(target.settings(), prompt, slots);
     }
 
+    record WorkflowExchange(WorkflowBudget budget, Map<String, String> headers, StepMetrics metrics) { }
+
+    static final class StepMetrics {
+        int bytes;
+        int units;
+    }
+
+    WorkflowBudget workflowBudget() {
+        return new WorkflowBudget(limits.requestBytes(), limits.responseBytes());
+    }
+
+    InvocationResult invokeWorkflow(TargetConfiguration target, String prompt, ScanBudget budget, String template,
+            String responsePath, StreamBinding stream, SessionExchange step, WorkflowExchange workflow) {
+        var settings = target.settings();
+        if (!settings.url().sameOrigin(step.destination()) || stream != null && !stream.permits(settings)) {
+            return InvocationResult.failure(ExecutionError.TARGET_CONFIGURATION_INVALID);
+        }
+        return exchange(target, prompt, budget,
+                value -> template == null ? "" : json.renderTemplate(template, value,
+                        slot -> LocalSessionBindings.resolveNode(slot, step.context(), step.destination())),
+                body -> json.extract(body, responsePath), stream, step, workflow);
+    }
+
     private InvocationResult exchange(TargetConfiguration target, String prompt, ScanBudget budget,
             java.util.function.Function<String, String> requestRenderer, TargetResponseTextExtractor extractor, StreamBinding binding,
-            SessionExchange session) {
+            SessionExchange session, WorkflowExchange workflow) {
         long entered = System.nanoTime();
         boolean bounded = binding != null || session != null;
         long timeout = TimeUnit.MILLISECONDS.toNanos(target.settings().timeoutMs());
@@ -153,6 +177,7 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
             if (body.length > limits.requestBytes()) {
                 throw new InvocationFailure(ExecutionError.REQUEST_TOO_LARGE);
             }
+            if (workflow != null) workflow.budget().chargeRequest(body.length);
             String host = uri.getHost().replace("[", "").replace("]", "");
             var address = destinations.select(dns.resolve(host,
                     Math.min(TimeUnit.MILLISECONDS.toNanos(limits.dnsMs()), deadline - System.nanoTime())), demo);
@@ -182,6 +207,7 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
                     .setConnectionRequestTimeout(Timeout.ofMilliseconds(remainingMs)).build());
             if (session == null || !session.method().equals("GET")) request.setEntity(new ByteArrayEntity(body, ContentType.APPLICATION_JSON));
             settings.headers().forEach(request::setHeader);
+            if (workflow != null) workflow.headers().forEach(request::setHeader);
             if (binding != null) {
                 request.removeHeaders("Accept");
                 request.setHeader("Accept", binding.mediaType());
@@ -251,14 +277,17 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
                         if (entity == null) {
                             throw new InvocationFailure(binding == null ? ExecutionError.RESPONSE_INVALID_JSON : ExecutionError.RESPONSE_FORMAT_ERROR);
                         }
-                        if (entity.getContentLength() > limits.responseBytes()) {
+                        int remainingBytes = workflow == null ? limits.responseBytes() : workflow.budget().remainingResponse();
+                        if (entity.getContentLength() > remainingBytes) {
                             throw new InvocationFailure(ExecutionError.RESPONSE_TOO_LARGE);
                         }
                         // No cerrar el stream mediante drain: se cierra la conexión en finally.
                         String text;
-                        if (collector != null) text = collector.collect(entity.getContent());
+                        InputStream input = entity.getContent();
+                        if (workflow != null) input = workflow.budget().countResponse(input, workflow.metrics());
+                        if (collector != null) text = collector.collect(input);
                         else {
-                            String decoded = readResponse(entity.getContent(), deadline, budget);
+                            String decoded = readResponse(input, deadline, budget);
                             if (bootstrap) {
                                 session.capture().accept(decoded, response);
                                 checkStream(deadline, budget);
@@ -324,6 +353,7 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
             }
             gate.release();
             if (collector != null) {
+                if (workflow != null) workflow.metrics().units = collector.units();
                 LOG.debug("stream events={} bytes={} durationMs={} terminal={} error={}", collector.units(), collector.bytes(),
                         elapsed(entered), collector.terminal(), effectiveError(streamError, deadline, scanLimited, budget));
             }

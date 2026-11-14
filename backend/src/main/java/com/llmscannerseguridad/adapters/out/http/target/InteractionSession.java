@@ -30,7 +30,17 @@ final class InteractionSession implements AutoCloseable {
     InteractionSession(TargetUrl origin) { this.origin = origin; }
 
     void capture(Object json, ClassicHttpResponse response, List<Capture> declarations) {
-        if (closed || !(json instanceof Map<?, ?>)) throw malformed();
+        if (!(json instanceof Map<?, ?>)) throw malformed();
+        captureValues(json, response, declarations);
+    }
+
+    void captureJson(Object json, List<Capture> declarations) {
+        if (declarations.stream().anyMatch(capture -> capture.source() != Source.JSON)) throw malformed();
+        captureValues(json, null, declarations);
+    }
+
+    private void captureValues(Object json, ClassicHttpResponse response, List<Capture> declarations) {
+        if (closed) throw malformed();
         for (Capture declaration : declarations) {
             Value value = switch (declaration.source()) {
                 case JSON -> jsonValue(declaration, json);

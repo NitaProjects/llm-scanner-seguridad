@@ -46,7 +46,8 @@ public final class ExecuteSecurityTestsUseCase implements ScanWorkPort {
                 result = budget.remainingNanos() == 0
                         ? InvocationResult.failure(ExecutionError.SCAN_BUDGET_EXCEEDED)
                         : LegacyInvocationResultProjection.toLegacy(
-                                selectedAdapter.interact(plan.target(), plan.tests().get(i).prompt(), budget));
+                                selectedAdapter.interact(plan.target(), plan.tests().get(i).prompt(),
+                                        plan.integration() == null ? budget : budget.forExecution(running.id())));
             } catch (RuntimeException error) {
                 result = InvocationResult.failure(ExecutionError.EXECUTION_INTERNAL_ERROR);
             }

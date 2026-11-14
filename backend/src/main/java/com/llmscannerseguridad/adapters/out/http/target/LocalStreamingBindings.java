@@ -25,8 +25,8 @@ public final class LocalStreamingBindings implements TargetIntegrationPort {
     private static final Set<String> MEDIA = Set.of("text/event-stream", "application/x-ndjson", "application/jsonl");
     private final Path file;
     private final HttpTargetInvocationAdapter transport;
-    private final StrictTargetJson json = new StrictTargetJson();
-    private final JsonTargetConfigurationValidator paths = new JsonTargetConfigurationValidator(new LocalTargetUrlPolicy(false, false, Set.of()));
+    private static final StrictTargetJson JSON = new StrictTargetJson();
+    private static final JsonTargetConfigurationValidator PATHS = new JsonTargetConfigurationValidator(new LocalTargetUrlPolicy(false, false, Set.of()));
 
     public LocalStreamingBindings(Path file, HttpTargetInvocationAdapter transport) {
         if (file != null && (file.toString().startsWith("\\\\") || !file.getFileName().toString().endsWith(".json"))) throw invalid();
@@ -41,7 +41,7 @@ public final class LocalStreamingBindings implements TargetIntegrationPort {
             if (bytes.length > FILE_BYTES) throw invalid();
             String text = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
                     .onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(bytes)).toString();
-            var root = object(json.read(text), Set.of("schemaVersion", "bindings"), Set.of());
+            var root = object(JSON.read(text), Set.of("schemaVersion", "bindings"), Set.of());
             if (!Integer.valueOf(1).equals(root.get("schemaVersion")) || !(root.get("bindings") instanceof List<?> entries)
                     || entries.size() > 64) throw invalid();
             StreamBinding selected = null;
@@ -67,7 +67,7 @@ public final class LocalStreamingBindings implements TargetIntegrationPort {
         }
     }
 
-    private StreamBinding binding(Map<?, ?> entry) {
+    static StreamBinding binding(Map<?, ?> entry) {
         String media = required(entry, "mediaType");
         if (!MEDIA.contains(media)) throw invalid();
         String eventPath = optional(entry, "eventPath");
@@ -78,7 +78,7 @@ public final class LocalStreamingBindings implements TargetIntegrationPort {
         if ((terminal == null) == (literal == null) || terminal != null && (terminal.equals(content) || terminal.equals(error))
                 || error != null && error.equals(content) || media.equals("text/event-stream") && eventPath != null
                 || !media.equals("text/event-stream") && eventPath == null && (content != null || error != null || terminal != null)) throw invalid();
-        if (!media.equals("text/event-stream") && literal != null && !(json.read(literal) instanceof Map<?, ?>)) throw invalid();
+        if (!media.equals("text/event-stream") && literal != null && !(JSON.read(literal) instanceof Map<?, ?>)) throw invalid();
         var reserved = new HashSet<String>();
         if (entry.containsKey("reservedHeaders")) {
             if (!(entry.get("reservedHeaders") instanceof List<?> names) || names.size() > 20) throw invalid();
@@ -87,8 +87,8 @@ public final class LocalStreamingBindings implements TargetIntegrationPort {
                 if (!reserved.add(header.toLowerCase(java.util.Locale.ROOT))) throw invalid();
             }
         }
-        return new StreamBinding(media, eventPath == null ? null : List.copyOf(paths.pathSegments(eventPath)),
-                List.copyOf(paths.pathSegments(required(entry, "textPath"))), content, error, terminal, literal,
+        return new StreamBinding(media, eventPath == null ? null : List.copyOf(PATHS.pathSegments(eventPath)),
+                List.copyOf(PATHS.pathSegments(required(entry, "textPath"))), content, error, terminal, literal,
                 StreamBinding.Mode.valueOf(required(entry, "mode")), Set.copyOf(reserved));
     }
 

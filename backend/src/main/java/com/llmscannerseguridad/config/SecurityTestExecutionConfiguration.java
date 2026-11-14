@@ -12,6 +12,7 @@ import com.llmscannerseguridad.adapters.out.http.target.BoundedDnsResolver;
 import com.llmscannerseguridad.adapters.out.http.target.HttpTargetInvocationAdapter;
 import com.llmscannerseguridad.adapters.out.http.target.LocalStreamingBindings;
 import com.llmscannerseguridad.adapters.out.http.target.LocalSessionBindings;
+import com.llmscannerseguridad.adapters.out.http.target.LocalWorkflowBindings;
 import com.llmscannerseguridad.adapters.out.http.target.TargetDestinationPolicy;
 import com.llmscannerseguridad.adapters.out.persistence.execution.PostgresSecurityTestCatalogAdapter;
 import com.llmscannerseguridad.adapters.out.persistence.execution.PostgresTestExecutionRepositoryAdapter;
@@ -101,10 +102,16 @@ public class SecurityTestExecutionConfiguration {
         var streaming = new LocalStreamingBindings(file.isBlank() ? null : Path.of(file), transport);
         String sessionFile = environment.getProperty("TARGET_SESSION_BINDINGS_FILE", "");
         var sessions = new LocalSessionBindings(sessionFile.isBlank() ? null : Path.of(sessionFile), transport);
+        String workflowFile = environment.getProperty("TARGET_WORKFLOW_BINDINGS_FILE", "");
+        var workflows = new LocalWorkflowBindings(workflowFile.isBlank() ? null : Path.of(workflowFile), transport);
         return target -> {
             var stream = streaming.resolve(target);
             var session = sessions.resolve(target);
-            if (stream != null && session != null) throw new IllegalArgumentException("Bindings de target incompatibles.");
+            var workflow = workflows.resolve(target);
+            if (workflow != null && (stream != null || session != null) || stream != null && session != null) {
+                throw new IllegalArgumentException("Bindings de target incompatibles.");
+            }
+            if (workflow != null) return workflow;
             return session == null ? stream : session;
         };
     }

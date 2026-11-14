@@ -183,3 +183,79 @@ persistida corresponde al POST final y contiene su estado HTTP y texto saneado.
 Los IDs no sensibles usados en el cuerpo final pueden aparecer en esa evidencia.
 El bootstrap queda fuera. La limpieza de sesiones remotas depende del TTL
 acordado con el target.
+
+### Workflow HTTP v1
+
+El operador puede fijar un plan con `TARGET_WORKFLOW_BINDINGS_FILE`. El archivo
+JSON tiene `schemaVersion: 1` y una lista `bindings`. Cada entrada vincula
+`projectId`, `targetConfigurationId` y `targetUpdatedAt` exactos a un target
+REST_LEGACY. `workflowId` identifica el plan y `revision` es un entero positivo.
+El workflow se selecciona al preparar el Scan. Es incompatible con otros
+bindings de sesión o streaming para el mismo target.
+
+Ejemplo de entrada en `bindings`:
+
+```json
+{
+  "projectId": "10000000-0000-4000-8000-000000000001",
+  "targetConfigurationId": "10000000-0000-4000-8000-000000000002",
+  "targetUpdatedAt": "2026-11-14T09:00:00Z",
+  "workflowId": "chat-session",
+  "revision": 1,
+  "steps": [
+    {
+      "id": "chat", "method": "POST", "path": "/api/chats",
+      "body": {}, "dependsOn": [], "response": {"type": "JSON"},
+      "captures": [
+        {"name": "chatId", "source": "JSON", "selector": "$.chatId", "type": "STRING", "required": true, "sensitive": false, "maxBytes": 256}
+      ]
+    },
+    {
+      "id": "session", "method": "POST", "path": "/api/chats/{{chatId}}/sessions",
+      "body": {}, "dependsOn": ["chat"], "response": {"type": "JSON"},
+      "captures": [
+        {"name": "sessionId", "source": "JSON", "selector": "$.sessionId", "type": "STRING", "required": true, "sensitive": false, "maxBytes": 256}
+      ]
+    },
+    {
+      "id": "answer", "method": "POST", "path": "/api/chats/{{chatId}}/sessions/{{sessionId}}/answer",
+      "body": {"prompt": "{{PROMPT}}"}, "dependsOn": ["chat", "session"],
+      "response": {
+        "type": "SSE",
+        "stream": {"mediaType": "text/event-stream", "mode": "DELTA", "textPath": "$.delta", "terminalLiteral": "[DONE]"}
+      }
+    }
+  ]
+}
+```
+
+Los pasos intermedios GET sin body y POST con objeto JSON aceptan únicamente
+respuesta JSON completa. Las capturas se limitan a escalares JSON y admiten
+selectores sobre arrays raíz, por ejemplo `$[0].id`. Los slots
+y las guardas usan capturas no sensibles de dependencias declaradas anteriores.
+Una guarda intermedia puede declarar `{"name":"chatId","operator":"exists"}` o
+`{"name":"chatId","operator":"equals","value":"chat-123"}`. Una guarda falsa
+omite ese paso. Un consumidor que depende del paso omitido aborta antes de
+enviar. `headers` admite valores estáticos de `Accept-Language` y
+`Content-Language`.
+
+El último paso es un POST incondicional con exactamente un nodo `{{PROMPT}}`.
+Para JSON se configura `{"type":"JSON","textPath":"$.text"}`. Para JSONL se
+usa `type: "JSONL"` con la configuración `stream` descrita en la sección
+de streaming. El binding terminal fija el `Accept` de SSE o JSONL.
+
+Cada prueba admite hasta seis pasos y comparte el menor plazo entre el timeout
+del target y el presupuesto restante del Scan. Las cotas efectivas de petición
+y respuesta se aplican también a los bytes acumulados de sus entidades. Los
+datos de stream descartados consumen cuota. El stream conserva sus límites de
+frame y unidades. La espera de cuota consume el plazo compartido. La latencia
+persistida suma la preparación y los intentos de cada paso sin esa espera.
+Cada exchange aplica el control de frecuencia y revalida
+SSRF, DNS/IP y TLS. La ruta se limita al mismo esquema, host y puerto efectivo
+del target antes de DNS y descifrado del Bearer estático.
+
+El diagnóstico DEBUG correlaciona cada paso con su TestExecution y registra
+ordinal, ID, estado, código, duración, contadores y flags de redacción. El
+resultado guarda únicamente la evidencia del paso terminal según el contrato
+actual. El contexto local se libera al terminar, fallar o cancelar. Acordar
+un TTL con el target para los recursos creados durante las pruebas.
