@@ -42,12 +42,16 @@ public final class ExecuteSecurityTestsUseCase implements ScanWorkPort {
         for (int i = 0; i < plan.tests().size(); i++) {
             var running = executions.start(plan.executions().get(i).id());
             InvocationResult result;
+            com.llmscannerseguridad.application.evaluation.StructuredInteractionEvidence observations = null;
             try {
-                result = budget.remainingNanos() == 0
-                        ? InvocationResult.failure(ExecutionError.SCAN_BUDGET_EXCEEDED)
-                        : LegacyInvocationResultProjection.toLegacy(
-                                selectedAdapter.interact(plan.target(), plan.tests().get(i).prompt(),
-                                        plan.integration() == null ? budget : budget.forExecution(running.id())));
+                if (budget.remainingNanos() == 0) {
+                    result = InvocationResult.failure(ExecutionError.SCAN_BUDGET_EXCEEDED);
+                } else {
+                    var interaction = selectedAdapter.interact(plan.target(), plan.tests().get(i).prompt(),
+                            plan.integration() == null ? budget : budget.forExecution(running.id(), plan.tests().get(i).code()));
+                    result = LegacyInvocationResultProjection.toLegacy(interaction);
+                    if (result.errorReason() == null) observations = interaction.observations();
+                }
             } catch (RuntimeException error) {
                 result = InvocationResult.failure(ExecutionError.EXECUTION_INTERNAL_ERROR);
             }
@@ -56,7 +60,8 @@ public final class ExecuteSecurityTestsUseCase implements ScanWorkPort {
             if (evaluations != null) {
                 var confirmed = executions.findByScanId(scanId).stream().filter(row -> row.id().equals(running.id()))
                         .findFirst().orElseThrow(ScanOperationException::internal);
-                evaluations.execute(confirmed, plan.tests().get(i), budget);
+                if (observations == null) evaluations.execute(confirmed, plan.tests().get(i), budget);
+                else evaluations.execute(confirmed, plan.tests().get(i), budget, observations);
             }
             if (result.errorReason() != null) {
                 failed = true;

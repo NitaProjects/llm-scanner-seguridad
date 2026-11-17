@@ -33,7 +33,7 @@ public final class LocalWorkflowBindings implements TargetIntegrationPort {
     private record Workflow(List<Step> steps) { }
     private record Step(String id, String method, String path, String body, Map<String, String> headers,
             List<String> dependsOn, Guard guard, List<InteractionSession.Capture> captures,
-            String responsePath, StreamBinding stream, List<CredentialBinding> credentials) { }
+            String responsePath, StreamBinding stream, List<CredentialBinding> credentials, ObservationBinding observations) { }
     private record Guard(String name, String operator, Object expected) {
         boolean allows(InteractionSession session, TargetUrl base) {
             if (session.value(name) == null) return false;
@@ -113,7 +113,7 @@ public final class LocalWorkflowBindings implements TargetIntegrationPort {
         var captureNames = new HashSet<String>();
         for (int i = 0; i < raw.size(); i++) {
             var fields = object(raw.get(i), Set.of("id", "method", "path", "dependsOn", "response"),
-                    Set.of("body", "captures", "guard", "headers", "credentialBindings"));
+                    Set.of("body", "captures", "guard", "headers", "credentialBindings", "observations"));
             String id = identifier(fields, "id");
             try {
                 boolean terminal = i == raw.size() - 1;
@@ -172,7 +172,8 @@ public final class LocalWorkflowBindings implements TargetIntegrationPort {
         var headers = headers(fields.containsKey("headers") ? fields.get("headers") : Map.of());
         var credentials = credentials(fields.containsKey("credentialBindings") ? fields.get("credentialBindings") : List.of(),
                 available, allowedHeaders);
-        return new Step(id, method, path, body, headers, List.copyOf(dependsOn), guard, captures, responsePath, stream, credentials);
+        var observations = fields.containsKey("observations") ? ObservationBinding.parse(fields.get("observations"), stream, terminal) : null;
+        return new Step(id, method, path, body, headers, List.copyOf(dependsOn), guard, captures, responsePath, stream, credentials, observations);
     }
 
     private static List<CredentialBinding> credentials(Object value, List<InteractionSession.Capture> available,
@@ -240,6 +241,7 @@ public final class LocalWorkflowBindings implements TargetIntegrationPort {
         long latencyMs = 0;
         var limits = transport.workflowBudget();
         var completed = new HashSet<String>();
+        var accumulator = workflow.steps().stream().anyMatch(step -> step.observations() != null) ? transport.observations() : null;
         try (var session = new InteractionSession(base)) {
             for (int i = 0; i < workflow.steps().size(); i++) {
                 var step = workflow.steps().get(i);
@@ -247,6 +249,7 @@ public final class LocalWorkflowBindings implements TargetIntegrationPort {
                 long started = System.nanoTime();
                 var metrics = new HttpTargetInvocationAdapter.StepMetrics();
                 InvocationResult result;
+                com.llmscannerseguridad.application.evaluation.StructuredInteractionEvidence evidence = null;
                 long preparationMs;
                 try {
                     checkDeadline(budget, deadline);
@@ -261,9 +264,20 @@ public final class LocalWorkflowBindings implements TargetIntegrationPort {
                             terminal ? null : (body, response) -> session.captureWorkflow(transport.parseSessionResponse(body),
                                     response, step.captures(), destination), session);
                     preparationMs = elapsed(started);
-                    result = transport.invokeWorkflow(target, prompt, budget, step.body(), step.responsePath(),
-                            step.stream(), exchange, new HttpTargetInvocationAdapter.WorkflowExchange(limits, step.headers(), metrics,
-                                    step.credentials()));
+                    var observation = accumulator == null ? null : new HttpTargetInvocationAdapter.ObservationExchange(
+                            step.observations(), accumulator, budget.executionId(), terminal,
+                            step.observations() == null ? Map.of() : step.observations().semanticSources(budget.testCode()));
+                    var workflowExchange = new HttpTargetInvocationAdapter.WorkflowExchange(limits, step.headers(), metrics,
+                            step.credentials(), observation);
+                    if (observation == null) {
+                        result = transport.invokeWorkflow(target, prompt, budget, step.body(), step.responsePath(),
+                                step.stream(), exchange, workflowExchange);
+                    } else {
+                        var interaction = transport.invokeObservedWorkflow(target, prompt, budget, step.body(), step.responsePath(),
+                                step.stream(), exchange, workflowExchange);
+                        result = LegacyInvocationResultProjection.toLegacy(interaction);
+                        evidence = interaction.observations();
+                    }
                 } catch (InvocationFailure error) {
                     preparationMs = elapsed(started);
                     result = InvocationResult.failure(error.reason);
@@ -276,7 +290,8 @@ public final class LocalWorkflowBindings implements TargetIntegrationPort {
                 log(budget, step, i, started, result.errorReason() == null ? "COMPLETED" : "FAILED", result, metrics);
                 if (terminal || result.errorReason() != null) {
                     return LegacyInvocationResultProjection.fromLegacy(new InvocationResult(terminal ? result.httpStatus() : null, latencyMs,
-                            result.errorReason(), result.requestBody(), result.responseText(), result.requestRedacted(), result.responseRedacted()));
+                            result.errorReason(), result.requestBody(), result.responseText(), result.requestRedacted(), result.responseRedacted()))
+                            .withObservations(evidence);
                 }
                 completed.add(step.id());
             }

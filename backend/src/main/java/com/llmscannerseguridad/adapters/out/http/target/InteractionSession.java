@@ -171,8 +171,13 @@ final class InteractionSession implements AutoCloseable {
     }
 
     UnaryOperator<String> redactor(String credential) {
+        return redactor(credential, Set.of());
+    }
+
+    UnaryOperator<String> redactor(String credential, Set<String> additional) {
         var secrets = new HashSet<String>();
         addSecret(secrets, credential);
+        additional.forEach(value -> addSecret(secrets, value));
         for (Value value : values.values()) {
             if (value.sensitive()) {
                 String text = value.data().toString();
@@ -182,6 +187,17 @@ final class InteractionSession implements AutoCloseable {
         }
         workflowCookieSecrets().forEach(secret -> addSecret(secrets, secret));
         forwardedHeaderValues.forEach(secret -> addSecret(secrets, secret));
+        return text -> redactMatches(text, secrets);
+    }
+
+    static UnaryOperator<String> credentialRedactor(String credential) {
+        return credentialRedactor(credential, Set.of());
+    }
+
+    static UnaryOperator<String> credentialRedactor(String credential, Set<String> additional) {
+        var secrets = new HashSet<String>();
+        addSecret(secrets, credential);
+        additional.forEach(value -> addSecret(secrets, value));
         return text -> redactMatches(text, secrets);
     }
 

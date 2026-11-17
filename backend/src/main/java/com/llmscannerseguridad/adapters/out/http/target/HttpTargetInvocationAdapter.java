@@ -91,12 +91,12 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
 
     public InvocationResult invokeWithResponseExtractor(TargetConfiguration target, String prompt, ScanBudget budget,
             java.util.function.Function<String, String> requestRenderer, TargetResponseTextExtractor extractor) {
-        return exchange(target, prompt, budget, requestRenderer, extractor, null, null, null);
+        return exchange(target, prompt, budget, requestRenderer, extractor, null, null, null, null);
     }
 
     InvocationResult invokeStream(TargetConfiguration target, String prompt, ScanBudget budget, StreamBinding binding) {
         if (!binding.permits(target.settings())) return InvocationResult.failure(ExecutionError.TARGET_CONFIGURATION_INVALID);
-        return exchange(target, prompt, budget, value -> json.render(target.settings(), value), null, binding, null, null);
+        return exchange(target, prompt, budget, value -> json.render(target.settings(), value), null, binding, null, null, null);
     }
 
     record SessionExchange(String method, TargetUrl destination, long deadline,
@@ -106,7 +106,7 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
     InvocationResult invokeSession(TargetConfiguration target, String prompt, ScanBudget budget,
             java.util.function.Function<String, String> render, SessionExchange step) {
         if (!target.settings().url().sameOrigin(step.destination())) return InvocationResult.failure(ExecutionError.TARGET_CONFIGURATION_INVALID);
-        return exchange(target, prompt, budget, render, body -> json.extract(body, target.settings().responsePath()), null, step, null);
+        return exchange(target, prompt, budget, render, body -> json.extract(body, target.settings().responsePath()), null, step, null, null);
     }
 
     String renderSession(TargetConfiguration target, String prompt, java.util.function.Function<String, Object> slots) {
@@ -114,7 +114,42 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
     }
 
     record WorkflowExchange(WorkflowBudget budget, Map<String, String> headers, StepMetrics metrics,
-            List<CredentialBinding> credentials) { }
+            List<CredentialBinding> credentials, ObservationExchange observations) {
+        WorkflowExchange(WorkflowBudget budget, Map<String, String> headers, StepMetrics metrics, List<CredentialBinding> credentials) {
+            this(budget, headers, metrics, credentials, null);
+        }
+    }
+
+    record ObservationExchange(ObservationBinding binding, ObservationAccumulator accumulator,
+            java.util.UUID executionId, boolean terminal,
+            Map<com.llmscannerseguridad.application.evaluation.StructuredInteractionEvidence.Source, Boolean> semanticSources) {
+        private static final class Result {
+            com.llmscannerseguridad.application.evaluation.StructuredInteractionEvidence evidence;
+        }
+    }
+
+    ObservationAccumulator observations() { return new ObservationAccumulator(limits.textBytes()); }
+
+    com.llmscannerseguridad.application.execution.NormalizedInteraction invokeObserved(TargetConfiguration target, String prompt,
+            ScanBudget budget, StreamBinding stream, ObservationBinding binding) {
+        var codec = new OpenAiCompatibleCodec();
+        boolean chat = target.settings().adapterType() == com.llmscannerseguridad.domain.target.TargetAdapterType.OPENAI_COMPATIBLE;
+        var result = new ObservationExchange.Result();
+        var plan = new ObservationExchange(binding, observations(), budget.executionId(), true, binding.semanticSources(budget.testCode()));
+        var invocation = exchange(target, prompt, budget,
+                value -> chat ? codec.render(target.settings(), value) : json.render(target.settings(), value),
+                chat ? codec::extract : body -> json.extract(body, target.settings().responsePath()),
+                stream, null, null, new ObservationRun(plan, result));
+        return observedInteraction(invocation, result);
+    }
+
+    private record ObservationRun(ObservationExchange exchange, ObservationExchange.Result result) { }
+
+    private static com.llmscannerseguridad.application.execution.NormalizedInteraction observedInteraction(InvocationResult invocation,
+            ObservationExchange.Result result) {
+        return com.llmscannerseguridad.application.execution.LegacyInvocationResultProjection.fromLegacy(invocation)
+                .withObservations(invocation.errorReason() == null ? result.evidence : null);
+    }
 
     static final class StepMetrics {
         int bytes;
@@ -127,6 +162,18 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
 
     InvocationResult invokeWorkflow(TargetConfiguration target, String prompt, ScanBudget budget, String template,
             String responsePath, StreamBinding stream, SessionExchange step, WorkflowExchange workflow) {
+        return invokeWorkflow(target, prompt, budget, template, responsePath, stream, step, workflow, null);
+    }
+
+    com.llmscannerseguridad.application.execution.NormalizedInteraction invokeObservedWorkflow(TargetConfiguration target, String prompt,
+            ScanBudget budget, String template, String responsePath, StreamBinding stream, SessionExchange step, WorkflowExchange workflow) {
+        var result = new ObservationExchange.Result();
+        return observedInteraction(invokeWorkflow(target, prompt, budget, template, responsePath, stream, step, workflow,
+                new ObservationRun(workflow.observations(), result)), result);
+    }
+
+    private InvocationResult invokeWorkflow(TargetConfiguration target, String prompt, ScanBudget budget, String template,
+            String responsePath, StreamBinding stream, SessionExchange step, WorkflowExchange workflow, ObservationRun observations) {
         var settings = target.settings();
         if (!settings.url().sameOrigin(step.destination()) || stream != null && !stream.permits(settings)) {
             return InvocationResult.failure(ExecutionError.TARGET_CONFIGURATION_INVALID);
@@ -134,12 +181,12 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
         return exchange(target, prompt, budget,
                 value -> template == null ? "" : json.renderTemplate(template, value,
                         slot -> LocalSessionBindings.resolveNode(slot, step.context(), step.destination())),
-                body -> json.extract(body, responsePath), stream, step, workflow);
+                body -> json.extract(body, responsePath), stream, step, workflow, observations);
     }
 
     private InvocationResult exchange(TargetConfiguration target, String prompt, ScanBudget budget,
             java.util.function.Function<String, String> requestRenderer, TargetResponseTextExtractor extractor, StreamBinding binding,
-            SessionExchange session, WorkflowExchange workflow) {
+            SessionExchange session, WorkflowExchange workflow, ObservationRun observations) {
         long entered = System.nanoTime();
         boolean bounded = binding != null || session != null;
         long timeout = TimeUnit.MILLISECONDS.toNanos(target.settings().timeoutMs());
@@ -262,7 +309,7 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
                     var evidence = bootstrap ? null : evidence(rendered, null, secret, session);
                     if (evidence != null) evidenceLimit(evidence.request(), null);
                     // El resultado de fallo nunca guarda un body preparado antes de resolver los headers efímeros.
-                    if (evidence != null && (workflow == null || workflow.credentials().isEmpty())) {
+                    if (evidence != null && observations == null && (workflow == null || workflow.credentials().isEmpty())) {
                         safeRequest = evidence.request();
                         requestRedacted = evidence.requestRedacted();
                     }
@@ -311,20 +358,50 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
                         }
                         InputStream input = entity.getContent();
                         if (workflow != null) input = workflow.budget().countResponse(input, workflow.metrics());
+                        var observer = observations == null ? null : observations.exchange();
+                        var redact = observer == null ? null : session == null ? InteractionSession.credentialRedactor(secret)
+                                : session.context().redactor(secret);
+                        if (collector != null && observer != null && observer.binding() != null) {
+                            collector.observe(event -> observer.binding().rules().stream().anyMatch(rule -> rule.event().equals(event)),
+                                    (event, document) -> observer.accumulator().accept(observer.binding(), event,
+                                    document, redact, () -> checkStream(deadline, budget)));
+                        }
                         if (collector != null) text = collector.collect(input);
                         else {
                             String decoded = readResponse(input, deadline, budget);
                             if (bootstrap) {
                                 session.capture().accept(decoded, response);
+                                if (observer != null && observer.binding() != null) {
+                                    observer.accumulator().accept(observer.binding(), null, json.parseResponse(decoded),
+                                            session.context().redactor(secret), () -> checkStream(deadline, budget));
+                                }
                                 checkStream(deadline, budget);
                                 return new InvocationResult(httpStatus, elapsed(started), null, null, null, false, false);
                             }
                             text = extractor.extract(decoded);
+                            if (observer != null && observer.binding() != null) {
+                                observer.accumulator().accept(observer.binding(), null, json.parseResponse(decoded), redact,
+                                        () -> checkStream(deadline, budget));
+                            }
                         }
                         if (text.getBytes(StandardCharsets.UTF_8).length > limits.textBytes()) {
                             throw new InvocationFailure(ExecutionError.EVIDENCE_LIMIT_EXCEEDED);
                         }
-                        evidence = evidence(rendered, text, secret, session);
+                        if (observer != null && observer.terminal()) {
+                            var trace = observer.accumulator().finish(observer.executionId(), observer.semanticSources(), redact);
+                            if (trace.inspectionIncomplete()) {
+                                // Un campo descartado o alterado puede haber dejado una copia imposible de localizar.
+                                evidence = new TargetJsonProcessor.Evidence("{}", "[REDACTED_CREDENTIAL]", true, true);
+                            } else {
+                                var localValues = trace.localValues();
+                                var privateRedactor = session == null ? InteractionSession.credentialRedactor(secret, localValues)
+                                        : session.context().redactor(secret, localValues);
+                                evidence = json.sanitize(rendered, text, privateRedactor);
+                            }
+                            observations.result().evidence = evidence.responseRedacted() ? trace.withIncompleteInspection() : trace;
+                        } else {
+                            evidence = evidence(rendered, text, secret, session);
+                        }
                         if (bounded && TargetRules.bytes(evidence.response()) > limits.textBytes()) {
                             throw new InvocationFailure(ExecutionError.EVIDENCE_LIMIT_EXCEEDED);
                         }

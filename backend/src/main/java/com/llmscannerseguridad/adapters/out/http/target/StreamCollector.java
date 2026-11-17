@@ -22,6 +22,8 @@ final class StreamCollector {
     private final int frameBytes;
     private final int textBytes;
     private final Runnable deadline;
+    private java.util.function.BiConsumer<String, Object> observer;
+    private java.util.function.Predicate<String> observedEvent;
     private final byte[] buffer = new byte[4096];
     private int cursor, available, bytes, units, frameSize, assembledBytes;
     private boolean skipLf, content, terminal;
@@ -39,6 +41,10 @@ final class StreamCollector {
     int bytes() { return bytes; }
     int units() { return units; }
     boolean terminal() { return terminal; }
+    void observe(java.util.function.Predicate<String> accepts, java.util.function.BiConsumer<String, Object> consumer) {
+        observedEvent = accepts;
+        observer = consumer;
+    }
 
     String collect(InputStream input) throws IOException {
         var data = new StringBuilder();
@@ -88,17 +94,34 @@ final class StreamCollector {
             terminal = true;
             return;
         }
-        if (binding.sse() && binding.contentEvent() != null && !binding.contentEvent().equals(event)) return;
+        if (binding.sse() && binding.contentEvent() != null && !binding.contentEvent().equals(event)
+                && (observer == null || !observedEvent.test(event))) return;
         Object parsed;
         try { parsed = json.parseResponse(data); }
-        catch (TargetJsonProcessor.JsonFailure error) { throw format(); }
-        if (!(parsed instanceof Map<?, ?>)) throw format();
+        catch (TargetJsonProcessor.JsonFailure error) {
+            if (observer != null && binding.sse() && !event.equals(binding.contentEvent())) {
+                observer.accept(event, null);
+                return;
+            }
+            throw format();
+        }
+        if (!(parsed instanceof Map<?, ?>)) {
+            if (observer != null && binding.sse() && !event.equals(binding.contentEvent())) {
+                observer.accept(event, null);
+                return;
+            }
+            throw format();
+        }
         if (!binding.sse() && data.equals(binding.terminalLiteral())) { terminal = true; return; }
         if (!binding.sse() && binding.eventPath() != null) {
             if (!(select(parsed, binding.eventPath()) instanceof String type)) throw format();
             if (type.equals(binding.errorEvent())) throw format();
             if (type.equals(binding.terminalEvent())) { terminal = true; return; }
-            if (binding.contentEvent() != null && !binding.contentEvent().equals(type)) return;
+            event = type;
+        }
+        if (binding.contentEvent() != null && !binding.contentEvent().equals(event)) {
+            if (observer != null) observer.accept(event, parsed);
+            return;
         }
         if (!(select(parsed, binding.textPath()) instanceof String text)) throw format();
         if (binding.mode() == StreamBinding.Mode.SNAPSHOT) {

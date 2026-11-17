@@ -73,6 +73,42 @@ class ExecuteSecurityTestsUseCaseTest {
         }
     }
 
+    @Test void observationsReachOnlyTheirConfirmedExecutionAndAreDiscardedOnWriteFailure() {
+        var plan = stubPlan();
+        var fallback = mock(TargetAdapter.class);
+        var evaluations = mock(com.llmscannerseguridad.application.evaluation.EvaluateExecutionUseCase.class);
+        var traces = new ArrayList<com.llmscannerseguridad.application.evaluation.StructuredInteractionEvidence>();
+        TargetAdapter integration = (target, prompt, budget) -> {
+            assertThat(budget.testCode()).isEqualTo(plan.tests().get(traces.size()).code());
+            var trace = new com.llmscannerseguridad.application.evaluation.StructuredInteractionEvidence(
+                    budget.executionId(), List.of(), Map.of(), Map.of(), false, java.util.Set.of());
+            traces.add(trace);
+            return LegacyInvocationResultProjection.fromLegacy(success()).withObservations(trace);
+        };
+        when(repository.prepare(scan)).thenReturn(new ExecutionPlan(
+                plan.tests(), plan.executions(), plan.target(), plan.scanStartedAt(), integration));
+        when(repository.allCompleted(scan)).thenReturn(true);
+        var confirmed = plan.executions().stream().map(row -> row.start(now, now).finish(
+                now, 200, 1L, null, "{}", "untrusted", false, false)).toList();
+        when(repository.findByScanId(scan)).thenReturn(confirmed);
+        when(evaluations.allCompleted(scan)).thenReturn(true);
+        var worker = new ExecuteSecurityTestsUseCase(repository, fallback, 300000, Clock.fixed(now, ZoneOffset.UTC),
+                System::nanoTime, evaluations);
+        worker.execute(scan);
+        var ordered = inOrder(repository, evaluations);
+        for (int i = 0; i < 4; i++) {
+            ordered.verify(repository).finish(eq(plan.executions().get(i).start(now, now)), eq(success()));
+            assertThat(traces.get(i).executionId()).isEqualTo(confirmed.get(i).id());
+            ordered.verify(evaluations).execute(eq(confirmed.get(i)), eq(plan.tests().get(i)), any(), same(traces.get(i)));
+        }
+        traces.clear();
+        clearInvocations(evaluations);
+        doThrow(ScanOperationException.internal()).when(repository).finish(any(), any());
+        assertThatThrownBy(() -> worker.execute(scan)).isInstanceOf(ScanOperationException.class);
+        assertThat(traces).hasSize(1);
+        verifyNoInteractions(evaluations, fallback);
+    }
+
     @Test
     void invocationExceptionAndInterruptionKeepExistingFailureSemantics() {
         stubPlan();

@@ -12,7 +12,7 @@ public final class EvaluatorMessages {
     public String promptHash() { return EvaluationJson.hash(system); }
     public String schemaHash() { return EvaluationJson.hash(EvaluationJson.canonical(schema)); }
     public String request(EvaluatorInput input, EvaluatorSettings settings) {
-        var payload = input.semanticProjection() == null ? legacy(input) : semantic(input);
+        var payload = payload(input);
         return EvaluationJson.write(Map.of("model", settings.model(), "store", false,
                 "max_output_tokens", settings.maxOutputTokens(), "input", List.of(
                     Map.of("role", "system", "content", system),
@@ -22,6 +22,7 @@ public final class EvaluatorMessages {
     }
 
     String projection(EvaluatorInput input) {
+        if (!input.additionalSources().isEmpty()) return EvaluationJson.canonical(payload(input));
         if (input.semanticProjection() != null) return EvaluationJson.canonical(semantic(input));
         // Mantener la representación canónica y el hash de los inputs v1.
         return EvaluationJson.canonical(Map.of("criteria", input.criteria(), "catalogPrompt", input.catalogPrompt(),
@@ -30,6 +31,20 @@ public final class EvaluatorMessages {
     }
 
     private record Payload(Map<String, Object> trusted, Map<String, Object> data) { }
+
+    private Payload payload(EvaluatorInput input) {
+        var payload = input.semanticProjection() == null ? legacy(input) : semantic(input);
+        if (input.additionalSources().isEmpty()) return payload;
+        var data = new HashMap<>(payload.data());
+        data.put("observations", input.additionalSources().stream().map(source -> {
+            var fields = new HashMap<String, Object>(Map.of(
+                    "source", source.source(), "kind", source.kind(), "ordinal", source.ordinal(), "text", source.value()));
+            if (source.relatedOrdinal() != null) fields.put("relatedOrdinal", source.relatedOrdinal());
+            if (source.alias() != null) fields.put("alias", source.alias());
+            return fields;
+        }).toList());
+        return new Payload(payload.trusted(), data);
+    }
 
     private Payload legacy(EvaluatorInput input) {
         var trusted = Map.of("schemaVersion", 1, "criteria", input.criteria(), "catalogPrompt", input.catalogPrompt(),

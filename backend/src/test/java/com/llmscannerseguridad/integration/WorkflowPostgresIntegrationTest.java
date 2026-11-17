@@ -34,6 +34,8 @@ import org.junit.jupiter.api.io.TempDir;
 class WorkflowPostgresIntegrationTest {
     private static final String COOKIE = "fixture-session-cookie";
     private static final String CSRF = "fixture-csrf-handle";
+    private static final String OVERSIZE_ID = "x".repeat(129);
+    private static final String OVERLAP = "private-prefix-" + CSRF + "-private-suffix";
     @TempDir Path directory;
 
     @Test void workflowClosesScanAndLegacyHistoryRemainsReadableWithoutBinding() throws Exception {
@@ -57,13 +59,21 @@ class WorkflowPostgresIntegrationTest {
                     exchange.getResponseHeaders().add("X-CSRF-Token", CSRF);
                     response = "{\"chatId\":\"chat-" + chats.incrementAndGet() + "\",\"privateValue\":\"fixture-private-value\"}";
                 } else if (path.equals("/api/chats/chat-" + chats.get() + "/sessions") && credentialsPresent(exchange)) {
-                    response = "{\"sessionId\":\"session-" + sessions.incrementAndGet() + "\"}";
+                    int number = sessions.incrementAndGet();
+                    response = "{\"sessionId\":\"session-" + number
+                            + "\",\"retrieval\":\"" + (number == 4 ? OVERLAP : "fixture-retrieved-private") + "\"}";
                 } else if (path.equals("/api/chats/chat-" + chats.get() + "/sessions/session-" + sessions.get() + "/answer")
                         && "text/event-stream".equals(exchange.getRequestHeaders().getFirst("Accept")) && request.contains("\"prompt\":")
                         && credentialsPresent(exchange)) {
-                    answers.incrementAndGet();
+                    int number = answers.incrementAndGet();
+                    String callId = number == 3 ? OVERSIZE_ID : "opaque-call";
+                    String retrieval = number == 4 ? OVERLAP : "fixture-retrieved-private";
                     media = "text/event-stream";
-                    response = "data: {\"delta\":\"respuesta terminal fixture-private-value " + COOKIE + " " + CSRF + "\"}\n\ndata: [DONE]\n\n";
+                    response = "event: request\ndata: {\"id\":\"" + callId + "\",\"tool\":\"fixture_tool\",\"argument\":\"fixture-argument-private\"}\n\n"
+                            + "event: result\ndata: {\"id\":\"" + callId + "\",\"result\":\"fixture-result-private\"}\n\n"
+                            + "event: answer\ndata: {\"delta\":\"respuesta terminal fixture-private-value " + COOKIE + " " + CSRF
+                            + " " + retrieval + " " + callId + "\"}\n\n"
+                            + "event: end\n\n";
                     status = 201;
                 } else {
                     exchange.sendResponseHeaders(400, -1);
@@ -105,12 +115,22 @@ class WorkflowPostgresIntegrationTest {
             assertThat(reader.getBean(GetScanUseCase.class).execute(project, scan.id()).status()).isEqualTo(ScanStatus.COMPLETED);
             var executions = reader.getBean(TestExecutionRepositoryPort.class);
             assertThat(executions.findByScanId(previous.id())).hasSize(4).allSatisfy(e -> assertThat(e.responseText()).isEqualTo("respuesta histórica"));
-            assertThat(executions.findByScanId(scan.id())).hasSize(4).allSatisfy(e -> {
+            var persisted = executions.findByScanId(scan.id());
+            assertThat(persisted).hasSize(4).allSatisfy(e -> {
                 assertThat(e.httpStatus()).isEqualTo(201);
-                assertThat(e.responseText()).isEqualTo("respuesta terminal [REDACTED_CREDENTIAL] [REDACTED_CREDENTIAL] [REDACTED_CREDENTIAL]");
                 assertThat(e.responseRedacted()).isTrue();
-                assertThat(e.requestBody()).contains("\"prompt\"").doesNotContain("fixture-private-value", "chat-", "session-", "chatId", "sessionId", COOKIE, CSRF);
+                assertThat(e.requestBody()).doesNotContain("fixture-private-value", "chat-", "session-", "chatId", "sessionId", COOKIE, CSRF);
             });
+            assertThat(persisted.stream().filter(e -> e.responseText().equals("[REDACTED_CREDENTIAL]")).toList())
+                    .hasSize(2).allSatisfy(e -> {
+                        assertThat(e.requestBody()).isEqualTo("{}");
+                        assertThat(e.requestRedacted()).isTrue();
+                    });
+            assertThat(persisted.stream().filter(e -> e.responseText().startsWith("respuesta terminal ")).toList())
+                    .hasSize(2).allSatisfy(e -> {
+                        assertThat(e.responseText()).isEqualTo("respuesta terminal " + "[REDACTED_CREDENTIAL] ".repeat(4) + "[REDACTED_CREDENTIAL]");
+                        assertThat(e.requestBody()).contains("\"prompt\"");
+                    });
             assertThat(reader.getBean(EvaluationRepositoryPort.class).listEvaluations(scan.id()).items()).hasSize(4)
                     .allSatisfy(e -> assertThat(e.status()).isEqualTo(EvaluationStatus.COMPLETED));
             var scores = reader.getBean(GetScanScoreUseCase.class);
@@ -121,8 +141,10 @@ class WorkflowPostgresIntegrationTest {
             assertThat(reports.execute(project, previous.id()).report()).usingRecursiveComparison().isEqualTo(previousReport);
             for (String table : List.of("test_executions", "evaluation_results", "findings", "scan_scores", "security_reports")) {
                 Integer exposed = db.jdbc().queryForObject("select count(*) from " + table
-                        + " as row_data where strpos(to_jsonb(row_data)::text, ?) > 0 or strpos(to_jsonb(row_data)::text, ?) > 0",
-                        Integer.class, COOKIE, CSRF);
+                        + " as row_data where to_jsonb(row_data)::text like any (array[?, ?, ?, ?, ?, ?, ?, ?, ?])",
+                        Integer.class, "%" + COOKIE + "%", "%" + CSRF + "%", "%fixture-retrieved-private%",
+                        "%fixture-argument-private%", "%fixture-result-private%", "%opaque-call%",
+                        "%" + OVERSIZE_ID + "%", "%private-prefix-%", "%-private-suffix%");
                 assertThat(exposed).as(table).isZero();
             }
         } finally {
@@ -140,12 +162,16 @@ class WorkflowPostgresIntegrationTest {
                 Map.of("id", "session", "method", "POST", "path", "/api/chats/{{chatId}}/sessions", "body", Map.of(),
                         "dependsOn", List.of("chat"), "response", Map.of("type", "JSON"),
                         "credentialBindings", credentials,
+                        "observations", Map.of("rules", List.of(Map.of("kind", "ITEM", "textPath", "$.retrieval"))),
                         "captures", List.of(capture("sessionId", "$.sessionId", false))),
                 Map.of("id", "answer", "method", "POST", "path", "/api/chats/{{chatId}}/sessions/{{sessionId}}/answer",
                         "body", Map.of("prompt", "{{PROMPT}}"), "dependsOn", List.of("chat", "session"),
                         "credentialBindings", credentials,
+                        "observations", Map.of("toolAliases", List.of("fixture_tool"), "rules", List.of(
+                                Map.of("kind", "REQUEST", "event", "request", "aliasPath", "$.tool", "callIdPath", "$.id", "textPath", "$.argument"),
+                                Map.of("kind", "RESULT", "event", "result", "callIdPath", "$.id", "textPath", "$.result"))),
                         "response", Map.of("type", "SSE", "stream", Map.of("mediaType", "text/event-stream",
-                                "textPath", "$.delta", "mode", "DELTA", "terminalLiteral", "[DONE]"))));
+                                "textPath", "$.delta", "mode", "DELTA", "contentEvent", "answer", "terminalEvent", "end"))));
     }
 
     private static boolean credentialsPresent(com.sun.net.httpserver.HttpExchange exchange) {

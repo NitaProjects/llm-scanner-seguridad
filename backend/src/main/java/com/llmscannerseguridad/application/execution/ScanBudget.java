@@ -11,6 +11,7 @@ public final class ScanBudget {
     private final long started;
     private final long available;
     private final UUID executionId;
+    private final String testCode;
 
     public ScanBudget(Instant scanStartedAt, long maximumMs, Clock clock, LongSupplier ticker) {
         this(scanStartedAt, maximumMs, clock.instant(), ticker.getAsLong(), ticker);
@@ -22,18 +23,21 @@ public final class ScanBudget {
         long elapsed = Math.max(0, Duration.between(scanStartedAt, enteredAt).toMillis());
         available = Duration.ofMillis(Math.max(0, maximumMs - elapsed)).toNanos();
         executionId = null;
+        testCode = null;
     }
 
-    private ScanBudget(ScanBudget budget, UUID executionId) {
+    private ScanBudget(ScanBudget budget, UUID executionId, String testCode) {
         ticker = budget.ticker;
         started = budget.started;
         available = budget.available;
         this.executionId = executionId;
+        this.testCode = testCode;
     }
 
-    ScanBudget forExecution(UUID id) { return new ScanBudget(this, id); }
+    ScanBudget forExecution(UUID id, String testCode) { return new ScanBudget(this, id, testCode); }
 
     public UUID executionId() { return executionId; }
+    public String testCode() { return testCode; }
 
     public long remainingNanos() {
         return Math.max(0, available - Math.max(0, ticker.getAsLong() - started));

@@ -15,4 +15,8 @@ public interface EvaluationPreparationPort {
         public boolean requestLlm() { return input != null; }
     }
     Prepared prepare(EvaluationResult pending, TestExecution execution, SecurityTest test);
+    default Prepared prepare(EvaluationResult pending, TestExecution execution, SecurityTest test,
+            StructuredInteractionEvidence.Context context) {
+        return prepare(pending, execution, test);
+    }
 }

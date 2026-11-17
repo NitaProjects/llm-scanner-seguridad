@@ -45,21 +45,32 @@ public final class LocalStreamingBindings implements TargetIntegrationPort {
             if (!Integer.valueOf(1).equals(root.get("schemaVersion")) || !(root.get("bindings") instanceof List<?> entries)
                     || entries.size() > 64) throw invalid();
             StreamBinding selected = null;
+            ObservationBinding observations = null;
+            boolean selectedJson = false;
             var targets = new HashSet<UUID>();
             for (Object item : entries) {
-                var entry = object(item, Set.of("projectId", "targetConfigurationId", "targetUpdatedAt", "mediaType", "textPath", "mode"),
-                        Set.of("eventPath", "contentEvent", "errorEvent", "terminalEvent", "terminalLiteral", "reservedHeaders"));
+                var entry = object(item, Set.of("projectId", "targetConfigurationId", "targetUpdatedAt", "mediaType"),
+                        Set.of("textPath", "mode", "eventPath", "contentEvent", "errorEvent", "terminalEvent",
+                                "terminalLiteral", "reservedHeaders", "observations"));
                 UUID project = uuid(entry, "projectId");
                 UUID targetId = uuid(entry, "targetConfigurationId");
                 Instant updated = Instant.parse(required(entry, "targetUpdatedAt"));
                 if (!targets.add(targetId) || updated.getNano() % 1000 != 0) throw invalid();
-                StreamBinding binding = binding(entry);
+                boolean fullJson = "application/json".equals(entry.get("mediaType"));
+                if (fullJson && (entry.size() != 5 || !entry.containsKey("observations"))) throw invalid();
+                StreamBinding binding = fullJson ? null : binding(entry);
+                var profile = entry.containsKey("observations") ? ObservationBinding.parse(entry.get("observations"), binding, true) : null;
                 if (!targetId.equals(target.id())) continue;
-                if (!project.equals(target.projectId()) || !updated.equals(target.updatedAt()) || !binding.permits(target.settings())) throw invalid();
+                if (!project.equals(target.projectId()) || !updated.equals(target.updatedAt())
+                        || binding != null && !binding.permits(target.settings())) throw invalid();
                 selected = binding;
+                selectedJson = fullJson;
+                observations = profile;
             }
-            if (selected == null) return null;
+            if (selected == null && !selectedJson) return null;
             StreamBinding fixed = selected;
+            ObservationBinding profile = observations;
+            if (profile != null) return (current, prompt, budget) -> transport.invokeObserved(target, prompt, budget, fixed, profile);
             return (current, prompt, budget) -> LegacyInvocationResultProjection.fromLegacy(transport.invokeStream(target, prompt, budget, fixed));
         } catch (Exception error) {
             LoggerFactory.getLogger(LocalStreamingBindings.class).warn("streamBinding=TARGET_CONFIGURATION_INVALID");

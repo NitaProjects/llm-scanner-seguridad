@@ -48,6 +48,96 @@ public final class EvaluationEvidenceProjector implements EvaluationPreparationP
         return configuration;
     }
     public void release(UUID id) { exportCorpus.remove(id); }
+
+    @Override public Prepared prepare(EvaluationResult pending, TestExecution execution, SecurityTest test,
+            StructuredInteractionEvidence.Context context) {
+        var historical = prepare(pending, execution, test);
+        if (!historical.requestLlm()) return historical;
+        var trace = context.evidence();
+        var input = historical.input();
+        var additional = new ArrayList<StructuredInteractionEvidence.Observation>();
+        var blocked = new HashSet<>(trace.localCorrelationIds());
+        OutcomeReason reason = null;
+        for (var source : StructuredInteractionEvidence.Source.values()) {
+            if (source == StructuredInteractionEvidence.Source.USER_INPUT) continue;
+            var records = trace.observations().stream().filter(item -> item.source() == source).toList();
+            var availability = trace.availability().getOrDefault(source, StructuredInteractionEvidence.Availability.INCOMPLETE);
+            boolean declared = trace.semanticSources().containsKey(source);
+            var allowed = declared && availability == StructuredInteractionEvidence.Availability.COMPLETE
+                    ? records.stream().filter(item -> item.exportable() && item.complete()).toList() : List.<StructuredInteractionEvidence.Observation>of();
+            if (allowed.size() == records.size() && !allowed.isEmpty()) additional.addAll(allowed);
+            else {
+                records.forEach(item -> {
+                    if (item.value() != null && !item.value().isEmpty()) blocked.add(item.value());
+                    if (item.alias() != null && !item.alias().isEmpty()) blocked.add(item.alias());
+                });
+                if (reason == null && Boolean.TRUE.equals(trace.semanticSources().get(source))) {
+                    reason = switch (availability) {
+                        case TOO_LARGE -> OutcomeReason.EVIDENCE_TOO_LARGE;
+                        case INCOMPLETE -> OutcomeReason.EVIDENCE_INCOMPLETE;
+                        case COMPLETE -> OutcomeReason.EVIDENCE_NOT_EXPORTABLE;
+                    };
+                }
+            }
+        }
+        if (additional.stream().anyMatch(item -> item.relatedOrdinal() != null
+                && additional.stream().noneMatch(call -> call.kind() == StructuredInteractionEvidence.Kind.REQUEST
+                    && call.ordinal() == item.relatedOrdinal()))) {
+            if (Boolean.TRUE.equals(trace.semanticSources().get(StructuredInteractionEvidence.Source.TOOL_RESULT)) && reason == null) {
+                reason = OutcomeReason.EVIDENCE_NOT_EXPORTABLE;
+            }
+            additional.removeIf(item -> {
+                if (item.source() != StructuredInteractionEvidence.Source.TOOL_RESULT) return false;
+                blocked.add(item.value());
+                return true;
+            });
+        }
+        var candidate = input.withAdditionalSources(additional);
+        String projection = messages.projection(candidate);
+        Object candidateData = EvaluationJson.parse(projection);
+        if (reason == null && (trace.inspectionIncomplete() || containsBlocked(candidateData, blocked)
+                || blocksSpanExport(candidateData, MAX_EMBEDDED_JSON_LAYERS))) {
+            reason = OutcomeReason.EVIDENCE_NOT_EXPORTABLE;
+        }
+        int inputBytes = reason == null ? EvaluationJson.bytes(messages.request(candidate, settings)) : 0;
+        if (reason == null && !additional.isEmpty() && (inputBytes > settings.inputBytes()
+                || EvaluationJson.bytes(projection) + EvaluationJson.bytes(pending.configuration().configurationSnapshot())
+                    + EvaluationJson.bytes(EvaluationJson.write(historical.result().deterministicSignals())) + 8192 > settings.recordBytes()
+                || EvaluationJson.bytes(EvaluationJson.write(additional)) + historical.result().evidence().evidenceBytes()
+                    > Math.min(settings.evidenceBytes(), textBytes))) reason = OutcomeReason.EVIDENCE_TOO_LARGE;
+        if (reason == null && additional.isEmpty()) return historical;
+        var previous = historical.result().evidence();
+        var evidence = new EvaluationResult.Evidence(null, previous.complete(), previous.redacted(),
+                reason == null ? inputBytes : 0, previous.evidenceBytes(), null);
+        var component = reason == null ? EvaluationResult.LlmComponent.pending()
+                : new EvaluationResult.LlmComponent(LlmStatus.SKIPPED, null, 0, null, null, null, null, null, null, null, null, null, null);
+        var signals = historical.result().deterministicSignals();
+        boolean localDecision = matched(signals, RuleSignal.Strength.STRONG_POSITIVE)
+                && !matched(signals, RuleSignal.Strength.STRONG_NEGATIVE);
+        return new Prepared(pending.start(clock.instant(), execution.finishedAt(), signals, evidence, component),
+                historical.criteria(), historical.context(), reason == null ? candidate : null, localDecision ? null : reason);
+    }
+
+    private static boolean containsBlocked(Object node, Set<String> blocked) {
+        if (blocked.isEmpty()) return false;
+        return switch (node) {
+            case String value -> {
+                String current = value;
+                boolean reject = false;
+                for (int layer = 0; layer <= MAX_EMBEDDED_JSON_LAYERS; layer++) {
+                    if (blocked.stream().anyMatch(current::contains)) { reject = true; break; }
+                    String next = decodeJsonEscapes(current, true);
+                    if (current.equals(next)) break;
+                    if (layer == MAX_EMBEDDED_JSON_LAYERS) reject = true;
+                    current = next;
+                }
+                yield reject;
+            }
+            case Map<?, ?> map -> map.entrySet().stream().anyMatch(e -> containsBlocked(e.getKey(), blocked) || containsBlocked(e.getValue(), blocked));
+            case List<?> list -> list.stream().anyMatch(item -> containsBlocked(item, blocked));
+            case null, default -> false;
+        };
+    }
     @Override public Prepared prepare(EvaluationResult pending, TestExecution execution, SecurityTest test) {
         var config = pending.configuration();
         if (config == null || config.configurationSnapshot() == null) throw EvaluationJson.invalid();
@@ -202,6 +292,10 @@ public final class EvaluationEvidenceProjector implements EvaluationPreparationP
     // Vista de búsqueda. Solo interpreta escapes JSON capaces de formar el span
     // o una capa adicional de escapes. El texto que se proyecta no se modifica.
     private static String decodeSpanEscapes(String text) {
+        return decodeJsonEscapes(text, false);
+    }
+
+    private static String decodeJsonEscapes(String text, boolean all) {
         var decoded = new StringBuilder(text.length());
         for (int i = 0; i < text.length(); i++) {
             char current = text.charAt(i);
@@ -209,6 +303,11 @@ public final class EvaluationEvidenceProjector implements EvaluationPreparationP
                 char escape = text.charAt(i + 1);
                 if (escape == '\\' || escape == '"' || escape == '/') {
                     decoded.append(escape);
+                    i++;
+                    continue;
+                }
+                if (all && "bfnrt".indexOf(escape) >= 0) {
+                    decoded.append("\b\f\n\r\t".charAt("bfnrt".indexOf(escape)));
                     i++;
                     continue;
                 }

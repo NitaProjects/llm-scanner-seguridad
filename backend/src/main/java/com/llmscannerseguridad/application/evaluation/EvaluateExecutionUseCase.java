@@ -23,6 +23,10 @@ public final class EvaluateExecutionUseCase {
         this.clock = clock; this.ticker = ticker; this.timeoutMs = timeoutMs;
     }
     public void execute(TestExecution execution, SecurityTest test, ScanBudget scanBudget) {
+        execute(execution, test, scanBudget, null);
+    }
+
+    public void execute(TestExecution execution, SecurityTest test, ScanBudget scanBudget, StructuredInteractionEvidence observations) {
         if (execution.status() == ExecutionStatus.FAILED) {
             repository.abortExecution(execution.id(), EvaluationError.EVALUATION_ABORTED);
             return;
@@ -38,7 +42,18 @@ public final class EvaluateExecutionUseCase {
         }
         EvaluationPreparationPort.Prepared prepared;
         try {
-            prepared = preparation.prepare(existing, execution, test);
+            if (observations == null) {
+                prepared = preparation.prepare(existing, execution, test);
+            } else {
+                if (!execution.id().equals(observations.executionId()) || !execution.securityTestId().equals(test.id())
+                        || !execution.id().equals(existing.testExecutionId())) throw ScanOperationException.internal();
+                var user = new StructuredInteractionEvidence.Observation(StructuredInteractionEvidence.Source.USER_INPUT,
+                        StructuredInteractionEvidence.Kind.PROMPT, 0, null, null, test.prompt(), false, true);
+                var output = new StructuredInteractionEvidence.Observation(StructuredInteractionEvidence.Source.FINAL_OUTPUT,
+                        StructuredInteractionEvidence.Kind.ANSWER, 0, null, null, execution.responseText(), false, true);
+                prepared = preparation.prepare(existing, execution, test,
+                        new StructuredInteractionEvidence.Context(observations, user, output, execution.responseRedacted()));
+            }
         } catch (EvaluationPreparationPort.Failure error) {
             repository.abortExecution(execution.id(), error.reason());
             throw ScanOperationException.internal();
@@ -51,12 +66,13 @@ public final class EvaluateExecutionUseCase {
         var running = claimed.get();
         var component = running.llm();
         boolean v2 = running.configuration() != null && "hybrid-v2".equals(running.configuration().policyVersion());
-        if (v2) running = running.withEvidence(running.evidence().withoutProjection());
+        boolean structuredDispatch = prepared.input() != null && !prepared.input().additionalSources().isEmpty();
+        if (v2 || structuredDispatch) running = running.withEvidence(running.evidence().withoutProjection());
         try {
             if (component.attemptCount() == 1) {
-                var outcome = v2 && (budget.remainingNanos() <= 0 || Thread.currentThread().isInterrupted())
+                var outcome = (v2 || structuredDispatch) && (budget.remainingNanos() <= 0 || Thread.currentThread().isInterrupted())
                         ? EvaluatorOutcome.notDispatched(LlmError.EVALUATOR_TIMEOUT) : evaluator.evaluate(prepared.input(), budget);
-                if (v2 && outcome.dispatched()) running = running.withEvidence(prepared.result().evidence());
+                if ((v2 || structuredDispatch) && outcome.dispatched()) running = running.withEvidence(prepared.result().evidence());
                 if (budget.scanExpired() || Thread.currentThread().isInterrupted()) {
                     repository.finish(running.fail(clock.instant(), budget.scanExpired()
                             ? EvaluationError.SCAN_BUDGET_EXCEEDED : EvaluationError.EVALUATION_INTERRUPTED));

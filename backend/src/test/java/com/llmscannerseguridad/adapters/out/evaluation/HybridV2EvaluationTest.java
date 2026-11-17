@@ -400,6 +400,90 @@ class HybridV2EvaluationTest {
         }
     }
 
+    @Test void structuredSemanticInputRemainsTypedAndNeverPersistsExactPayload() {
+        var synthetic = canary(CANARY, List.of("SAFE"));
+        var entries = Map.of(llm02.code(), new EvaluationScenarioPort.Entry(llm02.code(), 1, synthetic, List.of("SAFE")));
+        for (boolean v2 : List.of(false, true)) {
+            var pending = pending(llm02, scenario(entries, true, v2));
+            var execution = execution(pending, "SAFE", false);
+            var typed = trace(execution, true, "synthetic retrieved text");
+            var prepared = projector.prepare(pending, execution, llm02, typed);
+            assertThat(prepared.requestLlm()).isTrue();
+            assertThat(prepared.input().evidenceText()).isEqualTo("SAFE");
+            assertThat(prepared.input().additionalSources()).singleElement().satisfies(item ->
+                    assertThat(item.source()).isEqualTo(StructuredInteractionEvidence.Source.RETRIEVED_CONTEXT));
+            var request = new EvaluatorMessages().request(prepared.input(), EvaluationFixtures.settings());
+            var input = (List<?>) ((Map<?, ?>) EvaluationJson.parse(request)).get("input");
+            assertThat(((Map<?, ?>) input.get(1)).get("content").toString()).doesNotContain("synthetic retrieved text");
+            assertThat(((Map<?, ?>) input.get(2)).get("content").toString()).contains("RETRIEVED_CONTEXT", "synthetic retrieved text", "SAFE");
+            assertThat(prepared.result().evidence().projection()).isNull();
+            assertThat(prepared.result().evidence().inputHash()).isNull();
+            assertThat(prepared.result().evidence().inputBytes()).isEqualTo(EvaluationJson.bytes(request));
+
+            var repository = mock(EvaluationRepositoryPort.class);
+            var evaluator = mock(EvaluatorPort.class);
+            when(repository.findByExecution(execution.id())).thenReturn(Optional.of(pending));
+            when(repository.claim(any(), eq(true))).thenAnswer(invocation -> {
+                EvaluationResult candidate = invocation.getArgument(0);
+                assertThat(candidate.evidence().projection()).isNull();
+                return Optional.of(pending.start(NOW, NOW, candidate.deterministicSignals(), candidate.evidence(),
+                        new EvaluationResult.LlmComponent(LlmStatus.NOT_REQUESTED, null, 1, null, null, null,
+                                null, null, null, null, null, null, null)));
+            });
+            when(evaluator.evaluate(any(), any())).thenReturn(EvaluatorOutcome.failure(LlmError.EVALUATOR_UNAVAILABLE));
+            new EvaluateExecutionUseCase(repository, projector, evaluator, clock, () -> 0L, 1000)
+                    .execute(execution, llm02, new ScanBudget(NOW, 60000, clock, () -> 0L), typed.evidence());
+            var finished = org.mockito.ArgumentCaptor.forClass(EvaluationResult.class);
+            verify(repository).finish(finished.capture());
+            assertThat(finished.getValue().evidence()).isEqualTo(prepared.result().evidence());
+            assertThat(finished.getValue().llm().attemptCount()).isOne();
+            assertThat(finished.getValue().llm().status()).isEqualTo(LlmStatus.FAILED);
+        }
+    }
+
+    @Test void requiredLocalEvidenceSkipsEvaluatorAndPreservesIndependentV2Decision() {
+        for (String output : List.of("SAFE", CANARY)) {
+            var synthetic = canary(CANARY, List.of("SAFE"));
+            var pending = pending(llm02, scenario(Map.of(llm02.code(),
+                    new EvaluationScenarioPort.Entry(llm02.code(), 1, synthetic, List.of(output))), true, true));
+            var execution = execution(pending, output, false);
+            var repository = mock(EvaluationRepositoryPort.class);
+            var evaluator = mock(EvaluatorPort.class);
+            when(repository.findByExecution(execution.id())).thenReturn(Optional.of(pending));
+            when(repository.claim(any(), eq(false))).thenAnswer(invocation -> Optional.of(invocation.getArgument(0)));
+            new EvaluateExecutionUseCase(repository, projector, evaluator, clock, () -> 0L, 1000)
+                    .execute(execution, llm02, new ScanBudget(NOW, 60000, clock, () -> 0L), trace(execution, false, "local-value").evidence());
+            var finished = org.mockito.ArgumentCaptor.forClass(EvaluationResult.class);
+            verify(repository).claim(any(), eq(false));
+            verify(repository).finish(finished.capture());
+            verifyNoInteractions(evaluator);
+            assertThat(finished.getValue().llm().attemptCount()).isZero();
+            assertThat(finished.getValue().decision().finalVerdict()).isEqualTo(output.equals("SAFE") ? Verdict.INCONCLUSIVE : Verdict.VULNERABLE);
+            if (output.equals("SAFE")) assertThat(finished.getValue().decision().outcomeReason()).isEqualTo(OutcomeReason.EVIDENCE_NOT_EXPORTABLE);
+        }
+    }
+
+    @Test void optionalLocalValueRepeatedInFinalOutputStillBlocksExport() {
+        var synthetic = canary(CANARY, List.of("SAFE"));
+        var pending = pending(llm02, scenario(Map.of(llm02.code(),
+                new EvaluationScenarioPort.Entry(llm02.code(), 1, synthetic, List.of("SAFE"))), true, true));
+        var execution = execution(pending, "SAFE", false);
+        var item = trace(execution, false, "SAFE").evidence();
+        var optional = new StructuredInteractionEvidence(execution.id(), item.observations(), item.availability(),
+                Map.of(StructuredInteractionEvidence.Source.RETRIEVED_CONTEXT, false), false, Set.of());
+        var prepared = projector.prepare(pending, execution, llm02, new StructuredInteractionEvidence.Context(optional, null, null));
+        assertThat(prepared.input()).isNull();
+        assertThat(prepared.insufficiency()).isEqualTo(OutcomeReason.EVIDENCE_NOT_EXPORTABLE);
+    }
+
+    private static StructuredInteractionEvidence.Context trace(TestExecution execution, boolean exportable, String value) {
+        var source = StructuredInteractionEvidence.Source.RETRIEVED_CONTEXT;
+        var item = new StructuredInteractionEvidence.Observation(source, StructuredInteractionEvidence.Kind.ITEM, 1, null,
+                "fixture-item", value, exportable, true);
+        return new StructuredInteractionEvidence.Context(new StructuredInteractionEvidence(execution.id(), List.of(item),
+                Map.of(source, StructuredInteractionEvidence.Availability.COMPLETE), Map.of(source, true), false, Set.of()), null, null);
+    }
+
     private String semanticMessage(EvaluationPreparationPort.Prepared prepared) {
         assertThat(prepared.requestLlm()).isTrue();
         assertThat(prepared.input().trustedSyntheticContext()).isNull();

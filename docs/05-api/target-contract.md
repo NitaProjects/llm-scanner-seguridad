@@ -313,3 +313,63 @@ ruta. Solo una captura declarada puede autorizar un reemplazo. Una
 credencial requerida ausente, vencida o incompatible aborta antes de enviar.
 `HttpOnly` y `SameSite` se conservan como atributos internos. El contexto y
 los valores descartados para redacción se eliminan al cerrar la interacción.
+
+### Observaciones de retrieval y herramientas
+
+La propiedad opcional `observations` se declara en un paso de workflow o en
+una entrada de `TARGET_STREAM_BINDINGS_FILE`. Para un target JSON sin
+workflow, esa entrada contiene los tres campos de vinculación exacta,
+`mediaType: "application/json"` y `observations`. La respuesta final se
+selecciona con `responsePath` en REST JSON y con el contrato de chat en
+OpenAI-compatible. En un stream el binding de respuesta conserva
+`contentEvent`, `textPath` y su terminal explícito. JSONL requiere
+`eventPath` para distinguir las observaciones.
+
+Ejemplo de `observations` para un documento JSON:
+
+```json
+{
+  "retrievalAliases": ["doc-fixture"],
+  "toolAliases": ["search_documents"],
+  "rules": [
+    {"kind":"QUERY","textPath":"$.retrieval.query"},
+    {"kind":"ITEM","itemsPath":"$.retrieval.items","aliasPath":"$.alias","textPath":"$.chunk"},
+    {"kind":"REQUEST","itemsPath":"$.calls","callIdPath":"$.id","aliasPath":"$.name","textPath":"$.arguments.query"},
+    {"kind":"RESULT","itemsPath":"$.results","callIdPath":"$.callId","textPath":"$.output.summary"}
+  ]
+}
+```
+
+En SSE o JSONL, cada regla declara además su `event`, distinto del evento
+de respuesta y del terminal. Los selectores de texto, alias e ID se aplican
+al registro o a cada elemento de `itemsPath`. `MODEL_TEXT` permite observar
+texto intermedio para diagnóstico. Solo la respuesta final confirmada llega
+a las reglas existentes y conserva los offsets de sus citas.
+
+Cada interacción admite una consulta, 32 items, 16 peticiones de herramienta,
+16 resultados y 32 registros de texto intermedio. Cada registro serializado
+tiene una cota de 4 KiB UTF-8, cada ID una de 128 bytes y el agregado se
+sujeta a `textBytes`. Una traza parcial, ambigua o sobre la cota queda
+inconclusa para las comprobaciones dependientes. Un resultado acredita
+una declaración del target y se correlaciona únicamente con un ID único.
+
+Los registros son locales por defecto. Un operador puede declarar valores
+sintéticos exactos en `exportValues` por regla. El terminal puede declarar
+`semanticSources` por código del test. Por ejemplo,
+`{"LLM02-CANARY-001":{"RETRIEVED_CONTEXT":true}}` requiere esa fuente para la
+corroboración semántica. `false` indica fuente opcional. Rigen los permisos,
+corpus exacto y límites del evaluador. El sistema omite la llamada si una
+fuente requerida queda bloqueada. La proyección ampliada permanece en memoria.
+Antes de confirmar la ejecución, las coincidencias con valores locales
+observados e IDs de correlación se redactan junto con las credenciales
+en la evidencia terminal. Una copia en la respuesta final conserva el
+veto semántico incluso después de redactarla.
+Si un campo descartado por límites o alterado por redacción impide comprobar
+si quedaron copias, se sustituye toda la evidencia terminal. La petición
+se registra como `{}` y la respuesta como `[REDACTED_CREDENTIAL]`, ambas
+con su indicador de redacción.
+
+El operador prepara fixtures autorizadas con stubs inertes y egress controlado.
+Los eventos, argumentos y URLs observados se tratan como datos. El scanner
+registra contadores y códigos asociados a la ejecución local. Una solicitud
+observada no acredita que el target haya ejecutado la herramienta.

@@ -114,7 +114,9 @@ public final class PostgresEvaluationRepositoryAdapter implements EvaluationRepo
                         settings.tariffValid() ? settings.pricingVersion() : null, settings.tariffValid() ? settings.estimateVersion() : null, null);
             }
             var running = replaceComponent(prepared, component);
-            if (running.configuration() != null && "hybrid-v2".equals(running.configuration().policyVersion())) {
+            var evidence = running.evidence();
+            boolean transientInput = requestLlm && evidence.projection() == null && evidence.inputHash() == null;
+            if (transientInput || running.configuration() != null && "hybrid-v2".equals(running.configuration().policyVersion())) {
                 running = running.withEvidence(running.evidence().withoutProjection());
             }
             if (update(running, "status = 'PENDING'") != 1) return Optional.empty();
