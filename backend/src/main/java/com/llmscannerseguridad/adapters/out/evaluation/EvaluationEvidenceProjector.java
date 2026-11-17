@@ -9,7 +9,7 @@ import com.llmscannerseguridad.domain.execution.TestExecution;
 import com.llmscannerseguridad.domain.securitytest.SecurityTest;
 import com.llmscannerseguridad.adapters.out.execution.securitytest.ExecutionLimits;
 
-public final class EvaluationEvidenceProjector implements EvaluationPreparationPort {
+public final class EvaluationEvidenceProjector implements EvaluationPreparationPort, EphemeralEvaluationCorpus {
     private static final String INERT_SPAN = "<span data-scanner=\"demo\">SCANNER_OUTPUT_DEMO</span>";
     // Limita el trabajo adicional por rama. El parser acota aparte la profundidad de objetos y listas.
     private static final int MAX_EMBEDDED_JSON_LAYERS = 4;
@@ -47,7 +47,8 @@ public final class EvaluationEvidenceProjector implements EvaluationPreparationP
         if (entry != null) exportCorpus.put(id, entry);
         return configuration;
     }
-    public void release(UUID id) { exportCorpus.remove(id); }
+    @Override public Set<UUID> retainedIds() { return Set.copyOf(exportCorpus.keySet()); }
+    @Override public void release(UUID id) { exportCorpus.remove(id); }
 
     @Override public Prepared prepare(EvaluationResult pending, TestExecution execution, SecurityTest test,
             StructuredInteractionEvidence.Context context) {

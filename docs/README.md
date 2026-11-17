@@ -1,16 +1,20 @@
-# Documentación del proyecto
+# Documentación de LLM Scanner Seguridad
 
-## Separación de responsabilidades
+## Documentación vigente
 
-- `openspec/specs/`: destino de las especificaciones consolidadas; actualmente aún no contiene specs consolidadas.
-- `openspec/changes/`: contratos aprobados disponibles, propuestas, diseños, especificaciones delta, tareas y registros de implementación. Las extensiones posteriores deben leerse junto con el alcance histórico de cada incremento.
-- `docs/`: memoria del TFM, investigación, diagramas, metodología y documentación técnica consolidada.
-- `docs/08-entrega-tfm/`: requisitos académicos oficiales, checklist, trazabilidad y enlaces de entrega del TFM.
+Para instalar el proyecto y ejecutar el primer análisis, empieza por el [README principal](../Readme.md). Para reproducir casos controlados sin proveedor externo, consulta la [demo local](../demo-vulnerable/README.md).
 
-El backend core está aprobado e implementado por `project-management`, `target-configuration`, `scan-execution`, `security-test-execution`, `evaluation-engine`, `scoring-engine` y `reporting`. Sus contratos están en `openspec/changes/<cambio>/specs/<capacidad>/spec.md`. La sincronización a `openspec/specs/` y el archivo de changes podrán realizarse posteriormente según el workflow OpenSpec, sin reescribir los artefactos históricos. Esto no completa frontend, demo vulnerable, operación real, experimento ni entrega del TFM.
+| Tema | Documentación |
+| --- | --- |
+| Producto | [Visión](00-contexto/vision.md), [alcance](00-contexto/alcance.md) y [evolución futura](00-contexto/evolucion-futura.md). |
+| Diseño | [Arquitectura general](02-arquitectura/arquitectura-general.md) y [decisiones de arquitectura](02-arquitectura/decisiones/). |
+| Integración | [Contrato del target](05-api/target-contract.md) y [API OpenAPI](05-api/openapi.yaml). |
+| Seguridad | [Política de autorización](03-seguridad/politica-de-autorizacion.md) y [modelo de amenazas](03-seguridad/modelo-de-amenazas.md). |
+| Evaluación | [Estrategia](04-ia/estrategia-evaluacion.md), [casos de prueba](04-ia/casos-de-prueba.md) y [referencias](01-investigacion/referencias.md). |
+| Operación | [Modelo de datos](06-base-de-datos/modelo-datos.md) y [guía de despliegue](../docker/production/README.md). |
 
-## Regla de no duplicación
+OpenSpec es la fuente de verdad funcional. Las [especificaciones consolidadas](../openspec/specs/) cubren streaming, variables de sesión, workflows, credenciales por paso y observaciones RAG/herramientas. Los [cambios OpenSpec](../openspec/changes/) contienen los contratos en evolución o aún no consolidados. Las evidencias de validación describen la revisión comprobada, no el estado actual de un servicio desplegado.
 
-La documentación de `docs/` no debe repetir íntegramente las especificaciones de OpenSpec. Cuando sea necesario, debe explicar, justificar o resumir una decisión y referenciar la especificación relacionada.
+## Material histórico
 
-El backlog de `docs/00-contexto/backlog.md` se mantiene como roadmap de alto nivel. Las tareas concretas de implementación se mantienen en `tasks.md` dentro de cada cambio OpenSpec.
+La memoria (`07-memoria/`), los materiales de entrega (`08-entrega-tfm/`) y sus evidencias conservan el contexto académico original. Sus checklists, hitos y estados no son obligaciones ni indicadores de estado del producto. Los [cambios archivados](../openspec/changes/archive/) conservan decisiones, contratos y resultados por incremento; no se actualizan retrospectivamente al revisar estas guías.

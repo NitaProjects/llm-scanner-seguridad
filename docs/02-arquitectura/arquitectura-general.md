@@ -35,7 +35,7 @@ LLM Scanner Seguridad se plantea como un monolito modular con un frontend Angula
                               objetivo      evaluador
 ```
 
-El diagrama resume responsabilidades; el backend coordina las integraciones independientes con target y evaluador. El backend core está aprobado e implementado por `project-management`, `target-configuration`, `scan-execution`, `security-test-execution`, `evaluation-engine`, `scoring-engine` y `reporting`. Los contratos actuales están en `openspec/changes/<cambio>/specs/<capacidad>/spec.md` y en [OpenAPI](../05-api/openapi.yaml); `openspec/specs/` aún no contiene specs consolidadas. La consolidación/archivo podrá realizarse posteriormente según el workflow, conservando los históricos.
+El backend coordina las integraciones independientes con el target y el evaluador. El core está documentado en los cambios `project-management`, `target-configuration`, `scan-execution`, `security-test-execution`, `evaluation-engine`, `scoring-engine` y `reporting`, y la interfaz REST en [OpenAPI](../05-api/openapi.yaml). El workspace contiene cinco [especificaciones consolidadas](../../openspec/specs/): streaming de eventos, variables de sesión, workflows HTTP, credenciales acotadas al paso y observaciones de recuperación y herramientas. Deben leerse junto con los contratos aprobados aún no consolidados y sus extensiones. Los cambios archivados conservan la evidencia de implementación.
 
 ## Frontend
 
@@ -53,7 +53,7 @@ TargetForm mantiene credenciales nuevas únicamente de forma transitoria. Conser
 
 API_BASE_URL procede de environments con `/api`: proxy de desarrollo al puerto backend por defecto 8080 y mismo origen en producción. El hosting AWS usa Nginx como reverse proxy API y sirve Angular estático; la validación pública observada se limita al acceso y persistencia descritos abajo, sin Scan. CSS propio, labels, foco, badges textuales y details nativos cubren responsive/accesibilidad mínima. Pruebas Vitest/TestBed/HTTP simulado y revisión visual a 1280/1024/768/360 están registradas en [tasks.md](../../openspec/changes/frontend-mvp/tasks.md); ejecución y consumo se detallan en [README frontend](../../frontend/README.md).
 
-`demo-vulnerable/` implementa el target sintético independiente aprobado en su [change](../../openspec/changes/demo-vulnerable/design.md): Java 21/Boot 4.1.1, selección fija en memoria, sin LLM real, BD ni código compartido con el scanner. Escucha por defecto en `127.0.0.1:8081`; solo el backend lo invoca mediante la excepción SSRF existente. [Contrato, perfiles, límites y manifiestos](../../demo-vulnerable/README.md). No está desplegada en AWS; la validación local del evaluator y el despliegue académico se mantienen como evidencias separadas.
+`demo-vulnerable/` implementa el target sintético independiente aprobado en su [change](../../openspec/changes/demo-vulnerable/design.md): Java 21/Boot 4.1.1, selección fija en memoria, sin LLM real, BD ni código compartido con el scanner. Escucha por defecto en `127.0.0.1:8081`; solo el backend lo invoca mediante la excepción SSRF existente. [Contrato, perfiles, límites y manifiestos](../../demo-vulnerable/README.md). La demo se usa en local. La validación local del evaluador es independiente de la evidencia de despliegue en AWS.
 
 ## Backend
 
@@ -151,7 +151,7 @@ Es el endpoint autorizado que se desea analizar. Recibe los prompts o peticiones
 
 El acceso al target incorpora los controles contra SSRF, autorización externa de orígenes, DNS efectivo, tiempo, tamaño y frecuencia definidos por security-test-execution. Configurar un target por API no autoriza tráfico; ver la política de autorización consolidada.
 
-El contrato de integración del MVP queda limitado a HTTP REST, `POST` y JSON. La autenticación es opcional y se configura como parte del target.
+La integración admite REST `POST` JSON y Chat Completions compatible con OpenAI. Los bindings operativos añaden SSE/JSONL, variables de sesión y workflows HTTP de varios pasos, incluidos controles para cookies, CSRF y cabeceras dinámicas. Las observaciones RAG y de herramientas recogen datos declarados por el target; el scanner no ejecuta las herramientas observadas. Los formatos admitidos y las combinaciones válidas se detallan en el [contrato del target](../05-api/target-contract.md).
 
 ## Modelo evaluador
 
@@ -185,7 +185,7 @@ Las evaluaciones forman parte del procesamiento asíncrono del scan. El resultad
 
 ## Contrato conceptual del target
 
-El MVP no dependerá de un formato fijo de request. Cada target se configurará mediante una estructura conceptual `TargetConfiguration` con:
+La modalidad `REST_LEGACY` usa una estructura conceptual `TargetConfiguration` con:
 
 - `name`.
 - `url`.
@@ -214,34 +214,16 @@ La autenticación del target es `NONE`, `BEARER_TOKEN` o `API_KEY_HEADER`. El ch
 
 D-CRYPTO queda cerrado para el MVP local: AES-256-GCM con clave externa de 256 bits y envelope versionado (ADR-002). GET y conservación en PUT no descifran. Históricamente los controles SSRF de ejecución quedaron fuera de `target-configuration`; `security-test-execution` ya los incorpora, según la [política de autorización](../03-seguridad/politica-de-autorizacion.md). ADR-009 concreta Parameter Store SecureString/KMS; el operador comunica bootstrap AWS a tmpfs con permisos por UID. La revisión efectiva de IAM/KMS, custodia avanzada y rotación no se dan por completadas.
 
-## Decisiones todavía abiertas
+## Despliegue de referencia
 
-El despliegue académico está definido en
-[ADR-009](decisiones/ADR-009-despliegue-academico-ec2.md): una EC2, Nginx/Angular estático,
-backend pro y PostgreSQL16 privado; Basic Auth/TLS, secretos externos y sin demo/evaluator
-activos. Su Compose es independiente del local. Según la [evidencia del operador de 2026-10-20](../../openspec/changes/aws-production-readiness/evidence/2026-10-20-aws-deployment.md),
-está publicado en [https://llmscannerseguridad.com](https://llmscannerseguridad.com), eu-north-1,
-una EC2 m7i-flex.large/AL2023 x86_64 y ECR privado por digest. PostgreSQL16 usa EBS30GB/XFS,
-montaje persistente por UUID en `/srv/llm-scanner/postgres` y volumen externo
-`llm-scanner-pgdata`. Systems Manager sustituye SSH; solo443 público y backend/PG sin
-puertos publicados. Let's Encrypt/DNS-01 manual con Cloudflare, caducidad observada
-2027-01-18, renovación no automática. Se observaron Basic Auth401/login Chrome,
-Angular/API y persistencia de un proyecto al recargar; `TARGET_NOT_CONFIGURED` era esperado.
-Sin Scan ni demo en AWS; evaluator desactivado por defecto. Los tests locales no se atribuyen
-a AWS. El review acredita 1.1/6.2 completas y 6.4 completa en preparación técnica:
-24/25 tareas completas y acceso académico preparado. 6.1 completada: Certbot en Docker
-y DNS-01 disponible, procedimiento validado confirmado por el operador. Solo queda restore
-aislado (6.3). Despliegue académico autorizado en Free Plan/créditos, sin migración voluntaria
-autorizada a Paid Plan ni gasto exacto medido. URL disponible hasta finalizar entrega/evaluación;
-después podrán detenerse o retirarse recursos innecesarios. Operador del proyecto responsable
-operativo/TLS. La entrega efectiva de credenciales al tribunal es una acción
-administrativa pendiente por canal privado; no reabre 6.4. IDs de cuenta/instancia, IP
-directa y URI ECR identificativas se omiten; la URL pública se conserva.
+El [despliegue registrado en AWS](../../openspec/changes/aws-production-readiness/evidence/2026-10-20-aws-deployment.md) combina Nginx/Angular, Spring Boot y PostgreSQL en una EC2. Solo se expone HTTPS con Basic Auth; la API y la base de datos quedan en red privada. PostgreSQL usa almacenamiento EBS persistente y la administración se realiza mediante Systems Manager. Consulta la [guía de operación](../../docker/production/README.md) y la [decisión de arquitectura](decisiones/ADR-009-despliegue-academico-ec2.md). La evidencia histórica acredita acceso y persistencia básica, no la revisión desplegada hoy ni una restauración verificada.
+
+## Decisiones todavía abiertas
 
 - Las alternativas y recomendaciones se recogen en `docs/02-arquitectura/decisiones/decisiones-abiertas.md`.
 - OpenAI y modelo inicial configurable gpt-6-luna están aprobados y el acceso efectivo está acreditado en la revalidación citada; retención operativa y tarifa siguen sin acreditarse.
 - Límites y fallback del evaluador cerrados en evaluation-engine D-09/D-15; coste monetario estimado opcional y externo.
 - confidence-v1/severity-v1/scoring-v1 aprobadas; calibración estadística sigue pendiente.
-- Diseño del experimento académico definitivo.
+- Evaluación comparativa con un corpus más amplio y calibración de métricas.
 - Evolución del executor interno de instancia única hacia cola durable, AWS SQS o workers distribuidos.
 - Reintentos y cancelación; recuperación local y fallo agregado con éxitos conservados aprobados en ADR-003.

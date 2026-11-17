@@ -33,7 +33,7 @@ public final class TargetConfigurationService {
 
     public TargetView configure(UUID projectId, TargetCommand command) {
         validation.validate(command.settings());
-        projects.findById(projectId).orElseThrow(ProjectNotFoundException::new);
+        if (!projects.lockForDependentWrite(projectId)) throw new ProjectNotFoundException();
         if (targets.findByProjectId(projectId).isPresent()) {
             throw new TargetOperationException(TargetOperationException.Reason.TARGET_ALREADY_CONFIGURED);
         }
@@ -46,7 +46,7 @@ public final class TargetConfigurationService {
 
     public TargetView update(UUID projectId, TargetCommand command) {
         validation.validate(command.settings());
-        projects.findById(projectId).orElseThrow(ProjectNotFoundException::new);
+        if (!projects.lockForDependentWrite(projectId)) throw new ProjectNotFoundException();
         var previous = targets.findByProjectId(projectId).orElseThrow(() ->
                 new TargetOperationException(TargetOperationException.Reason.TARGET_NOT_CONFIGURED));
         if (!command.adapterTypeExplicit() && previous.settings().adapterType() != com.llmscannerseguridad.domain.target.TargetAdapterType.REST_LEGACY) {

@@ -24,11 +24,9 @@ Diseñar y desarrollar una plataforma web defensiva que permita evaluar de forma
 - Separar el dominio de los detalles de infraestructura mediante puertos y adaptadores.
 - Exponer una API REST coherente entre frontend y backend.
 - Mantener los análisis y sus resultados trazables y reproducibles.
-- Preparar el sistema para un despliegue final en AWS.
-- Comparar los resultados de reglas deterministas, evaluación mediante LLM y evaluación híbrida.
-- Medir, dentro del experimento del TFM, detección, falsos positivos, falsos negativos, reproducibilidad, tiempo y coste aproximado.
+- Documentar un despliegue reproducible con la aplicación y la base de datos separadas de la entrada HTTPS.
 
-El diseño concreto del despliegue en AWS queda como **Pendiente de decisión**.
+La topología validada en AWS se describe en la [guía de despliegue](../../docker/production/README.md).
 
 ## Objetivos relacionados con IA
 
@@ -40,7 +38,7 @@ El diseño concreto del despliegue en AWS queda como **Pendiente de decisión**.
 - Evitar que las respuestas de la aplicación objetivo se interpreten como instrucciones confiables para el sistema evaluador.
 - Incorporar una escala de confianza y dejar prevista una revisión manual opcional de los resultados.
 
-## Objetivos académicos
+## Validación futura
 
 - Evaluar la detección sobre un conjunto controlado de casos vulnerables, no vulnerables y, cuando proceda, ambiguos.
 - Comparar reglas deterministas, LLM evaluador y evaluación híbrida.
@@ -49,7 +47,7 @@ El diseño concreto del despliegue en AWS queda como **Pendiente de decisión**.
 
 El tamaño del dataset, el número de repeticiones, el procedimiento de ground truth y los valores objetivo quedan como **Pendiente de decisión**.
 
-La elección MVP está aprobada e implementada por `evaluation-engine`: OpenAI Responses API/Structured Outputs, modelo inicial `gpt-6-luna` configurable externamente, según [ADR-004](../02-arquitectura/decisiones/ADR-004-evaluador-llm.md). La verificación de cuenta, disponibilidad, retención y tarifa para operación real autorizada sigue pendiente. Comparar otros modelos/proveedores forma parte del trabajo académico o de una evolución posterior, sin darlo por ejecutado.
+La integración con OpenAI [se validó en local](../../openspec/changes/real-evaluator-validation/evidence/2026-10-19-tls-revalidation/result.md) para un escenario sintético. Esa validación no acredita un benchmark, una evaluación de retención ni una tarifa.
 
 ## Objetivos relacionados con seguridad
 

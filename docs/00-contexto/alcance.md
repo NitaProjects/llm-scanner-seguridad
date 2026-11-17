@@ -25,9 +25,9 @@ El MVP incluirá:
 
 El backend core está aprobado e implementado por `project-management`, `target-configuration`, `scan-execution`, `security-test-execution`, `evaluation-engine`, `scoring-engine` y `reporting`. El plan contiene un SecurityTest inmutable por categoría. Para confirmar COMPLETED, cada Scan nuevo requiere cuatro ejecuciones y cuatro evaluaciones COMPLETED, ScanScore y SecurityReport íntegros; score, informe y cierre se confirman en una misma transacción. Un fallo técnico global puede llevar a FAILED; el fallo/degradación LLM consolidado puede producir INCONCLUSIVE o VULNERABLE según las reglas, sin implicar Scan FAILED. Los históricos conservan su semántica sin backfill.
 
-El frontend MVP está implementado por [frontend-mvp](../../openspec/changes/frontend-mvp/), con páginas por proyecto/análisis, configuración de target y consulta de progreso, Findings, score e informe; no incorpora dashboard global. La evidencia de pruebas aisladas y build está en su tasks.md. La integración en un entorno real autorizado y demo vulnerable siguen pendientes. La instalación/ejecución completa, el experimento académico, la validación real de OpenAI y los entregables finales del TFM siguen pendientes. Los contratos aprobados están en `openspec/changes/`; `openspec/specs/` aún no contiene specs consolidadas.
+La interfaz permite gestionar proyectos y targets, consultar progreso, hallazgos, score e informe; no incorpora dashboard global. El [README](../../Readme.md#validación-y-despliegue) referencia el recorrido local con la demo, las validaciones con proveedores y el despliegue registrado en AWS, cada uno con su alcance.
 
-Como decisión cerrada del MVP, el target utilizará únicamente HTTP REST con método `POST`, `Content-Type: application/json`, body JSON configurable mediante plantilla, placeholder `{{PROMPT}}`, headers configurables, autenticación opcional, `responsePath` configurable y timeout configurable.
+El contrato original del target usa HTTP REST con método `POST`, `Content-Type: application/json`, body configurable mediante plantilla, placeholder `{{PROMPT}}`, headers, autenticación opcional, `responsePath` y timeout. El [contrato actualizado](../05-api/target-contract.md) distingue esa modalidad de Chat Completions compatible con OpenAI y de los bindings para streaming, sesiones, workflows y observaciones de recuperación de contexto y herramientas.
 
 La configuración conceptual del target incluirá:
 
@@ -53,21 +53,20 @@ Quedan fuera del MVP:
 - Explotación autónoma, denegación de servicio o pruebas destructivas.
 - Cobertura exhaustiva de todos los riesgos del OWASP GenAI LLM Top 10 (2026).
 - Soporte completo para cualquier proveedor, formato o protocolo LLM.
-- Soporte inicial para agentes, herramientas externas, streaming o RAG avanzado.
-- Streaming, multipart, WebSocket, SSE, GET, SOAP y gRPC.
-- Agentes complejos o herramientas externas invocadas por el target.
+- Ejecución de herramientas del target por el scanner o evaluación exhaustiva de agentes y RAG.
+- Soporte general de multipart, WebSocket, SOAP y gRPC.
 - Monitorización continua en producción.
 - Gestión avanzada de usuarios, organizaciones, roles y multi-tenancy.
 - Integración con sistemas externos de tickets o gestión de vulnerabilidades.
-- Despliegue productivo completo en AWS.
+- Garantías de alta disponibilidad u operación a escala.
 
 El modelo de autenticación del usuario queda como **Pendiente de decisión**. Para el target, el MVP soportará únicamente `NONE`, `BEARER_TOKEN` y `API_KEY_HEADER`.
 
-OAuth2, mTLS, Basic Auth avanzada, cookies o sesión, flujos interactivos y autenticación multi-step quedan fuera del alcance inicial.
+OAuth2, mTLS y Basic Auth avanzada para targets quedan fuera del alcance inicial. Los bindings operativos posteriores admiten sesiones efímeras, cookies y credenciales acotadas por paso; sus límites se documentan en el contrato del target.
 
 Las credenciales nunca se incluirán en logs, informes, respuestas al frontend ni payloads persistidos sin sanitización. D-CRYPTO está cerrado para el MVP local: AES-256-GCM, envelope versionado y clave externa de 256 bits, según [ADR-002](../02-arquitectura/decisiones/ADR-002-autenticacion-target-credenciales.md). Custodia operativa, rotación avanzada y gestión en AWS siguen como **Pendiente de decisión**.
 
-Los scans del MVP se ejecutan de forma asíncrona. La solicitud inicial crea el scan y devuelve un identificador; la API permite consultar estado y progreso derivado de las ejecuciones mediante polling. `scan-execution` implementa un ThreadPoolTaskExecutor interno acotado y configurable, con rechazo inmediato y un único Scan activo por Project. La recuperación local marca activos FAILED/SCAN_INTERRUPTED sin relanzar trabajo, según [ADR-003](../02-arquitectura/decisiones/ADR-003-ejecucion-asincrona-scans.md). La interfaz de seguimiento está implementada en frontend-mvp; el recorrido con backend y demo reales sigue pendiente.
+Los scans se ejecutan de forma asíncrona. La solicitud inicial devuelve un identificador; la interfaz consulta estado y progreso mediante polling. El executor es acotado y admite un único Scan activo por proyecto. La recuperación local marca los análisis activos `FAILED` con motivo `SCAN_INTERRUPTED`, sin relanzarlos, según [ADR-003](../02-arquitectura/decisiones/ADR-003-ejecucion-asincrona-scans.md).
 
 Los estados mínimos del scan serán `PENDING`, `RUNNING`, `COMPLETED` y `FAILED`. `CANCELLED` y `PARTIAL` no forman parte del conjunto mínimo del MVP y su incorporación queda como **Pendiente de decisión**.
 
@@ -81,11 +80,11 @@ Los estados mínimos del scan serán `PENDING`, `RUNNING`, `COMPLETED` y `FAILED
 - Las peticiones a targets configurados por usuarios introducen riesgo de SSRF y requieren controles específicos.
 - La evaluación mediante un segundo LLM no garantiza por sí sola la corrección del resultado.
 - confidence-v1, severity-v1 y scoring-v1 tienen políticas ejecutables aprobadas e implementadas, incluidas fórmula, redondeo y bandas de riesgo (ADR-005). La calibración empírica sigue pendiente. El score es heurístico, no una probabilidad; cero significa ningún Finding detectado en las pruebas completadas, sin demostrar seguridad. INCONCLUSIVE conserva un contador separado.
-- No se incluirá inicialmente soporte específico para agentes, herramientas externas, streaming ni RAG avanzado.
+- Las observaciones de recuperación y herramientas se limitan a eventos declarados por el target; no acreditan ejecución real de una herramienta ni cobertura integral de agentes o RAG.
 - La autenticación del target es opcional; el cifrado local está implementado. Autenticación/autorización productiva de usuarios, retención/borrado de evidencia y custodia/rotación avanzada de claves siguen pendientes.
 - El procesamiento aplica límites aprobados de tiempo, concurrencia, frecuencia, tamaños y cuatro pruebas por Scan (STE-09/ADR-003), además de cuatro intentos LLM como máximo y cuotas del evaluador (evaluation D-15/ADR-004). El presupuesto compartido es 300 s; el control monetario estimado es opcional y externo, sin acreditar tarifa ni coste real verificados.
 - La recuperación tras reinicios de una única instancia está definida e implementada sin reenvíos. Reintentos, cancelación, PARTIAL, cola durable y workers distribuidos siguen pendientes y fuera del MVP actual.
-- El informe estructurado está implementado; exportaciones HTML/Markdown/PDF, despliegue AWS y operación productiva permanecen fuera del incremento actual y pendientes de trabajo posterior.
+- El informe estructurado está implementado; las exportaciones HTML, Markdown y PDF siguen fuera del alcance actual.
 
 ## Evolución futura
 

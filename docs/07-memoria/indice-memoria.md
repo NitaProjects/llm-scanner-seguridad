@@ -1,6 +1,6 @@
 # Índice inicial de la memoria del TFM
 
-La memoria final sigue **EN PROGRESO**; este documento es su índice inicial. El backend core aprobado e implementado comprende `project-management`, `target-configuration`, `scan-execution`, `security-test-execution`, `evaluation-engine`, `scoring-engine` y `reporting`, cuyos contratos están actualmente en `openspec/changes/`, aún sin consolidar en `openspec/specs/`. Esta evidencia no completa frontend, demo vulnerable, experimento, operación real ni entrega final.
+> **Material histórico.** Este índice conserva la estructura inicial de la memoria académica. No define requisitos ni el estado actual del producto; consulta el [índice técnico](../README.md).
 
 ## 1. Introducción
 

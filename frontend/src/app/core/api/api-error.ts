@@ -11,6 +11,7 @@ const messages = {
   PROJECT_NOT_FOUND: 'El proyecto no existe.', SCAN_NOT_FOUND: 'El análisis no existe en este proyecto.',
   TARGET_NOT_CONFIGURED: 'El proyecto no tiene un target configurado.', TARGET_ALREADY_CONFIGURED: 'El target ya está configurado. Carga la configuración existente.',
   TARGET_TYPE_REQUIRED: 'Consulta el target y selecciona su tipo antes de guardar.', TARGET_TYPE_CHANGED: 'El tipo cambi�. Recarga la configuraci�n antes de guardar.',
+  PROJECT_DELETE_CONFLICT: 'No se pudo eliminar el proyecto porque existen referencias a sus datos.',
   SCAN_ALREADY_ACTIVE: 'Ya existe un análisis activo. Consulta el histórico.', SCAN_DISPATCH_FAILED: 'No se pudo iniciar el procesamiento. Puedes consultar el intento registrado.',
   SCAN_EXECUTION_UNAVAILABLE: 'El servicio de ejecución no está disponible temporalmente.', INTERNAL_ERROR: 'No se ha podido completar la operación.'
 } as const;

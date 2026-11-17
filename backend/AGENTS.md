@@ -14,7 +14,7 @@ Estas instrucciones son específicas de `backend/` y complementan las reglas del
 
 ## Fuente de verdad
 
-La fuente de verdad funcional del producto es `openspec/specs/` y la de los cambios en curso es `openspec/changes/`. `docs/` contiene la memoria del TFM, investigación, diagramas y documentación consolidada.
+OpenSpec es la fuente de verdad funcional: `openspec/specs/` contiene los contratos consolidados y `openspec/changes/` los cambios en curso y contratos aún no consolidados. Consulta el [índice técnico](../docs/README.md) para la documentación vigente.
 
 Antes de implementar una funcionalidad:
 

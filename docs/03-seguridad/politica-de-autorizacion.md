@@ -16,7 +16,14 @@ Evidencia solo interna: body JSON preparado y string extraído con redacción ex
 
 `evaluation-engine` añade un permiso externo independiente para exportar evidencia sintética al evaluador. EVALUATOR_EXPORT_ENABLED queda deshabilitado por defecto; requiere EVALUATOR_ALLOWED_SCENARIOS y un manifiesto local D-02 vinculado a projectId/targetConfigurationId/targetUpdatedAt/code/revision, exportPolicy OPENAI y corpus finito que autoriza el string completo observado. Ausencia, desajuste o texto desconocido producen INCONCLUSIVE sin llamada ni copia bruta. Autorizar el target no autoriza al proveedor. El manifiesto no admite ground truth, URL, headers ni credenciales. EVALUATOR_API_KEY procede del entorno y solo alcanza el transporte HTTPS de destino fijo.
 
-Solo esa proyección sintética puede salir al evaluador; nunca requestBody, TargetConfiguration, auth/ciphertext o logs. GET evaluations/findings publica metadatos y plantillas inertes, con no-store. Retención/borrado, autenticación/autorización de usuarios y datos reales siguen pendientes de un change específico. Los límites por Scan no limitan almacenamiento histórico. No hay nuevos permisos AWS, acceso externo automático ni exposición pública de evidencia.
+Solo esa proyección sintética puede salir al evaluador; nunca requestBody, TargetConfiguration, auth/ciphertext o logs. GET evaluations/findings publica metadatos y plantillas inertes, con no-store. La retención y la autenticación/autorización de usuarios siguen pendientes. Los límites por Scan no limitan almacenamiento histórico. No hay nuevos permisos AWS, acceso externo automático ni exposición pública de evidencia.
+
+DELETE de Project aplica el mismo perímetro de operador, incluido Basic Auth
+cuando está configurado en el ingreso. El modelo actual carece de ACL por
+proyecto. El borrado alcanza la evidencia y credenciales cifradas de la base
+activa. Las copias, logs, manifiestos y recursos del target conservan sus
+propios ciclos de vida. Un Scan activo bloquea el borrado. Tras 204, repetir
+el DELETE sobre el mismo ID devuelve 404.
 
 Reporting `report-v1/es` opera localmente sobre proyecciones positivas: resumen persistido, diecinueve campos mínimos de evaluación y quince de Finding. Excluye raw evidence/target response, requests/headers, auth/ciphertext/API keys, prompts/system prompts, contenidos de schemas, LlmAssessment, reasoning interno, señales deterministas internas, provider raw output y chain-of-thought. Los identificadores de versiones no autorizan copiar contenidos. Scope conserva solo id/fecha del target del plan, nunca URL/configuración actual. Los cuatro textos públicos de Finding se copian literalmente; no se traducen ni redactan para corregir datos inválidos. La garantía depende de plantillas upstream y minimización, no de una regex capaz de detectar cualquier secreto.
 

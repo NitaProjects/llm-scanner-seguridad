@@ -29,6 +29,13 @@ public class PostgresProjectRepositoryAdapter implements ProjectRepositoryPort {
     }
 
     @Override
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
+    public boolean lockForDependentWrite(UUID id) {
+        return !entityManager.createNativeQuery("select id from projects where id = :id for key share")
+                .setParameter("id", id).getResultList().isEmpty();
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public Optional<Project> findById(UUID id) {
         try {

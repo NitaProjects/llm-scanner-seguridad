@@ -1,6 +1,6 @@
 # Modelo de datos conceptual
 
-El modelo vigente del backend core aprobado e implementado incorpora V8 para targets tipados; el core de evaluación/scoring/reporting llega hasta V7, con EvaluationResult, ScanScore y SecurityReport separados de las columnas semánticas heredadas sin uso. Los contratos aprobados están actualmente en `openspec/changes/`; `openspec/specs/` aún no contiene specs consolidadas.
+El modelo del backend incorpora V8 para targets tipados; el core de evaluación, scoring y reporting queda reflejado en V1–V7, con `EvaluationResult`, `ScanScore` y `SecurityReport` separados de las columnas semánticas heredadas. Consulta los contratos aprobados en `openspec/changes/` y las extensiones consolidadas en `openspec/specs/`.
 
 Las referencias a V1–V6 describen el alcance histórico de esos incrementos, sin reinterpretar datos previos. Los registros de implementación y validación de cada change conservan la secuencia de comprobaciones; las menciones históricas a migraciones/tests preparados sin ejecución no describen las validaciones técnicas posteriores registradas, por ejemplo en [reporting/tasks.md](../../openspec/changes/reporting/tasks.md#validaciones-ejecutadas).
 
@@ -201,7 +201,17 @@ ScanScore 1 --- 0..1 SecurityReport por reportVersion
 - Las credenciales o referencias de autenticación deben gestionarse de forma segura y solo durante la ejecución autorizada.
 - Las peticiones, respuestas y evidencias pueden contener información sensible.
 - Deben aplicarse minimización, redacción, control de acceso y retención limitada.
-- Project, TargetConfiguration, Scan, SecurityTest, TestExecution, EvaluationResult/Finding, ScanScore y SecurityReport tienen esquema aprobado hasta V7. Retención temporal, borrado y autorización de usuarios requieren decisiones posteriores; los límites por Scan no acotan el crecimiento histórico.
+- Project, TargetConfiguration, Scan, SecurityTest, TestExecution, EvaluationResult/Finding, ScanScore y SecurityReport usan las migraciones vigentes. Los límites por Scan no acotan el crecimiento histórico. La retención temporal y la autorización por usuario siguen pendientes.
+
+### Borrado de Project
+
+El borrado físico elimina en una transacción y en este orden `security_reports`,
+`scan_scores`, `findings`, `evaluation_results`, `test_executions`, `scans`,
+`target_configurations` y `projects`. Incluye los snapshots, la evidencia y el
+ciphertext de esas filas. El catálogo `test_cases` permanece. El bloqueo de
+la fila de Project serializa el borrado con la admisión y el guardado del
+target. Un Scan PENDING o RUNNING impide borrar. Las FK vigentes protegen el
+aislamiento y un fallo en cualquier sentencia revierte el conjunto.
 
 ## Persistencia
 

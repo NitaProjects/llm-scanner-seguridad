@@ -331,6 +331,4 @@ La red bridge no acredita bloqueo egress; aplicar el procedimiento de safety ant
 - [ ] Cerrar frontend-mvp 9.4 solo tras verificar sus criterios reales; un Finding se abre
   únicamente si existe. El recorrido offline vacío no acredita esa parte visual.
 
-Pendientes separados: E2E completo, safety con aislamiento/observación del sistema,
-Docker, operación real del evaluador, dataset/repeticiones/estadística de ADR-007 y
-publicación/despliegue. Esta demo no declara listo el TFM ni exporta informes.
+El [recorrido local de extremo a extremo](../openspec/changes/e2e-integration/evidence/2026-10-16-005150/result.md) y la [validación local del evaluador](../openspec/changes/real-evaluator-validation/evidence/2026-10-19-tls-revalidation/result.md) son evidencias independientes. No acreditan aislamiento externo de egress, validación de la demo en Docker ni un benchmark. La demo está pensada para uso local y no exporta informes.

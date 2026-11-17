@@ -14,6 +14,7 @@ describe('ProjectsPage ambiguous creation reconciliation', () => {
   const input = { name: 'Proyecto sintético', description: null };
   const get = { method: 'GET', url: '/api/projects' };
   const post = { method: 'POST', url: '/api/projects' };
+  const remove = { method: 'DELETE', url: `/api/projects/${project.id}` };
 
   beforeEach(async () => {
     TestBed.configureTestingModule({ providers: [
@@ -102,5 +103,93 @@ describe('ProjectsPage ambiguous creation reconciliation', () => {
     expect(page.ambiguous()).toBe(true);
     page.create(input);
     http.expectNone(post);
+  });
+
+  function openDeletion() {
+    harness.detectChanges();
+    const node = harness.routeNativeElement!;
+    const opener = node.querySelector<HTMLButtonElement>('.project-list button')!;
+    const dialog = node.querySelector<HTMLDialogElement>('dialog')!;
+    // jsdom no implementa el top layer de HTMLDialogElement.
+    dialog.showModal ??= () => dialog.setAttribute('open', '');
+    dialog.close ??= () => dialog.removeAttribute('open');
+    opener.click();
+    harness.detectChanges();
+    return { dialog, opener, cancel: dialog.querySelector<HTMLButtonElement>('[autofocus]')!,
+      confirm: dialog.querySelector<HTMLButtonElement>('.delete-confirm')! };
+  }
+
+  it('names and describes the modal, focuses Cancelar and cancels without DELETE', async () => {
+    http.expectOne(get).flush([project]);
+    const { dialog, opener, cancel } = openDeletion();
+    expect(dialog.open).toBe(true);
+    expect(dialog.getAttribute('aria-labelledby')).toBe('delete-title');
+    expect(dialog.getAttribute('aria-describedby')).toBe('delete-description');
+    expect(dialog.textContent).toContain(project.name);
+    expect(dialog.textContent).toContain('no se puede deshacer');
+    expect(document.activeElement).toBe(cancel);
+    cancel.click();
+    expect(dialog.open).toBe(false);
+    await new Promise(resolve => setTimeout(resolve));
+    expect(document.activeElement).toBe(opener);
+    http.expectNone(remove);
+  });
+
+  it('blocks duplicate submit and closes and removes the card after 204', async () => {
+    http.expectOne(get).flush([project]);
+    const { dialog, cancel, confirm } = openDeletion();
+    confirm.click();
+    page.deleteProject();
+    harness.detectChanges();
+    expect(confirm.disabled).toBe(true);
+    expect(cancel.disabled).toBe(true);
+    expect(dialog.getAttribute('aria-busy')).toBe('true');
+    const request = http.expectOne(remove);
+    expect(request.request.body).toBeNull();
+    request.flush(null, { status: 204, statusText: 'No Content' });
+    harness.detectChanges();
+    expect(dialog.open).toBe(false);
+    expect(page.projects().data).toEqual([]);
+    expect(page.deleteNotice()).toBe('Proyecto eliminado.');
+    await new Promise(resolve => setTimeout(resolve));
+    expect(document.activeElement).toBe(harness.routeNativeElement!.querySelector('h1'));
+  });
+
+  it('invalidates a stale read on 204 and restarts the list', () => {
+    http.expectOne(get).flush([project]);
+    openDeletion().confirm.click();
+    page.load();
+    const stale = http.expectOne(get);
+    http.expectOne(remove).flush(null, { status: 204, statusText: 'No Content' });
+    expect(stale.cancelled).toBe(true);
+    http.expectOne(get).flush([]);
+    expect(page.projects().data).toEqual([]);
+  });
+
+  it('keeps a project with active scans and reports the conflict', () => {
+    http.expectOne(get).flush([project]);
+    openDeletion().confirm.click();
+    http.expectOne(remove).flush({ code: 'SCAN_ALREADY_ACTIVE', message: 'Conflicto', fieldErrors: [] },
+      { status: 409, statusText: 'Conflict' });
+    expect(page.projects().data).toEqual([project]);
+    expect(page.deleteError()).toContain('pendiente o en ejecución');
+  });
+
+  it('reconciles uncertain and missing outcomes before allowing new attempts', () => {
+    http.expectOne(get).flush([project]);
+    openDeletion().confirm.click();
+    http.expectOne(remove).error(new ProgressEvent('error'));
+    const fresh = http.expectOne(get);
+    expect(page.pendingReconciliation()).not.toBeNull();
+    page.deleteProject();
+    http.expectNone(remove);
+    fresh.flush([project]);
+    expect(page.pendingReconciliation()).toBeNull();
+    openDeletion().confirm.click();
+    http.expectOne(remove).flush({ code: 'PROJECT_NOT_FOUND', message: 'Ausente', fieldErrors: [] },
+      { status: 404, statusText: 'Not Found' });
+    http.expectOne(get).flush([]);
+    expect(page.deleteNotice()).toBe('El proyecto ya no existe.');
+    http.expectNone(remove);
   });
 });

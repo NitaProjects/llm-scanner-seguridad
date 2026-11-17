@@ -3,6 +3,7 @@ package com.llmscannerseguridad.adapters.in.rest.project;
 import java.util.List;
 
 import com.llmscannerseguridad.application.project.ProjectNotFoundException;
+import com.llmscannerseguridad.application.project.ProjectDeletionException;
 import com.llmscannerseguridad.domain.project.ProjectValidationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -41,6 +42,14 @@ public class ProjectExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ProjectApiError> internalError() {
         return error(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "No se ha podido completar la operación.");
+    }
+
+    @ExceptionHandler(ProjectDeletionException.class)
+    public ResponseEntity<ProjectApiError> deleteConflict(ProjectDeletionException exception) {
+        return error(HttpStatus.CONFLICT, exception.reason().name(), switch (exception.reason()) {
+            case SCAN_ALREADY_ACTIVE -> "El proyecto tiene un análisis pendiente o en ejecución.";
+            case PROJECT_DELETE_CONFLICT -> "No se pudo eliminar el proyecto porque existen referencias a sus datos.";
+        });
     }
 
     private ResponseEntity<ProjectApiError> error(HttpStatus status, String code, String message) {

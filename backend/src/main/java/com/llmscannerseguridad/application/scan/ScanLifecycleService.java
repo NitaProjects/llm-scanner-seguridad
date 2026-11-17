@@ -28,7 +28,7 @@ public final class ScanLifecycleService implements ScanLifecyclePort {
 
     @Override
     public Scan create(UUID projectId) {
-        if (projects.findById(projectId).isEmpty()) {
+        if (!projects.lockForDependentWrite(projectId)) {
             throw new ScanOperationException(ScanOperationException.Reason.PROJECT_NOT_FOUND);
         }
         if (!targets.existsByProjectId(projectId)) {

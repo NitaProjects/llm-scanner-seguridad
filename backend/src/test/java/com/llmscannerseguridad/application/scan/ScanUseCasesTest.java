@@ -45,6 +45,7 @@ class ScanUseCasesTest {
     @BeforeEach
     void setUp() {
         service = new ScanLifecycleService(projects, targets, scans, Clock.fixed(now, ZoneOffset.UTC), () -> id);
+        when(projects.lockForDependentWrite(project)).thenReturn(true);
         when(projects.findById(project)).thenReturn(Optional.of(new Project(project, "Proyecto", null, now, now)));
         when(targets.existsByProjectId(project)).thenReturn(true);
     }
@@ -53,7 +54,7 @@ class ScanUseCasesTest {
     void createsPendingAfterPreconditionsWithoutLoadingTarget() {
         assertThat(service.create(project)).isEqualTo(pending);
         var order = inOrder(projects, targets, scans);
-        order.verify(projects).findById(project);
+        order.verify(projects).lockForDependentWrite(project);
         order.verify(targets).existsByProjectId(project);
         order.verify(scans).existsActiveByProjectId(project);
         order.verify(scans).insert(pending);
@@ -62,10 +63,10 @@ class ScanUseCasesTest {
 
     @Test
     void preconditionsAndStorageFailuresNeverCreateOrDispatch() {
-        when(projects.findById(project)).thenReturn(Optional.empty());
+        when(projects.lockForDependentWrite(project)).thenReturn(false);
         assertReason(() -> service.create(project), ScanOperationException.Reason.PROJECT_NOT_FOUND);
         verifyNoInteractions(targets, scans, dispatcher);
-        when(projects.findById(project)).thenReturn(Optional.of(new Project(project, "Proyecto", null, now, now)));
+        when(projects.lockForDependentWrite(project)).thenReturn(true);
         when(targets.existsByProjectId(project)).thenReturn(false);
         assertReason(() -> service.create(project), ScanOperationException.Reason.TARGET_NOT_CONFIGURED);
         verifyNoInteractions(scans, dispatcher);

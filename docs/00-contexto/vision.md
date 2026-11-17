@@ -35,9 +35,9 @@ La plataforma centraliza pruebas básicas de seguridad LLM y transforma las resp
 
 El backend core aprobado e implementado permite crear proyectos de análisis, configurar un target, ejecutar scans asíncronos con las cuatro pruebas fijas, aplicar evaluación híbrida, consultar el histórico y obtener `scoring-v1` e informes estructurados `report-v1`. Cada Scan nuevo COMPLETED requiere cuatro ejecuciones y cuatro evaluaciones COMPLETED, ScanScore y SecurityReport confirmados; un fallo LLM consolidado no implica automáticamente Scan FAILED. El score es heurístico y cero no acredita seguridad. Los históricos conservan su significado sin recálculo.
 
-El frontend/dashboard y la demo vulnerable siguen en progreso. La instalación/ejecución completa, operación real de OpenAI, experimento académico, AWS y entrega final siguen pendientes. HTML/Markdown/PDF son futuras exportaciones del informe estructurado ya implementado.
+La interfaz Angular y la demo sintética se han validado juntas en local. El [README principal](../../Readme.md#validación-y-despliegue) separa la evidencia local, las validaciones con proveedores y el despliegue registrado en AWS. El informe estructurado está disponible; las exportaciones HTML, Markdown y PDF quedan como evolución futura.
 
-La primera versión se centrará en cuatro riesgos del OWASP GenAI LLM Top 10 (2026): LLM01 – Prompt Injection, LLM02 – Sensitive Information Disclosure, LLM08 – Hidden Context Exposure y LLM10 – Improper Output Handling.
+El catálogo se centra en cuatro riesgos del OWASP GenAI LLM Top 10 (2026): LLM01 – Prompt Injection, LLM02 – Sensitive Information Disclosure, LLM08 – Hidden Context Exposure y LLM10 – Improper Output Handling. Los [adaptadores y bindings](../05-api/target-contract.md) amplían las aplicaciones que pueden probarse sin ampliar por sí solos la cobertura del catálogo.
 
 ## Qué no pretende ser
 

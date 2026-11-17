@@ -1,8 +1,8 @@
 # Entrega del TFM
 
-Esta carpeta contiene los requisitos académicos oficiales del TFM y el control del estado de la entrega de **LLM Scanner Seguridad**.
+> **Material histórico.** Esta carpeta conserva los requisitos y registros de la entrega académica de **LLM Scanner Seguridad**. Sus estados corresponden a esa etapa y no describen el estado actual del producto.
 
-No sustituye a la documentación técnica del producto. Debe revisarse periódicamente durante el desarrollo y utilizarse como checklist antes de entregar el TFM.
+Para la documentación vigente, consulta el [índice técnico](../README.md).
 
 ## Documentos
 

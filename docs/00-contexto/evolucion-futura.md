@@ -2,14 +2,14 @@
 
 ## Propósito
 
-Este documento centraliza las funcionalidades y mejoras identificadas que quedan fuera del MVP de LLM Scanner Seguridad. Su objetivo es demostrar que el alcance se ha acotado conscientemente y proporcionar una base para priorizar futuras versiones.
+Este documento reúne posibles mejoras de LLM Scanner Seguridad. Las capacidades disponibles y su alcance se resumen en el [README](../../Readme.md).
 
 Las evoluciones aquí recogidas no forman parte del compromiso actual ni deben implementarse sin una decisión posterior.
 
 ## Principios
 
 - No ampliar el MVP sin una decisión explícita.
-- Priorizar seguridad, valor académico y viabilidad técnica.
+- Priorizar seguridad, valor para los equipos que usan el scanner y viabilidad técnica.
 - Analizar dependencias antes de incorporar una evolución.
 - Mantener la compatibilidad con la arquitectura modular y hexagonal.
 - Documentar cada decisión importante mediante un ADR o un change de OpenSpec.
@@ -19,23 +19,21 @@ Las evoluciones aquí recogidas no forman parte del compromiso actual ni deben i
 - OAuth2.
 - mTLS.
 - Basic Auth.
-- Cookies y sesiones.
-- Flujos interactivos.
-- Autenticación multi-step.
+
+Las sesiones efímeras, cookies y credenciales acotadas por paso ya tienen soporte mediante [bindings operativos](../05-api/target-contract.md). Queda fuera el soporte general de flujos de autenticación interactivos.
 
 Estas opciones requieren mayor complejidad de configuración, gestión de secretos, renovación de credenciales y validación de seguridad.
 
 ## Protocolos y formatos de integración
 
-- Streaming.
-- SSE.
 - WebSocket.
 - multipart.
-- GET.
 - SOAP.
 - gRPC.
 
 Su incorporación requeriría contratos, adaptadores y controles de seguridad específicos.
+
+SSE y JSONL tienen soporte mediante bindings. Los métodos de los workflows HTTP se rigen por su contrato; esto no implica soporte de métodos arbitrarios.
 
 ## Categorías OWASP futuras
 
@@ -51,8 +49,7 @@ Quedan fuera del MVP las siguientes categorías del OWASP GenAI LLM Top 10 (2026
 ## Capacidades avanzadas del scanner
 
 - Soporte para agentes complejos.
-- Herramientas externas invocadas por el target.
-- RAG avanzado.
+- Ampliar la evaluación de RAG y herramientas más allá de las observaciones declaradas por el target.
 - Ejecuciones programadas.
 - Monitorización continua.
 - Comparación entre versiones de una aplicación.
@@ -65,7 +62,7 @@ Quedan fuera del MVP las siguientes categorías del OWASP GenAI LLM Top 10 (2026
 - Multi-tenancy.
 - AWS Secrets Manager para almacenar y gestionar secretos, junto con AWS KMS para gestionar las claves de cifrado.
 - Políticas avanzadas de retención y auditoría.
-- Despliegue completo y operación productiva en AWS.
+- Validación de restauración aislada y operación a escala sobre el despliegue de referencia.
 
 ## Ejecución y operación de scans
 
@@ -104,6 +101,6 @@ Cada evolución deberá analizarse considerando:
 - Complejidad.
 - Dependencias.
 - Impacto en seguridad.
-- Aportación al TFM o a una versión posterior del producto.
+- Aportación a una versión posterior del producto.
 
 La priorización definitiva queda como **Pendiente de decisión**.

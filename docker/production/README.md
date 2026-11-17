@@ -1,24 +1,10 @@
-# Producción académica: guía y despliegue observado
+# Despliegue y operación
 
 Contrato: [aws-production-readiness](../../openspec/changes/aws-production-readiness/design.md).
 Guía de compilación y ejecución local: [README raíz](../../Readme.md).
 No ejecutar comandos AWS sin autorización independiente de cuenta/región/coste/dominio.
 
-Despliegue real comunicado por el operador el 2026-10-20: [https://llmscannerseguridad.com](https://llmscannerseguridad.com),
-en eu-north-1, EC2 m7i-flex.large/AL2023 x86_64, Docker25.0.14/Compose v2.40.3.
-Requiere Basic Auth de prueba, entregable únicamente por canal privado; entrega efectiva al tribunal no acreditada. [Evidencia consolidada](../../openspec/changes/aws-production-readiness/evidence/2026-10-20-aws-deployment.md):
-ECR privado por digest, EBS30GB/XFS, volumen `llm-scanner-pgdata`, SecureString→tmpfs,
-Systems Manager y HTTPS operativo; sin demo ni evaluator activo por defecto.
-Incidencias resueltas: rollback inicial t3.medium y lectura de privkey.pem por UID101.
-Certificado Let's Encrypt expira el 2027-01-18; renovación manual DNS-01/Cloudflare,
-no automática, responsabilidad del operador del proyecto. Review: 1.1/6.2 completas,
-6.4 completa en preparación técnica y 6.1 completada, **24/25 completas**. Solo queda
-restore aislado (6.3). Certbot en Docker + DNS-01 disponible y procedimiento validado,
-según confirmación del operador. La guía siguiente no es una nueva ejecución.
-Despliegue académico autorizado, Free Plan/créditos sin migración voluntaria autorizada
-a Paid Plan ni gasto exacto medido. Mantener URL hasta finalizar entrega/evaluación;
-después podrán detenerse o retirarse recursos innecesarios. El acceso académico está preparado;
-la entrega efectiva de credenciales es administrativa y no reabre 6.4.
+La [validación de despliegue en AWS](../../openspec/changes/aws-production-readiness/evidence/2026-10-20-aws-deployment.md) registró una EC2 en `eu-north-1`, ECR privado por digest, Nginx/Angular, Spring Boot y PostgreSQL sobre EBS. La entrada usa HTTPS y Basic Auth; el evaluador estaba desactivado y la demo no formaba parte del despliegue. Es evidencia de la revisión validada en esa fecha, no una comprobación de disponibilidad actual. La renovación TLS es manual con Certbot y DNS-01. No se ha validado una restauración aislada.
 
 En documentación pública usar `<aws-account-id>`, `<instance-id>` y `<public-ip>` cuando
 sean necesarios; para ECR, `<aws-account-id>.dkr.ecr.eu-north-1.amazonaws.com/<service>@sha256:<digest>`.
@@ -83,8 +69,8 @@ Ficheros de secreto separados (ningún valor real en Git/imagen/argv/logs):
 
 Admin y app deben ser contraseñas nuevas distintas, al menos24 caracteres, sin reutilizar
 las del Compose de desarrollo. Mantener la misma clave AES entre reinicios/restauración;
-no generarla en cada arranque. No existe autorización por usuario/Project en Spring:
-las credenciales Basic Auth son acceso compartido académico y se entregan por canal privado.
+no generarla en cada arranque. No existe autorización por usuario/Project en Spring.
+Las credenciales de Basic Auth se gestionan y comparten por un canal privado.
 
 ## Secretos AWS, IAM y volumen
 
@@ -103,7 +89,7 @@ ARM y no corresponde a la AMI x86_64 actual. No se cambia AMI ni arquitectura.
 La elegibilidad Free Tier depende de cuenta/región y debe comprobarse antes de cada
 despliegue; no garantiza coste cero del conjunto ni acredita un despliegue completado.
 Estos hechos son aportados por el operador, sin consulta AWS en esta actualización.
-IP del tribunal no requerida. RestrictIngressIp=true exige ReviewerCidr;
+La lista de IP permitidas es opcional. RestrictIngressIp=true exige ReviewerCidr;
 ese modo opcional no sustituye Basic Auth. Sin IPv6/AAAA ni puertos SSH/HTTP/backend/PG.
 
 Rol de instancia: canales ssmmessages y UpdateInstanceInformation explícitos (sin política
@@ -300,12 +286,8 @@ requiere restauración/plan aprobado, nunca migración inversa improvisada.
 Backup: con aprobación, snapshot cifrado coherente con PG detenido o pg_dump protegido fuera
 de Git; custodiar la misma AES separadamente. Probar restore en volumen/entorno aislado antes de
 afirmar recuperabilidad. CloudFormation retiene datos/ECR; conservarlos puede seguir generando coste
-con EC2 parada. El despliegue y URL reales comunicados constan en la evidencia enlazada;
-AMI real e imágenes por digest aceptadas por review. Contexto económico Free Plan/créditos,
-ventana hasta finalizar evaluación/entrega y responsable operativo documentados arriba.
-6.1 completada con confirmación de Certbot en Docker + DNS-01; solo queda restore aislado,
-recarga de proyecto o reinicio simple no
-constituyen restore. Entrega administrativa de credenciales y TFM completo no acreditados.
+con EC2 parada. La persistencia básica observada no acredita recuperación ante un fallo.
+Recargar un proyecto o reiniciar el servicio no sustituye un restore aislado.
 
 ## Pruebas sin AWS
 

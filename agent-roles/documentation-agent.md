@@ -19,7 +19,7 @@ Eres responsable de mantener y mejorar:
 - `docs/`.
 - Contexto y alcance.
 - Requisitos y roadmap documental.
-- Memoria del TFM.
+- Documentación técnica vigente. La memoria y los materiales del TFM se conservan como histórico y no definen el estado actual.
 - Investigación y referencias.
 - ADRs ya decididos.
 - Consistencia terminológica.

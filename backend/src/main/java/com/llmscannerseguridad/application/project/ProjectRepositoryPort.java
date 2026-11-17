@@ -12,6 +12,8 @@ public interface ProjectRepositoryPort {
 
     Optional<Project> findById(UUID id);
 
+    boolean lockForDependentWrite(UUID id);
+
     // Orden por createdAt descendente y UUID canónico ascendente.
     List<Project> findAllOrdered();
 }

@@ -128,6 +128,63 @@ paths:
               example: {code: PROJECT_NOT_FOUND, message: El proyecto no existe., fieldErrors: []}
         '500':
           $ref: '#/components/responses/InternalError'
+    delete:
+      operationId: deleteProject
+      summary: Eliminar un proyecto con sus datos dependientes
+      description: >
+        Borrado transaccional en la base activa. Conserva el catálogo compartido.
+        Aplica el perímetro de operador existente. Ante una respuesta ambigua,
+        consultar el listado antes de enviar otro DELETE.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+            pattern: '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+      responses:
+        '204':
+          description: Borrado confirmado sin cuerpo.
+          headers:
+            Cache-Control:
+              schema: {type: string, const: no-store}
+        '400':
+          description: INVALID_PROJECT_ID.
+          headers:
+            Cache-Control:
+              schema: {type: string, const: no-store}
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: PROJECT_NOT_FOUND, incluso al repetir el borrado.
+          headers:
+            Cache-Control:
+              schema: {type: string, const: no-store}
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: SCAN_ALREADY_ACTIVE si hay un análisis pendiente o en ejecución, o PROJECT_DELETE_CONFLICT si una FK impide el borrado.
+          headers:
+            Cache-Control:
+              schema: {type: string, const: no-store}
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: INTERNAL_ERROR sin detalles internos.
+          headers:
+            Cache-Control:
+              schema: {type: string, const: no-store}
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
   /api/projects/{projectId}/target:
     parameters:
       - in: path
@@ -1406,7 +1463,7 @@ components:
       properties:
         code:
           type: string
-          enum: [INVALID_REQUEST, VALIDATION_ERROR, INVALID_PROJECT_ID, PROJECT_NOT_FOUND, TARGET_NOT_CONFIGURED, TARGET_ALREADY_CONFIGURED, TARGET_TYPE_REQUIRED, TARGET_TYPE_CHANGED, INTERNAL_ERROR]
+          enum: [INVALID_REQUEST, VALIDATION_ERROR, INVALID_PROJECT_ID, PROJECT_NOT_FOUND, PROJECT_DELETE_CONFLICT, SCAN_ALREADY_ACTIVE, TARGET_NOT_CONFIGURED, TARGET_ALREADY_CONFIGURED, TARGET_TYPE_REQUIRED, TARGET_TYPE_CHANGED, INTERNAL_ERROR]
         message:
           type: string
           description: Explicación comprensible en español.

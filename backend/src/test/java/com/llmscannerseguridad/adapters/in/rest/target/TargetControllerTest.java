@@ -51,6 +51,7 @@ class TargetControllerTest {
     @BeforeEach
     void setUp() {
         when(projects.findById(projectId)).thenReturn(Optional.of(new Project(projectId, "Proyecto", null, now, now)));
+        when(projects.lockForDependentWrite(projectId)).thenReturn(true);
         when(targets.findByProjectId(projectId)).thenAnswer(call -> Optional.ofNullable(saved.get()));
         doAnswer(call -> { saved.set(call.getArgument(0)); return null; }).when(targets).insert(any());
         when(targets.replace(any(), any())).thenAnswer(call -> { saved.set(call.getArgument(0)); return true; });

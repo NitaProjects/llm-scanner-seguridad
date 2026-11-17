@@ -2,7 +2,7 @@
 
 Este backlog representa un roadmap de alto nivel. Las tareas concretas de implementación se definirán mediante cambios OpenSpec.
 
-El backend core de estas épicas está aprobado e implementado mediante `project-management`, `target-configuration`, `scan-execution`, `security-test-execution`, `evaluation-engine`, `scoring-engine` y `reporting`. Sus contratos están en `openspec/changes/`; `openspec/specs/` sigue sin specs consolidadas. Frontend/dashboard y demo vulnerable permanecen en progreso; procedimientos completos de instalación/ejecución, experimento, operación real de OpenAI y entrega final siguen pendientes. Las épicas siguientes describen el roadmap y no implican que todo el producto esté completado.
+Las épicas describen el alcance inicial y las líneas de evolución. Consulta el [README](../../Readme.md) para ver las capacidades disponibles y la evidencia de validación, y OpenSpec para distinguir qué se ha implementado y qué sigue pendiente.
 
 ## Gestión de proyectos
 
@@ -48,4 +48,4 @@ Proteger la plataforma y sus integraciones, incluyendo autorización, SSRF, lím
 
 Preparar la ejecución local y definir posteriormente el despliegue final en AWS.
 
-AWS es el destino previsto. La arquitectura concreta de despliegue, la custodia operativa de claves y el nivel de automatización quedan como **Pendiente de decisión**; el despliegue real sigue pendiente.
+La [guía de despliegue](../../docker/production/README.md) recoge la topología registrada en AWS. La automatización adicional y la operación a escala quedan como evolución futura.

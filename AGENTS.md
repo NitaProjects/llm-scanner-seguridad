@@ -8,7 +8,7 @@ LLM Scanner Seguridad es una aplicación web defensiva para analizar aplicacione
 
 El sistema permite configurar un endpoint autorizado, ejecutar pruebas de seguridad controladas, evaluar las respuestas obtenidas, registrar hallazgos y generar resultados e informes accionables.
 
-El proyecto se desarrolla como parte de un Trabajo Fin de Máster. Las decisiones técnicas deben favorecer la trazabilidad, la reproducibilidad, la seguridad, la mantenibilidad y la facilidad de evaluación académica.
+LLM Scanner Seguridad es un proyecto personal de ingeniería de software y seguridad de aplicaciones LLM. Las decisiones técnicas deben favorecer la trazabilidad, la reproducibilidad, la seguridad y la mantenibilidad.
 
 La aplicación no debe utilizarse para atacar sistemas ajenos. Todas las pruebas deben ejecutarse únicamente contra aplicaciones propias, autorizadas o preparadas específicamente para pruebas, como `demo-vulnerable/`.
 
@@ -19,12 +19,12 @@ La aplicación no debe utilizarse para atacar sistemas ajenos. Todas las pruebas
 - `demo-vulnerable/`: aplicación deliberadamente vulnerable para demostraciones y pruebas reproducibles.
 - `docker/`: infraestructura y configuración del entorno local.
 - `openspec/`: especificaciones funcionales del producto y cambios en curso.
-- `docs/`: memoria del TFM, investigación, diagramas y documentación consolidada.
+- `docs/`: documentación vigente de arquitectura, seguridad, evaluación, integración y operación. El [índice](docs/README.md) distingue el material histórico.
 - `.github/workflows/`: automatizaciones de CI/CD, cuando se soliciten y estén definidas.
 - `README.md` o `Readme.md`: introducción y guía general del proyecto.
 - `AGENTS.md`: contexto e instrucciones para agentes de IA.
 
-En el estado actual, `openspec/specs/` aún no contiene specs consolidadas. Los contratos funcionales aprobados están en `openspec/changes/<cambio>/specs/<capacidad>/spec.md`, junto con los diseños, aprobaciones y registros de implementación. El backend core está aprobado e implementado por `project-management`, `target-configuration`, `scan-execution`, `security-test-execution`, `evaluation-engine`, `scoring-engine` y `reporting`. Los contratos deben leerse junto con sus extensiones posteriores, conservando el alcance histórico de cada incremento. La sincronización a `openspec/specs/` y el archivo de changes podrán realizarse posteriormente según el workflow, sin reescribir históricos. `docs/` contiene la documentación académica, investigativa, explicativa y arquitectónica consolidada.
+OpenSpec es la fuente de verdad de los cambios funcionales. `openspec/specs/` contiene los contratos consolidados. `openspec/changes/` conserva los cambios en curso y los contratos aprobados aún no consolidados; `openspec/changes/archive/` conserva el alcance y la evidencia de cada incremento cerrado. Consulta cada contrato junto con sus extensiones posteriores y no reescribas cambios archivados para corregir documentación vigente.
 
 Si existe una contradicción entre el código y una especificación o decisión documentada, debe señalarse antes de cambiar el comportamiento.
 
@@ -36,7 +36,7 @@ Si existe una contradicción entre el código y una especificación o decisión 
 - Persistencia: PostgreSQL 16.
 - Migraciones: Flyway.
 - Entorno local: Docker Compose.
-- Despliegue final previsto: AWS.
+- Despliegue de referencia documentado en AWS; su evidencia corresponde a la revisión validada, no a la disponibilidad actual.
 - API: REST y JSON, documentada mediante `docs/05-api/openapi.yaml`.
 - Desarrollo guiado por especificaciones: OpenSpec con esquema `spec-driven`.
 
@@ -57,7 +57,7 @@ Al implementar funcionalidades nuevas:
 - Preferir soluciones simples, explícitas y fáciles de probar.
 - No refactorizar código no relacionado con la petición.
 
-El diseño de un cambio en curso se registra en su `openspec/changes/<cambio>/design.md`. Las decisiones arquitectónicas estables y relevantes para el TFM se registran en `docs/02-arquitectura/decisiones/` mediante una ADR. No duplicar contenido sin necesidad; relacionar ambos documentos cuando proceda.
+El diseño de un cambio en curso se registra en su `openspec/changes/<cambio>/design.md`. Las decisiones arquitectónicas estables del producto se registran en `docs/02-arquitectura/decisiones/` mediante una ADR. No duplicar contenido sin necesidad; relacionar ambos documentos cuando proceda.
 
 Cada ADR o decisión arquitectónica importante debe incluir una sección **Fuera del MVP / Evolución futura** cuando existan alternativas, extensiones o funcionalidades relacionadas que no formen parte del alcance actual.
 
@@ -72,9 +72,11 @@ El flujo principal del MVP es:
 5. Registrar peticiones, respuestas, evaluaciones y evidencias.
 6. Calcular resultados y niveles de riesgo.
 7. Generar el informe estructurado y confirmar score, informe y Scan COMPLETED conjuntamente.
-8. Mostrar los hallazgos en el frontend (integración en progreso).
+8. Consultar los hallazgos y el informe en el frontend.
 
-El backend core implementa ejecución asíncrona, evaluación híbrida, `scoring-v1` e informe estructurado `report-v1`. Cada Scan nuevo COMPLETED requiere cuatro ejecuciones y cuatro evaluaciones COMPLETED, ScanScore y SecurityReport íntegros; score, informe y cierre se confirman juntos. Un fallo técnico global puede llevar a FAILED; un fallo/degradación LLM puede consolidar INCONCLUSIVE o VULNERABLE según las reglas sin implicar Scan FAILED. El score es heurístico, no una probabilidad; cero no acredita seguridad. El frontend, la demo vulnerable y la entrega final siguen en progreso o pendientes. Exportaciones HTML/Markdown/PDF, operación real de OpenAI y AWS no se dan por completados.
+El backend implementa ejecución asíncrona, evaluación híbrida, `scoring-v1` e informe estructurado `report-v1`. Cada Scan nuevo `COMPLETED` requiere cuatro ejecuciones y cuatro evaluaciones `COMPLETED`, `ScanScore` y `SecurityReport` íntegros; score, informe y cierre se confirman juntos. Un fallo técnico global puede llevar a `FAILED`; un fallo del evaluador puede consolidar `INCONCLUSIVE` o `VULNERABLE` según las reglas sin implicar `FAILED`. El score es heurístico y cero no acredita seguridad. El [README](Readme.md) distingue validación local con la demo, pruebas con proveedores y despliegue histórico. Las exportaciones HTML/Markdown/PDF siguen fuera del alcance actual.
+
+El [contrato de integración](docs/05-api/target-contract.md) describe REST `POST` JSON, Chat Completions compatible con OpenAI y bindings operativos para SSE/JSONL, variables de sesión, workflows de varios pasos, cookies, CSRF, cabeceras dinámicas y observaciones de recuperación de contexto y herramientas. Configurar un binding no autoriza tráfico ni amplía el catálogo fijo de cuatro pruebas.
 
 Las primeras categorías de análisis son:
 
@@ -106,6 +108,8 @@ La seguridad es parte del producto y también del propio scanner.
 
 La aplicación debe dejar claro que el usuario solo debe analizar sistemas propios o autorizados.
 
+El repositorio es público. No incluir credenciales reales, secretos, enlaces privados, datos personales innecesarios ni identificadores internos que no aporten valor. Usar ejemplos sintéticos claramente identificados. Ante un posible secreto en Git, registrar solo ruta y naturaleza del dato; recomendar rotación y evaluar el saneamiento por separado. Quitar el valor del árbol actual no lo elimina del historial.
+
 ## Flyway y base de datos
 
 Las migraciones oficiales de Flyway se almacenan en:
@@ -128,7 +132,7 @@ Los datos de demostración y scripts auxiliares pueden ubicarse en `database/` s
 
 ## Historias de usuario y requisitos
 
-Las especificaciones y criterios de aceptación aprobados se encuentran actualmente en los cambios de `openspec/changes/`; `openspec/specs/` queda destinado a su consolidación posterior. Deben incluir, como mínimo:
+Consulta `openspec/specs/` para los contratos consolidados y `openspec/changes/` para cambios en curso o todavía no consolidados. Las historias y requisitos deben incluir, como mínimo:
 
 - Identificador y título.
 - Rol, necesidad y beneficio.
@@ -136,7 +140,7 @@ Las especificaciones y criterios de aceptación aprobados se encuentran actualme
 - Prioridad.
 - Dependencias o relaciones relevantes.
 
-`docs/00-contexto/backlog.md` puede contener únicamente un roadmap de alto nivel del TFM. Las tareas concretas de implementación deben vivir en el `tasks.md` del cambio OpenSpec correspondiente.
+`docs/00-contexto/backlog.md` contiene únicamente un roadmap de alto nivel del producto. Las tareas concretas de implementación viven en el `tasks.md` del cambio OpenSpec correspondiente.
 
 No modificar requisitos, prioridades, estimaciones, criterios de aceptación ni decisiones arquitectónicas sin autorización explícita.
 
@@ -155,8 +159,6 @@ La evaluación no debe depender exclusivamente de un LLM. Cuando sea posible, co
 La metodología de evaluación y la investigación sobre IA se documentan en `docs/04-ia/`. Los requisitos y cambios funcionales de los evaluadores se especifican en OpenSpec. Los prompts de evaluación y los casos de prueba deben estar versionados y documentados en el lugar correspondiente, sin incluir secretos ni datos reales sensibles.
 
 Las respuestas del objetivo deben considerarse contenido no confiable y estar claramente delimitadas en los prompts del evaluador para reducir prompt injection indirecta.
-
-Antes de marcar el proyecto como preparado para entrega o realizar cambios relacionados con la documentación final, revisar `docs/08-entrega-tfm/checklist-entrega.md`.
 
 ## Forma de trabajar
 
@@ -245,10 +247,8 @@ Al finalizar una tarea o change:
 
 1. Revisa si el trabajo realizado invalida o modifica documentación existente.
 2. Actualiza únicamente la documentación directamente afectada.
-3. Si cambia el estado de algún requisito oficial del TFM, actualiza:
-   `docs/08-entrega-tfm/checklist-entrega.md`
-4. No marques requisitos como COMPLETADO sin evidencia real en el repositorio.
-5. No actualices documentación no relacionada únicamente por mantenimiento preventivo.
+3. Distingue implementación, validación local y despliegue, y no marques requisitos como completados sin evidencia.
+4. No actualices documentación no relacionada únicamente por mantenimiento preventivo.
 
 ## Fuentes de verdad
 
@@ -257,7 +257,7 @@ Antes de realizar cambios, utiliza este orden de prioridad:
 1. `AGENTS.md` → reglas generales de trabajo.
 2. `openspec/` → requisitos y cambios implementables aprobados.
 3. `docs/02-arquitectura/decisiones/` → decisiones arquitectónicas y ADRs.
-4. `docs/` → contexto técnico, académico, investigación y documentación ampliada.
+4. `docs/` → contexto técnico, investigación y documentación ampliada.
 5. Código existente → comportamiento realmente implementado.
 
 Si existe una contradicción entre OpenSpec, documentación y código:
@@ -284,38 +284,19 @@ No conviertas una suposición en arquitectura permanente.
 
 ## Flujo OpenSpec
 
-Para funcionalidades nuevas o cambios relevantes:
+Para funcionalidades nuevas o cambios relevantes, seguir: **arquitectura → especificación → implementación → pruebas → revisión → archivo**.
 
-1. Revisar documentación y decisiones existentes.
-2. Crear o utilizar el change OpenSpec correspondiente.
-3. Definir requisitos.
-4. Definir diseño.
-5. Definir tareas.
-6. Revisar el change.
-7. Implementar únicamente después de que el change esté aprobado.
-8. Al finalizar, comprobar que código, OpenSpec y documentación siguen alineados.
+1. **Arquitectura:** revisar los contratos y decisiones existentes; registrar el diseño en el change y, cuando proceda, en una ADR.
+2. **Especificación:** definir requisitos, criterios verificables y tareas del change. Implementar solo cuando esté aprobado.
+3. **Implementación:** completar el alcance aprobado y mantener alineados código, contrato y documentación afectada.
+4. **Pruebas:** ejecutar solo las comprobaciones solicitadas explícitamente; registrar qué pasó y qué quedó sin verificar.
+5. **Revisión:** contrastar implementación, evidencia y documentación con la especificación antes de cerrar tareas.
+6. **Archivo:** tras aceptar el cambio, consolidar y archivar según el workflow OpenSpec cuando se solicite; conservar los registros históricos.
 
 No implementar funcionalidades nuevas importantes directamente desde una conversación si deberían estar especificadas en OpenSpec.
 
-Si una modificación documental cambia o concreta requisitos implementables, debe comprobarse si requiere actualizar un change OpenSpec. La documentación académica o técnica no sustituye a la especificación implementable.
+Si una modificación documental cambia o concreta requisitos implementables, comprobar si requiere actualizar un change OpenSpec. La documentación descriptiva no sustituye a la especificación implementable.
 
-## Contexto TFM
+## Material histórico
 
-Este repositorio corresponde al TFM **LLM Scanner Seguridad**.
-
-Mantener separados:
-
-- requisitos del producto;
-- arquitectura y desarrollo;
-- investigación académica;
-- requisitos administrativos de entrega del TFM.
-
-Los requisitos oficiales de entrega se encuentran en:
-
-`docs/08-entrega-tfm/`
-
-Antes de considerar el proyecto preparado para entrega revisar:
-
-`docs/08-entrega-tfm/checklist-entrega.md`
-
-No convertir requisitos académicos como slides, vídeo o formulario de entrega en funcionalidades del producto.
+La memoria, la entrega del TFM y sus evidencias se conservan como antecedentes. No definen el estado operativo del proyecto ni introducen requisitos vigentes. No reabrir sus tareas al documentar la evolución del producto.

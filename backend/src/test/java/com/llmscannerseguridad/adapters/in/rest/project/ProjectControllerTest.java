@@ -40,6 +40,8 @@ import static org.mockito.Mockito.when;
 class ProjectControllerTest {
 
     private final ProjectRepositoryPort repository = mock(ProjectRepositoryPort.class);
+    private final com.llmscannerseguridad.application.project.ProjectDeletionPort deletion =
+            mock(com.llmscannerseguridad.application.project.ProjectDeletionPort.class);
     private final UUID id = UUID.fromString("b33bfe85-a166-4bef-bb36-184a1c27e322");
     private final Instant now = Instant.parse("2026-10-09T10:00:00.123456Z");
     private MockMvc mvc;
@@ -48,8 +50,36 @@ class ProjectControllerTest {
     void setUp() {
         var create = new CreateProjectService(repository, Clock.fixed(now, ZoneOffset.UTC), () -> id);
         var controller = new ProjectController(create, new GetProjectUseCase(repository),
-                new ListProjectsUseCase(repository), JsonMapper.builder().build());
+                new ListProjectsUseCase(repository), new com.llmscannerseguridad.application.project.DeleteProjectUseCase(deletion),
+                JsonMapper.builder().build());
         mvc = MockMvcBuilders.standaloneSetup(controller).setControllerAdvice(new ProjectExceptionHandler()).build();
+    }
+
+    @Test
+    void deleteUsesProjectErrorContractAndNeverReturnsABodyForSuccess() throws Exception {
+        var path = "/api/projects/" + id;
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/projects/bad"))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("INVALID_PROJECT_ID"))
+                .andExpect(header().string("Cache-Control", "no-store"));
+        verifyNoInteractions(deletion);
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete(path))
+                .andExpect(status().isNoContent()).andExpect(content().string(""))
+                .andExpect(header().string("Cache-Control", "no-store"));
+        for (var reason : com.llmscannerseguridad.application.project.ProjectDeletionException.Reason.values()) {
+            doThrow(new com.llmscannerseguridad.application.project.ProjectDeletionException(reason)).when(deletion).delete(id);
+            expectDeleteError(path, 409, reason.name());
+        }
+        doThrow(new com.llmscannerseguridad.application.project.ProjectNotFoundException()).when(deletion).delete(id);
+        expectDeleteError(path, 404, "PROJECT_NOT_FOUND");
+        doThrow(new IllegalStateException("SQL detail")).when(deletion).delete(id);
+        expectDeleteError(path, 500, "INTERNAL_ERROR");
+    }
+
+    private void expectDeleteError(String path, int statusCode, String code) throws Exception {
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete(path))
+                .andExpect(status().is(statusCode)).andExpect(header().string("Cache-Control", "no-store"))
+                .andExpect(jsonPath("$", aMapWithSize(3))).andExpect(jsonPath("$.code").value(code))
+                .andExpect(jsonPath("$.fieldErrors", hasSize(0)));
     }
 
     @Test
