@@ -45,7 +45,33 @@ describe('Frontend routes and HTTP flows', () => {
     const page = await harness.navigateByUrl(`/projects/${projectId}/target`, TargetPage); http.expectOne(projectPath).flush(project); http.expectOne(projectPath + '/target').flush({ code: 'TARGET_NOT_CONFIGURED', message: 'Public', fieldErrors: [] }, { status: 404, statusText: 'Not Found' }); harness.detectChanges(); const form = page.editor()!; form.form.patchValue({ url: target().url, requestTemplate: target().requestTemplate, responsePath: '$.text' }); form.submit(); http.expectOne(projectPath + '/target').flush({ code: 'TARGET_ALREADY_CONFIGURED', message: 'Public', fieldErrors: [] }, { status: 409, statusText: 'Conflict' }); harness.detectChanges(); expect(page.reconcileRequired()).toBe(true); http.expectNone(request => request.method === 'PUT'); page.load(); http.expectOne(projectPath).flush(project); http.expectOne(projectPath + '/target').flush(target()); harness.detectChanges(); expect(page.target().data).toEqual(target());
   });
   it('Target CanDeactivate preserves the page on cancelled navigation and clears the secret', async () => {
-    const page = await harness.navigateByUrl(`/projects/${projectId}/target`, TargetPage); http.expectOne(projectPath).flush(project); http.expectOne(projectPath + '/target').flush(target('BEARER_TOKEN')); harness.detectChanges(); page.editor()!.form.markAsDirty(); page.editor()!.form.controls.secretValue.setValue('synthetic-token'); vi.spyOn(window, 'confirm').mockReturnValue(false); await harness.navigateByUrl('/unknown'); expect(TestBed.inject(Router).url).toBe(`/projects/${projectId}/target`); expect(page.editor()!.form.controls.secretValue.value).toBe('');
+    const page = await harness.navigateByUrl(`/projects/${projectId}/target`, TargetPage); http.expectOne(projectPath).flush(project); http.expectOne(projectPath + '/target').flush(target('BEARER_TOKEN')); harness.detectChanges();
+    const dialog = mockLeaveDialog();
+    page.editor()!.form.markAsDirty(); page.editor()!.form.controls.secretValue.setValue('synthetic-token');
+    const confirm = vi.spyOn(window, 'confirm');
+    const navigation = harness.navigateByUrl('/unknown');
+    await vi.waitFor(() => expect(dialog.showModal).toHaveBeenCalledTimes(1));
+    dialog.querySelector<HTMLButtonElement>('button.secondary')!.click();
+    await navigation;
+    expect(TestBed.inject(Router).url).toBe(`/projects/${projectId}/target`);
+    expect(page.editor()!.form.controls.secretValue.value).toBe(''); expect(confirm).not.toHaveBeenCalled();
+    http.expectNone(request => request.method !== 'GET');
+  });
+  function mockLeaveDialog() {
+    const dialog = harness.routeNativeElement!.querySelector<HTMLDialogElement>('.leave-dialog')!;
+    Object.defineProperty(dialog, 'showModal', { configurable: true, value: vi.fn(() => dialog.setAttribute('open', '')) });
+    Object.defineProperty(dialog, 'close', { configurable: true, value: vi.fn(() => dialog.removeAttribute('open')) });
+    return dialog;
+  }
+  it('Target Cancel uses the same guard once and only leaves after explicit discard', async () => {
+    const page = await harness.navigateByUrl(`/projects/${projectId}/target`, TargetPage); http.expectOne(projectPath).flush(project); http.expectOne(projectPath + '/target').flush(target()); harness.detectChanges();
+    const dialog = mockLeaveDialog(); page.editor()!.form.markAsDirty();
+    page.cancel(); await vi.waitFor(() => expect(dialog.showModal).toHaveBeenCalledTimes(1));
+    expect(page.editor()!.form.dirty).toBe(true); http.expectNone(projectPath);
+    const navigated = nextNavigation(); dialog.querySelector<HTMLButtonElement>('.discard-confirm')!.click();
+    await navigated; projectLoaded();
+    expect(TestBed.inject(Router).url).toBe(`/projects/${projectId}`);
+    expect(dialog.showModal).toHaveBeenCalledTimes(1); http.expectNone(request => request.method !== 'GET');
   });
   it('keeps history usable when target fails and never enables start', async () => {
     const component = await harness.navigateByUrl(`/projects/${projectId}`, ProjectPage); http.expectOne(projectPath).flush(project); http.expectOne(projectPath + '/target').flush('Failure', { status: 500, statusText: 'Failure' }); http.expectOne(projectPath + '/scans').flush([scan({ status: 'COMPLETED' })]); harness.detectChanges(); expect(harness.routeNativeElement!.textContent).toContain('Abrir análisis'); expect(harness.routeNativeElement!.textContent).not.toContain('Ejecutar análisis'); component.start(); http.expectNone(request => request.method === 'POST');

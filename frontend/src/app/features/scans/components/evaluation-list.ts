@@ -2,10 +2,10 @@ import { Component, computed, input } from '@angular/core';
 import { EvaluationMetadataDto } from '../models/scan';
 import { StatusBadge } from '../../../shared/ui/status-badge';
 import { confidenceLabel, outcomeLabels, publicReason } from '../../../shared/presentation/labels';
-import { Icon } from '../../../shared/ui/icon';
-@Component({ selector: 'app-evaluation-list', imports: [StatusBadge, Icon], styleUrl: '../../../shared/ui/page.css', template: `
-  @if (rows().length === 0) { <div class="empty-state"><app-icon name="document" class="empty-icon" /><h3>Sin evaluaciones registradas</h3><p>No hay evaluaciones registradas.</p></div> }
-  <ul class="plain-list">@for (item of rows(); track item.id) { <li [id]="'evaluation-' + item.id"><h3>{{ item.category }} · {{ item.securityTestCode }} (revisión {{ item.securityTestRevision }})</h3>
+import { EmptyState } from '../../../shared/ui/empty-state';
+@Component({ selector: 'app-evaluation-list', imports: [StatusBadge, EmptyState], styleUrl: '../../../shared/ui/page.css', template: `
+  @if (rows().length === 0) { <app-empty-state [level]="3" title="Sin evaluaciones registradas" message="No hay evaluaciones registradas." /> }
+  <ul class="plain-list evaluation-list">@for (item of rows(); track item.id) { <li [id]="'evaluation-' + item.id"><h3>{{ item.category }} · {{ item.securityTestCode }} (revisión {{ item.securityTestRevision }})</h3>
     @if (item.status === 'COMPLETED' && item.finalVerdict) { <app-status-badge [badge]="{kind:'verdict',value:item.finalVerdict}" />
       @if (item.confidence !== null) { <p class="meta">{{ confidence(item.confidence) }}</p> }
       @if (item.severity) { <app-status-badge [badge]="{kind:'severity',value:item.severity}" /> }

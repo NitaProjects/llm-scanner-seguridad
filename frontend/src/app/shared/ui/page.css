@@ -18,8 +18,21 @@ nav[aria-label=Ruta]{font-size:var(--text-small);margin-bottom:var(--space-3)}
 dl{display:grid;grid-template-columns:minmax(8rem,1fr) minmax(0,2fr);gap:var(--space-2) var(--space-4);margin:var(--space-4) 0}dt{font-weight:600}dd{margin:0;overflow-wrap:anywhere}
 section{scroll-margin-top:var(--space-4)}
 .empty-state{border:1px solid var(--border);border-radius:var(--radius-panel);background:var(--surface);padding:var(--space-4)}.empty-state p{max-width:56ch;color:var(--muted)}.empty-state>app-icon{color:var(--muted);margin-bottom:var(--space-3)}
-.project-list{display:grid;gap:var(--space-3)}.project-list>li{border:1px solid var(--border);padding:var(--space-4)}.project-list>li:last-child{border-bottom:1px solid var(--border)}.project-list h2{font-size:1.125rem}.project-list .meta{margin:0}
 .project-description{max-width:var(--reading-max);color:var(--muted)}
 .availability{padding:var(--space-3);background:var(--surface-subtle);border-radius:var(--radius-control);color:var(--muted)}.availability[data-tone=PENDING]{color:var(--warning);background:var(--warning-soft)}
 @media(min-width:768px){.card{padding:calc(var(--space-4) + var(--space-1))}.empty-state{padding:var(--space-5)}}
 @media(max-width:767px){.grid,dl{grid-template-columns:1fr}dl{gap:var(--space-1)}dd{margin-bottom:var(--space-3)}}
+.card{box-shadow:var(--shadow-panel)}
+.launch-panel{margin-top:var(--space-5);padding-top:var(--space-5);border-top:1px solid var(--border)}
+.launch-panel h3{margin-bottom:var(--space-2)}
+.anchors{gap:var(--space-2);padding:var(--space-2);background:var(--surface-subtle);border:1px solid var(--border);border-radius:var(--radius-control)}
+.anchors a{padding:var(--space-2) var(--space-3);border-radius:var(--radius-control);text-decoration:none}
+.anchors a:hover{background:var(--accent-soft)}
+.evaluation-list>li,.execution-list>li{padding:var(--space-5);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-panel);margin-bottom:var(--space-3)}
+.evaluation-list>li:last-child,.execution-list>li:last-child{border-bottom:1px solid var(--border)}
+.evaluation-list p:last-child{margin-bottom:0}
+.empty-state{padding:var(--space-6);border-style:dashed;background:var(--surface-subtle)}
+@media(prefers-reduced-motion:no-preference){
+ :host{animation:enter var(--duration-normal) ease-out}
+}
+@media(max-width:767px){.card,.evaluation-list>li,.execution-list>li{padding:var(--space-4)}.page-heading{align-items:flex-start}.page-heading>button{width:100%}.empty-state{padding:var(--space-5)}}

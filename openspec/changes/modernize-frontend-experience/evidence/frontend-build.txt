@@ -1,0 +1,31 @@
+
+> frontend@0.0.0 build
+> ng build
+
+> Building...
+√ Building...
+Initial chunk files | Names          |  Raw size | Estimated transfer size
+chunk-6KTXQFT3.js   | -              | 276.00 kB |                75.57 kB
+main-GVOQYVAI.js    | main           |   7.65 kB |                 2.69 kB
+styles-BN5PVBT7.css | styles         |   4.90 kB |                 1.52 kB
+chunk-EWY2UAI3.js   | -              | 253 bytes |               253 bytes
+
+                    | Initial total  | 288.80 kB |                80.03 kB
+
+Lazy chunk files    | Names          |  Raw size | Estimated transfer size
+chunk-QA2TRYFI.js   | scan-page      |  75.58 kB |                 9.57 kB
+chunk-EYGLOFFU.js   | -              |  43.99 kB |                 9.65 kB
+chunk-K6L7SIBF.js   | target-page    |  35.37 kB |                 7.51 kB
+chunk-2KUL6E4P.js   | projects-page  |  25.50 kB |                 4.89 kB
+chunk-PGVAQUBQ.js   | project-page   |  20.71 kB |                 3.93 kB
+chunk-VYVIV3WB.js   | -              |  13.56 kB |                 4.22 kB
+chunk-RAOYMDUD.js   | -              |   9.12 kB |                 3.20 kB
+chunk-BW4YBV7X.js   | not-found-page |   6.36 kB |                 1.40 kB
+chunk-R2L2YU72.js   | -              |   1.83 kB |               762 bytes
+chunk-PUGYDAPR.js   | -              |   1.33 kB |               630 bytes
+chunk-XKCLKAL7.js   | -              | 779 bytes |               779 bytes
+
+Application bundle generation complete. [2.648 seconds] - 2026-11-19T20:50:01.843Z
+
+Output location: C:\Users\Develop\Desktop\llm-scanner-seguridad\frontend\dist\frontend
+

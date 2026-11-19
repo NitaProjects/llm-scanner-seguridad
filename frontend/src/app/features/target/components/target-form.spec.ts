@@ -17,6 +17,24 @@ describe('TargetForm secrets UX', () => {
       authType: 'BEARER_TOKEN' as const, authConfig: null, hasCredentials: true,
       timeoutMs: 15000, createdAt: legacy.createdAt, updatedAt: legacy.updatedAt };
   }
+  it.each(['REST_LEGACY', 'OPENAI_COMPATIBLE'] as const)('associates errors and invalid state with %s visible controls', async adapterType => {
+    const fixture = TestBed.createComponent(TargetForm);
+    fixture.componentRef.setInput('original', adapterType === 'OPENAI_COMPATIBLE' ? chat() : target());
+    await fixture.whenStable(); fixture.detectChanges();
+    const field = adapterType === 'OPENAI_COMPATIBLE' ? 'endpoint' : 'url';
+    fixture.componentRef.setInput('error', new ApiClientError('backend', 'Revisa la configuración', 400, 'VALIDATION_ERROR', [{ field, code: 'INVALID_FORMAT', message: 'URL no válida' }])); fixture.detectChanges();
+    const input: HTMLInputElement = fixture.nativeElement.querySelector('#target-url');
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(input.getAttribute('data-field')).toBe(field);
+    expect(input.getAttribute('aria-describedby')).toContain('target-url-error');
+    expect(fixture.nativeElement.querySelector('#target-url-error').textContent).toContain('URL no válida');
+    for (const control of fixture.nativeElement.querySelectorAll('input,select,textarea')) {
+      expect(fixture.nativeElement.querySelector(`label[for="${control.id}"]`)).not.toBeNull();
+      for (const id of (control.getAttribute('aria-describedby') ?? '').split(' ').filter(Boolean)) {
+        expect(fixture.nativeElement.querySelector(`#${id}`)).not.toBeNull();
+      }
+    }
+  });
   it('loads chat directly and sends only its discriminated fields without a secret on conservation', async () => {
     const fixture = TestBed.createComponent(TargetForm); fixture.componentRef.setInput('original', chat()); fixture.detectChanges();
     await fixture.whenStable(); fixture.detectChanges();
@@ -72,8 +90,55 @@ describe('TargetForm secrets UX', () => {
     const write = vi.fn(); component.save.subscribe(write); component.submit(); expect(write).not.toHaveBeenCalled(); component.form.controls.secretValue.setValue('synthetic-again'); component.cancelForm(); expect(component.form.controls.secretValue.value).toBe(''); component.form.controls.secretValue.setValue('synthetic-last'); fixture.destroy(); expect(component.form.controls.secretValue.value).toBe('');
     expect(storage).not.toHaveBeenCalled(); expect(log).not.toHaveBeenCalled(); expect(debug).not.toHaveBeenCalled(); expect(errorLog).not.toHaveBeenCalled();
   });
-  it('clears on cancelled and accepted navigation, and confirms only dirty changes', () => {
-    const component = create().componentInstance; const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false); component.form.markAsDirty(); component.form.controls.secretValue.setValue('synthetic'); expect(component.confirmLeave()).toBe(false); expect(component.form.controls.secretValue.value).toBe(''); confirm.mockReturnValue(true); expect(component.confirmLeave()).toBe(true);
+  function leaveFixture() {
+    const fixture = create();
+    const dialog: HTMLDialogElement = fixture.nativeElement.querySelector('.leave-dialog');
+    Object.defineProperty(dialog, 'showModal', { configurable: true, value: vi.fn(() => dialog.setAttribute('open', '')) });
+    Object.defineProperty(dialog, 'close', { configurable: true, value: vi.fn(() => dialog.removeAttribute('open')) });
+    return { fixture, component: fixture.componentInstance, dialog };
+  }
+  it('clears credentials on a pristine exit without opening a confirmation', () => {
+    const { component, dialog } = leaveFixture();
+    component.form.controls.secretValue.setValue('synthetic');
+    expect(component.confirmLeave()).toBe(true);
+    expect(component.form.controls.secretValue.value).toBe('');
+    expect(dialog.showModal).not.toHaveBeenCalled();
+  });
+  it('opens a single accessible modal, focuses the safe action and restores focus when staying', async () => {
+    const { fixture, component, dialog } = leaveFixture();
+    const confirm = vi.spyOn(window, 'confirm');
+    const opener: HTMLInputElement = fixture.nativeElement.querySelector('#target-name');
+    opener.focus(); component.form.markAsDirty(); component.form.controls.secretValue.setValue('synthetic');
+    const decision = component.confirmLeave();
+    expect(component.confirmLeave()).toBe(decision);
+    expect(dialog.showModal).toHaveBeenCalledTimes(1);
+    expect(dialog.getAttribute('aria-labelledby')).toBe('leave-title');
+    expect(dialog.getAttribute('aria-describedby')).toBe('leave-description');
+    expect(document.activeElement).toBe(dialog.querySelector('button.secondary'));
+    expect(component.form.controls.secretValue.value).toBe('');
+    dialog.querySelector<HTMLButtonElement>('button.secondary')!.click();
+    expect(await decision).toBe(false); expect(component.form.dirty).toBe(true);
+    expect(document.activeElement).toBe(opener); expect(confirm).not.toHaveBeenCalled();
+  });
+  it('only authorizes leaving after the explicit discard action', async () => {
+    const { component, dialog } = leaveFixture(); component.form.markAsDirty();
+    const decision = component.confirmLeave();
+    dialog.querySelector<HTMLButtonElement>('.discard-confirm')!.click();
+    expect(await decision).toBe(true); expect(dialog.close).toHaveBeenCalledTimes(1);
+  });
+  it('treats Escape as staying and keeps non-secret draft fields intact', async () => {
+    const { component, dialog } = leaveFixture(); component.form.controls.name.setValue('Borrador'); component.form.markAsDirty();
+    const decision = component.confirmLeave(); const event = new Event('cancel', { cancelable: true });
+    dialog.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(true); expect(await decision).toBe(false);
+    expect(component.form.controls.name.value).toBe('Borrador'); expect(component.form.dirty).toBe(true);
+  });
+  it('fails closed when the dialog closes without confirmation or its owner is destroyed', async () => {
+    const { fixture, component, dialog } = leaveFixture(); component.form.markAsDirty();
+    const closed = component.confirmLeave(); dialog.close(); dialog.dispatchEvent(new Event('close'));
+    expect(await closed).toBe(false);
+    const destroyed = component.confirmLeave(); fixture.destroy();
+    expect(await destroyed).toBe(false); expect(component.form.controls.secretValue.value).toBe('');
   });
   it('changing original project metadata resets the local draft and secret', () => {
     const fixture = create(); fixture.componentInstance.form.controls.secretValue.setValue('synthetic'); fixture.componentRef.setInput('original', target('NONE')); fixture.detectChanges(); expect(fixture.componentInstance.form.controls.secretValue.value).toBe(''); expect(fixture.componentInstance.form.pristine).toBe(true);

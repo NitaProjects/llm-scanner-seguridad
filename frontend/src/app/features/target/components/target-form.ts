@@ -1,4 +1,4 @@
-import { Component, DestroyRef, ElementRef, computed, effect, inject, input, output, signal } from '@angular/core';
+import { Component, DestroyRef, ElementRef, computed, effect, inject, input, output, signal, viewChild } from '@angular/core';
 import { FormArray, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ApiClientError, FieldName } from '../../../core/api/api-error';
@@ -10,6 +10,11 @@ export class TargetForm {
   readonly original = input<TargetConfigurationDto | null>(null); readonly busy = input(false); readonly blocked = input(false); readonly error = input<ApiClientError | null>(null);
   readonly save = output<UpdateTargetRequest>(); readonly cancel = output<void>();
   private readonly element = inject<ElementRef<HTMLElement>>(ElementRef); private readonly revision = signal(0); readonly submitted = signal(false);
+  private readonly leaveDialog = viewChild.required<ElementRef<HTMLDialogElement>>('leaveDialog');
+  private readonly keepEditing = viewChild.required<ElementRef<HTMLButtonElement>>('keepEditing');
+  private leaveDecision?: Promise<boolean>;
+  private resolveLeave?: (leave: boolean) => void;
+  private leaveOpener?: HTMLElement;
   readonly isChat = computed(() => { this.revision(); return this.form.controls.adapterType.value === 'OPENAI_COMPATIBLE'; });
   readonly form = new FormGroup({
     adapterType: new FormControl<TargetAdapterType>('REST_LEGACY', { nonNullable: true }),
@@ -75,7 +80,13 @@ export class TargetForm {
       previousType = original?.authType ?? 'NONE'; this.submitted.set(false); this.revision.update(value => value + 1);
     });
     effect(() => { if (this.error()) { this.clearSecret(); this.focusError(); } });
-    inject(DestroyRef).onDestroy(() => this.clearSecret());
+    inject(DestroyRef).onDestroy(() => {
+      this.clearSecret();
+      this.resolveLeave?.(false);
+      this.resolveLeave = undefined;
+      this.leaveDecision = undefined;
+      this.leaveOpener = undefined;
+    });
   }
   private syncAdapterControls() {
     for (const control of [this.form.controls.requestTemplate, this.form.controls.responsePath]) {
@@ -112,9 +123,30 @@ export class TargetForm {
     this.clearSecret(); this.save.emit(request);
   }
   cancelForm() { this.clearSecret(); this.cancel.emit(); }
-  confirmLeave(): boolean {
-    const dirty = this.form.dirty;
+  confirmLeave(): boolean | Promise<boolean> {
     this.clearSecret();
-    return !dirty || window.confirm('Hay cambios sin guardar. ¿Quieres salir y descartarlos?');
+    if (this.leaveDecision) return this.leaveDecision;
+    if (!this.form.dirty) return true;
+    const active = this.element.nativeElement.ownerDocument.activeElement;
+    this.leaveOpener = active instanceof HTMLElement ? active : undefined;
+    this.leaveDecision = new Promise<boolean>(resolve => this.resolveLeave = resolve);
+    this.leaveDialog().nativeElement.showModal();
+    this.keepEditing().nativeElement.focus();
+    return this.leaveDecision;
+  }
+  finishLeave(leave: boolean, event?: Event) {
+    event?.preventDefault();
+    const resolve = this.resolveLeave;
+    if (!resolve) return;
+    const opener = this.leaveOpener;
+    this.resolveLeave = undefined;
+    this.leaveDecision = undefined;
+    this.leaveOpener = undefined;
+    this.leaveDialog().nativeElement.close();
+    if (!leave && opener?.isConnected) opener.focus({ preventScroll: true });
+    resolve(leave);
+  }
+  onLeaveClosed() {
+    if (!this.leaveDialog().nativeElement.open) this.finishLeave(false);
   }
 }

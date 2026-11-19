@@ -18,7 +18,9 @@ export class App {
     router.events.pipe(filter(event => event instanceof NavigationEnd), takeUntilDestroyed()).subscribe(event => {
       const pageUrl = event.urlAfterRedirects.split('#')[0];
       if (pageUrl === this.pageUrl) return;
+      const initialNavigation = this.pageUrl === undefined;
       this.pageUrl = pageUrl;
+      if (initialNavigation) return;
       requestAnimationFrame(() => {
         if (router.url === event.urlAfterRedirects && !router.parseUrl(router.url).fragment) {
           this.element.nativeElement.querySelector<HTMLElement>('h1')?.focus();

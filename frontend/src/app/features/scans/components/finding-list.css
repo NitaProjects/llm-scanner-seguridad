@@ -9,3 +9,7 @@ summary{padding-block:var(--space-4)}
 .finding-detail{padding-block:var(--space-4);border-top:1px solid var(--border)}
 .finding-detail p{max-width:var(--reading-max)}
 .recommendation{padding:var(--space-3);background:var(--surface-subtle);border-radius:var(--radius-control)}
+
+.finding-test{color:var(--muted);font-family:var(--font-mono);font-size:.75rem;flex-basis:100%}summary:hover{color:var(--accent)}
+
+@media(prefers-reduced-motion:no-preference){.finding{animation:enter var(--duration-normal) ease-out}}

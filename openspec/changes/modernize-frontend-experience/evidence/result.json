@@ -1,0 +1,180 @@
+{
+  "change": "modernize-frontend-experience",
+  "date": "2026-11-19",
+  "status": "READY_TO_ARCHIVE",
+  "implementation": "IMPLEMENTED",
+  "acceptance": "FINAL_VERSION_ACCEPTED_MANUALLY_BY_OPERATOR",
+  "tasks": {
+    "completed": 18,
+    "total": 18,
+    "pending": []
+  },
+  "angular": {
+    "filesPassed": 13,
+    "passed": 185,
+    "failed": 0,
+    "skipped": 0,
+    "command": "npm test -- --watch=false",
+    "scope": "Historical evidence before the subsequent unsaved-target dialog and initial heading focus adjustments"
+  },
+  "build": {
+    "result": "PASS",
+    "warnings": 0,
+    "command": "npm run build",
+    "scope": "Historical evidence before the subsequent unsaved-target dialog and initial heading focus adjustments"
+  },
+  "contrast": {
+    "passed": 45,
+    "failed": 0,
+    "method": "Calculated opaque CSS-token pairs; browser audit incomplete",
+    "scope": "Historical evidence before the subsequent unsaved-target dialog and initial heading focus adjustments"
+  },
+  "layout": {
+    "view": "COMPLETED scan with synthetic mixed results",
+    "checks": [
+      {
+        "requestedWidth": 1440,
+        "clientWidth": 1425,
+        "scrollWidth": 1425,
+        "horizontalOverflow": false
+      },
+      {
+        "requestedWidth": 1280,
+        "clientWidth": 1265,
+        "scrollWidth": 1265,
+        "horizontalOverflow": false
+      },
+      {
+        "requestedWidth": 1024,
+        "clientWidth": 1009,
+        "scrollWidth": 1009,
+        "horizontalOverflow": false
+      },
+      {
+        "requestedWidth": 768,
+        "clientWidth": 753,
+        "scrollWidth": 753,
+        "horizontalOverflow": false
+      },
+      {
+        "requestedWidth": 390,
+        "clientWidth": 375,
+        "scrollWidth": 375,
+        "horizontalOverflow": false
+      },
+      {
+        "requestedWidth": 360,
+        "clientWidth": 345,
+        "scrollWidth": 345,
+        "horizontalOverflow": false
+      },
+      {
+        "requestedWidth": 320,
+        "clientWidth": 305,
+        "scrollWidth": 305,
+        "horizontalOverflow": false
+      }
+    ],
+    "otherViews": "PARTIAL",
+    "zoom200": "NOT_VERIFIED",
+    "scope": "Historical evidence before the subsequent unsaved-target dialog and initial heading focus adjustments"
+  },
+  "visual": {
+    "desktopProjects": "PASS",
+    "projectTargetAndHistory": "PASS",
+    "restTargetDesktop": "PASS",
+    "findingKeyboardExpand": "PASS",
+    "reportAccessibilityTreeAndInternalLink": "PASS",
+    "reportViewportScreenshot": "NOT_CAPTURED_AT_FINAL_SCROLL_POSITION",
+    "reducedMotion": "NOT_VERIFIED",
+    "modalKeyboard": "NOT_VERIFIED",
+    "assistiveTechnologyReading": "PARTIAL_AX_TREE_ONLY",
+    "scope": "Historical evidence before the subsequent unsaved-target dialog and initial heading focus adjustments"
+  },
+  "browserBlock": "Computer Use could not determine the current browser URL on Windows with enough confidence; browser interaction stopped.",
+  "externalTargetsCalled": 0,
+  "realScansLaunched": 0,
+  "backendModified": false,
+  "dependenciesModified": false,
+  "openSpecStrict": "PASS_CURRENT_DOCUMENTARY_CLOSURE",
+  "cleanup": {
+    "syntheticServer": "STOPPED",
+    "operatorServices": "NOT_MODIFIED",
+    "browserAutomation": "STOPPED_BY_POLICY",
+    "scope": "Historical evidence before the subsequent unsaved-target dialog and initial heading focus adjustments"
+  },
+  "subsequentChanges": {
+    "description": "Final implemented unsaved-target dialog and initial navigation focus behavior inspected statically and accepted manually by operator",
+    "validation": "STATIC_INSPECTION_AND_FINAL_OPERATOR_MANUAL_ACCEPTANCE",
+    "previousResultsApplyTo": "Revision before these changes",
+    "testsPrepared": [
+      "target-form.spec.ts",
+      "flows.spec.ts"
+    ],
+    "browserReview": "PASS_REPORTED_BY_OPERATOR_FINAL_VERSION",
+    "openSpecStrictCurrentRevision": "PASS",
+    "architectReview": "FOCUS_DECISION_CLOSED_BY_STATIC_INSPECTION_AND_OPERATOR_ACCEPTANCE_NO_INDEPENDENT_ARCHITECT_REVIEW_CLAIMED",
+    "focusDecision": "CLOSED: Seguir editando has autofocus and explicit focus() after showModal(); conservative default; Escape or unconfirmed close denies leaving and restores connected opener. Initial shell navigation does not force h1 focus; subsequent navigation without fragment does.",
+    "automatedRegression": "NOT_RUN_FOR_FINAL_ADJUSTMENTS",
+    "buildFinalAdjustments": "NOT_RUN"
+  },
+  "previousOperatorAcceptance": {
+    "source": "result.md: historical operator acceptance",
+    "result": "PASS_REPORTED_BY_OPERATOR",
+    "scope": "Revision before the subsequent dialog and initial focus adjustments",
+    "currentAdjustmentsAccepted": false
+  },
+  "documentationReview": {
+    "method": "Static inspection, existing historical automated evidence and explicit final operator manual acceptance",
+    "codeModified": false,
+    "testsExecuted": false,
+    "buildExecuted": false,
+    "browserReviewExecuted": false,
+    "openSpecStrictExecuted": true,
+    "changeArchived": false
+  },
+  "finalOperatorAcceptance": {
+    "result": "PASS_REPORTED_BY_OPERATOR",
+    "scope": "FINAL currently implemented version including unsaved-target dialog and navigation/focus",
+    "source": "Explicit operator confirmation in documentary closure request",
+    "areas": [
+      "visual design",
+      "navigation",
+      "projects",
+      "target configuration",
+      "scans",
+      "findings",
+      "report",
+      "project deletion",
+      "unsaved changes modal",
+      "confirm/cancel",
+      "keyboard",
+      "visible focus",
+      "intended close actions",
+      "visual states",
+      "responsive",
+      "zoom 200%",
+      "reduced motion",
+      "user experience"
+    ],
+    "blockingDefectsReported": false,
+    "agentRepeatedBrowserReview": false,
+    "newScreenshots": false
+  },
+  "closure": {
+    "changeComplete": true,
+    "readyToArchive": true,
+    "archived": false,
+    "basis": "Operator-authorized documentary acceptance combining implementation, historical automated evidence, static inspection and final manual acceptance",
+    "task51": "Closed documentarily under that acceptance basis; newly prepared modal tests remain NOT_RUN, not PASS",
+    "currentAngularSuitePassClaimed": false,
+    "currentBuildPassClaimed": false
+  },
+  "previousOpenSpecStrict": "PASS_HISTORICAL_PRE_ADJUSTMENTS",
+  "openSpecStrictFinal": {
+    "command": "openspec validate modernize-frontend-experience --strict",
+    "result": "PASS",
+    "output": "Change 'modernize-frontend-experience' is valid",
+    "scope": "OpenSpec artifacts only; does not execute Angular tests or build"
+  }
+}

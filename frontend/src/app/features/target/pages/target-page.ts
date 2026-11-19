@@ -1,3 +1,5 @@
+import { PageHeader } from '../../../shared/ui/page-header';
+import { LoadingState } from '../../../shared/ui/loading-state';
 import { Component, DestroyRef, inject, signal, viewChild } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -10,11 +12,11 @@ import { LoadState, loading, loaded, failed } from '../../../shared/models/load-
 import { FeedbackPanel } from '../../../shared/ui/feedback-panel';
 import { ProjectsApi } from '../../projects/data-access/projects-api';
 import { ProjectDto } from '../../projects/models/project';
-@Component({ selector: 'app-target-page', imports: [RouterLink, TargetForm, FeedbackPanel], styleUrl: '../../../shared/ui/page.css', template: `
-  <nav aria-label="Ruta"><a routerLink="/projects">Proyectos</a> / <a [routerLink]="['/projects',projectId()]">Volver al proyecto</a></nav><h1 tabindex="-1">Configuración del target</h1>
+@Component({ selector: 'app-target-page', imports: [RouterLink, TargetForm, FeedbackPanel, PageHeader, LoadingState], styleUrl: '../../../shared/ui/page.css', template: `
+  <nav aria-label="Ruta"><a routerLink="/projects">Proyectos</a> / <a [routerLink]="['/projects',projectId()]">Volver al proyecto</a></nav><app-page-header title="Configuración del target" eyebrow="Integración" description="Define la conexión, el formato de intercambio y la autenticación." />
   <p class="warning">Configura únicamente endpoints propios o autorizados. Guardar no comprueba conectividad ni autoriza tráfico.</p>
   @if (project().error; as error) { <app-feedback-panel kind="error" [message]="error.message" [retryable]="true" (retry)="load()" /> }
-  @if (target().status === 'loading') { <app-feedback-panel message="Cargando configuración…" /> }
+  @if (target().status === 'loading') { <app-loading-state label="Cargando configuración…" /> }
   @if (project().data && target().error) { <app-feedback-panel kind="error" [message]="target().error!.message" [retryable]="true" (retry)="load()" /> }
   @if (saveError(); as error) { <app-feedback-panel kind="error" [message]="error.message" /> }
   @if (reconcileRequired()) { <app-feedback-panel message="Consulta la configuración pública antes de volver a guardar. La respuesta no permite confirmar el resultado."><button (click)="load()">Cargar configuración existente</button></app-feedback-panel> }
@@ -47,6 +49,6 @@ export class TargetPage {
       this.saving.set(false); this.saveError.set(error); this.editor()?.clearSecret(); this.reconcileRequired.set(error.ambiguousWrite || ['TARGET_ALREADY_CONFIGURED', 'TARGET_TYPE_REQUIRED', 'TARGET_TYPE_CHANGED'].includes(error.code ?? ''));
     } }));
   }
-  cancel() { if (this.editor()?.confirmLeave() !== false) { this.editor()?.form.markAsPristine(); void this.router.navigate(['/projects', this.projectId()]); } }
+  cancel() { void this.router.navigate(['/projects', this.projectId()]); }
   canDeactivate() { return this.editor()?.confirmLeave() ?? true; }
 }

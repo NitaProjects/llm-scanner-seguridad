@@ -1,3 +1,5 @@
+import { PageHeader } from '../../../shared/ui/page-header';
+import { LoadingState } from '../../../shared/ui/loading-state';
 import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
@@ -14,9 +16,22 @@ import { StatusBadge } from '../../../shared/ui/status-badge';
 import { Availability } from '../../../shared/models/contracts';
 import { publicReason } from '../../../shared/presentation/labels';
 import { sameScore } from '../models/scan.decoder';
-@Component({ selector: 'app-scan-page', imports: [RouterLink, DatePipe, RiskSummary, CategorySummary, FindingList, EvaluationList, ScanProgress, ReportSections, FeedbackPanel, StatusBadge], providers: [ScanDetailState], templateUrl: './scan-page.html', styleUrls: ['../../../shared/ui/page.css', './scan-page.css'] })
+@Component({ selector: 'app-scan-page', imports: [RouterLink, DatePipe, RiskSummary, CategorySummary, FindingList, EvaluationList, ScanProgress, ReportSections, FeedbackPanel, StatusBadge, PageHeader, LoadingState], providers: [ScanDetailState], templateUrl: './scan-page.html', styleUrls: ['../../../shared/ui/page.css', './scan-page.css'] })
 export class ScanPage {
   readonly state = inject(ScanDetailState); readonly projectId = signal(''); readonly reason = publicReason;
+  readonly title = computed(() => {
+    switch (this.state.scan().data?.status) {
+      case 'PENDING': return 'Análisis pendiente';
+      case 'RUNNING': return 'Análisis en ejecución';
+      case 'COMPLETED': return 'Análisis completado';
+      case 'FAILED': return 'Análisis fallido';
+      default: return 'Resultado del análisis';
+    }
+  });
+  readonly tracking = computed(() => {
+    const status = this.state.scan().data?.status;
+    return (status === 'RUNNING' || status === 'PENDING') && this.state.scan().status === 'loaded' && !this.state.scan().error && !this.state.paused();
+  });
   readonly terminal = computed(() => this.state.scan().data?.status === 'COMPLETED' || this.state.scan().data?.status === 'FAILED');
   readonly score = computed(() => { const data = this.state.score().data; return this.state.score().status === 'loaded' && data?.availability === 'AVAILABLE' ? data.score : null; });
   readonly report = computed(() => { const data = this.state.report().data; return this.state.report().status === 'loaded' && data?.availability === 'AVAILABLE' ? data.report : null; });

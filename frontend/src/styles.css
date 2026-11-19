@@ -1,31 +1,45 @@
 :root {
-  --background: #f4f6fa;
-  --surface: #ffffff;
-  --surface-subtle: #eef2f7;
-  --text-primary: #172b45;
-  --text-secondary: #4f6075;
+  color-scheme: dark;
+  --shadow-overlay: 0 12px 32px rgb(0 0 0 / 24%);
+  --primary-soft: #272443;
+  --surface-raised: #17243c;
+  --primary: #a99bff;
+  --primary-hover: #c0b5ff;
+  --on-primary: #101426;
+  --on-danger: #24101a;
+  --info: #69c8ff;
+  --info-soft: #132d43;
+  --space-7: 48px;
+  --duration-fast: 140ms;
+  --duration-normal: 220ms;
+  --duration-slow: 280ms;
+  --background: #080f1f;
+  --surface: #101b30;
+  --surface-subtle: #0d172a;
+  --text-primary: #edf2ff;
+  --text-secondary: #a5b4cf;
   --text: var(--text-primary);
   --muted: var(--text-secondary);
-  --border: #c7d1df;
+  --border: #33425d;
   --control-border: #71839a;
-  --accent: #1857a1;
-  --accent-hover: #12457f;
-  --accent-soft: #eff6ff;
-  --focus: #17499a;
-  --success: #166534;
-  --success-soft: #f0fdf4;
-  --warning: #754500;
-  --warning-soft: #fff8e6;
-  --danger: #991b1b;
-  --danger-soft: #fff1f2;
-  --risk-none: #334155;
-  --risk-none-soft: #f1f5f9;
-  --risk-low: #365b7a;
-  --risk-low-soft: #edf2f7;
+  --accent: var(--primary);
+  --accent-hover: var(--primary-hover);
+  --accent-soft: var(--primary-soft);
+  --focus: #8cd7ff;
+  --success: #63dca0;
+  --success-soft: #123127;
+  --warning: #f4c46a;
+  --warning-soft: #342a19;
+  --danger: #ff8e9e;
+  --danger-soft: #381e2b;
+  --risk-none: #bcc9dc;
+  --risk-none-soft: #202c40;
+  --risk-low: #91c8ed;
+  --risk-low-soft: #162e42;
   --risk-medium: var(--warning);
   --risk-medium-soft: var(--warning-soft);
-  --risk-high: #8a330b;
-  --risk-high-soft: #fff3ed;
+  --risk-high: #ffa979;
+  --risk-high-soft: #38291f;
   --risk-critical: var(--danger);
   --risk-critical-soft: var(--danger-soft);
   --space-1: 4px;
@@ -34,16 +48,16 @@
   --space-4: 16px;
   --space-5: 24px;
   --space-6: 32px;
-  --radius-control: 6px;
-  --radius-panel: 10px;
+  --radius-control: 8px;
+  --radius-panel: 14px;
   --radius-badge: 999px;
-  --shadow-panel: 0 1px 2px rgb(23 43 69 / 4%);
+  --shadow-panel: 0 4px 16px rgb(0 0 0 / 12%);
   --font-body: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Consolas, monospace;
   --text-small: .875rem;
   --text-badge: .8125rem;
   --text-action: .9375rem;
-  --text-h1: clamp(1.5rem, 2vw, 1.875rem);
+  --text-h1: clamp(1.65rem, 2.5vw, 2.25rem);
   --text-h2: 1.25rem;
   --text-h3: 1rem;
   --text-score: clamp(2.5rem, 5vw, 3.5rem);
@@ -72,7 +86,7 @@ button, .button {
   border: 1px solid var(--accent);
   border-radius: var(--radius-control);
   background: var(--accent);
-  color: var(--surface);
+  color: var(--on-primary);
   padding: 10px 14px;
   min-height: 44px;
   min-width: 44px;
@@ -86,11 +100,11 @@ button, .button {
   max-width: 100%;
   overflow-wrap: anywhere;
 }
-button:hover:not(:disabled), .button:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: var(--surface); }
+button:hover:not(:disabled), .button:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: var(--on-primary); }
 button.secondary, .button.secondary { color: var(--accent); background: var(--surface); border-color: var(--control-border); }
 button.secondary:hover:not(:disabled), .button.secondary:hover { background: var(--accent-soft); color: var(--accent-hover); }
 button:disabled, input:disabled, textarea:disabled, select:disabled { cursor: default; color: var(--muted); background: var(--surface-subtle); border-color: var(--control-border); }
-input, textarea, select { font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--control-border); border-radius: var(--radius-control); padding: 10px 12px; width: 100%; min-width: 0; }
+input, textarea, select { font: inherit; color: var(--text); background: var(--surface-subtle); border: 1px solid var(--control-border); border-radius: var(--radius-control); padding: 10px 12px; width: 100%; min-width: 0; }
 textarea { resize: vertical; min-height: 6rem; }
 label, legend { font-weight: 600; }
 fieldset { border: 0; padding: 0; margin: var(--space-5) 0; min-width: 0; }
@@ -108,3 +122,15 @@ input, select, summary { min-height: 44px; }
   a, button, input, textarea, select { transition: color 140ms, background-color 140ms, border-color 140ms, box-shadow 140ms; }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+input::placeholder, textarea::placeholder { color: var(--muted); opacity: 1; }
+[aria-invalid="true"] { border-color: var(--danger); }
+input:focus-visible, textarea:focus-visible, select:focus-visible { border-color: var(--focus); }
+@media (prefers-reduced-motion: no-preference) {
+  app-projects-page, app-project-page, app-target-page, app-scan-page, app-not-found-page { animation: enter var(--duration-normal) ease-out; }
+  @keyframes enter { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  @keyframes activity { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}

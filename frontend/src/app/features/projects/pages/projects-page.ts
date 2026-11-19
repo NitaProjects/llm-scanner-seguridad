@@ -1,3 +1,6 @@
+import { PageHeader } from '../../../shared/ui/page-header';
+import { LoadingState } from '../../../shared/ui/loading-state';
+import { EmptyState } from '../../../shared/ui/empty-state';
 import { Component, DestroyRef, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
@@ -11,20 +14,20 @@ import { LoadState, loading, loaded, failed } from '../../../shared/models/load-
 import { FeedbackPanel } from '../../../shared/ui/feedback-panel';
 import { Icon } from '../../../shared/ui/icon';
 @Component({
-  selector: 'app-projects-page', imports: [RouterLink, DatePipe, ProjectCreateForm, FeedbackPanel, Icon], styleUrl: '../../../shared/ui/page.css',
-  styles: ['dialog { max-width: min(32rem, calc(100% - 2rem)); padding: var(--space-4); background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-panel); } .delete-confirm:not(:disabled) { background: var(--danger); border-color: var(--danger); }'],
-  template: `<div class="page-heading"><div><h1 tabindex="-1">Proyectos</h1><p class="muted">Organiza tus análisis de aplicaciones LLM autorizadas.</p></div><button id="new-project" (click)="showForm.set(true)" [disabled]="showForm()"><app-icon name="plus" />Nuevo proyecto</button></div>
+  selector: 'app-projects-page', imports: [RouterLink, DatePipe, ProjectCreateForm, FeedbackPanel, Icon, PageHeader, LoadingState, EmptyState], styleUrls: ['../../../shared/ui/page.css', './projects-page.css'],
+  styles: ['dialog { max-width: min(32rem, calc(100% - 2rem)); max-height: calc(100dvh - 2rem); overflow: auto; box-shadow: var(--shadow-overlay); padding: var(--space-5); background: var(--surface-raised); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-panel); } .delete-confirm:not(:disabled) { background: var(--danger); border-color: var(--danger); color: var(--on-danger); } dialog::backdrop { background: rgb(3 8 20 / 78%); } dialog button { margin: var(--space-1); } @media(prefers-reduced-motion:no-preference) { dialog[open] { animation: enter 180ms ease-out; } }'],
+  template: `<app-page-header title="Proyectos" description="Organiza tus análisis de aplicaciones LLM autorizadas."><button id="new-project" (click)="showForm.set(true)" [disabled]="showForm()"><app-icon name="plus" />Nuevo proyecto</button></app-page-header>
     @if (showForm()) { <app-project-create-form [busy]="creating()" [error]="createError()" (create)="create($event)" (cancel)="cancel()" /> }
     @if (createError(); as error) { <app-feedback-panel kind="error" [message]="error.message" /> }
     @if (ambiguous()) { <app-feedback-panel message="No se pudo confirmar la creación. Consulta el listado antes de volver a crear."><button (click)="reconcile()">Consultar listado</button></app-feedback-panel> }
-    @if (deleteNotice(); as notice) { <p role="status">{{ notice }}</p> }
+    @if (deleteNotice(); as notice) { <p class="success-notice" role="status">{{ notice }}</p> }
     @if (deleteError(); as error) { <app-feedback-panel kind="error" [message]="error" /> }
-    @if (projects().status === 'loading') { <app-feedback-panel message="Cargando proyectos…" /> }
+    @if (projects().status === 'loading') { <app-loading-state label="Cargando proyectos…" /> }
     @if (projects().error; as error) { <app-feedback-panel kind="error" [message]="error.message" [retryable]="true" (retry)="load()" /> }
     @if (projects().status === 'loaded') {
-      @if (projects().data?.length === 0 && !showForm()) { <section class="empty-state"><app-icon name="folder" class="empty-icon" /><h2>Todavía no hay proyectos</h2><p>Crea un proyecto para configurar su target y ejecutar el primer análisis.</p><button (click)="showForm.set(true)" [disabled]="showForm()"><app-icon name="plus" />Nuevo proyecto</button></section> }
-      <ul class="plain-list project-list">@for (project of projects().data; track project.id) { <li class="card"><h2><a class="row-link" [routerLink]="['/projects', project.id]">{{ project.name }}</a></h2>@if (project.description) { <p class="text muted">{{ project.description }}</p> }<p class="meta">Creado {{ project.createdAt | date:'medium':'UTC' }} UTC</p>
-      <button type="button" class="secondary" #opener (click)="confirmDeletion(project, opener)" [disabled]="deleting() || pendingReconciliation() !== null">Eliminar proyecto</button></li> }</ul>
+      @if (projects().data?.length === 0 && !showForm()) { <app-empty-state icon="folder" title="Todavía no hay proyectos" message="Crea un proyecto para configurar su target y ejecutar el primer análisis."><button (click)="showForm.set(true)" [disabled]="showForm()"><app-icon name="plus" />Nuevo proyecto</button></app-empty-state> }
+      <p class="collection-count">{{ projects().data?.length }} proyectos en este listado</p><ul class="plain-list project-list">@for (project of projects().data; track project.id) { <li class="card"><h2><a class="row-link" [routerLink]="['/projects', project.id]">{{ project.name }}</a></h2>@if (project.description) { <p class="text muted">{{ project.description }}</p> }<p class="meta">Creado {{ project.createdAt | date:'medium':'UTC' }} UTC</p>
+      <div class="project-actions"><a class="row-link" [routerLink]="['/projects', project.id]">Abrir proyecto →</a><button type="button" class="secondary delete-action" #opener (click)="confirmDeletion(project, opener)" [disabled]="deleting() || pendingReconciliation() !== null">Eliminar proyecto</button></div></li> }</ul>
     }
     <dialog #deleteDialog aria-labelledby="delete-title" aria-describedby="delete-description" (cancel)="cancelDeletion($event)" [attr.aria-busy]="deleting()">
       <h2 id="delete-title">Eliminar proyecto</h2>

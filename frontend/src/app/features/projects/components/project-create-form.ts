@@ -8,7 +8,7 @@ import { CreateProjectRequest } from '../models/project';
   template: `<form [formGroup]="form" (ngSubmit)="submit()" class="card" aria-label="Crear proyecto">
     <h2>Nuevo proyecto</h2><div class="field"><label for="project-name">Nombre</label><input id="project-name" formControlName="name" aria-describedby="project-name-error" [attr.aria-invalid]="!!nameError()" />
     <small id="project-name-error" class="field-error">{{ nameError() }}</small></div>
-    <div class="field"><label for="project-description">Descripción (opcional)</label><textarea id="project-description" formControlName="description" aria-describedby="project-description-error"></textarea><small id="project-description-error" class="field-error">{{ descriptionError() }}</small></div>
+    <div class="field"><label for="project-description">Descripción (opcional)</label><textarea id="project-description" formControlName="description" aria-describedby="project-description-error" [attr.aria-invalid]="!!descriptionError()"></textarea><small id="project-description-error" class="field-error">{{ descriptionError() }}</small></div>
     <div class="actions"><button type="submit" [disabled]="busy()">{{ busy() ? 'Creando…' : 'Crear proyecto' }}</button><button type="button" class="secondary" [disabled]="busy()" (click)="cancel.emit()">Cancelar</button></div>
   </form>`
 })
