@@ -24,6 +24,7 @@ final class ObservationAccumulator {
     private final EnumMap<Kind, Integer> rejectedAliases = new EnumMap<>(Kind.class);
     private final EnumMap<Kind, Integer> counts = new EnumMap<>(Kind.class);
     private final EnumMap<Source, Availability> availability = new EnumMap<>(Source.class);
+    private final Map<Integer, List<String>> originals = new HashMap<>();
     private int bytes = 2;
     private boolean inspectionIncomplete;
 
@@ -75,6 +76,10 @@ final class ObservationAccumulator {
             invalidate(source, TOO_LARGE);
             return;
         }
+        if (!rule.exportValues().contains(text)) {
+            com.llmscannerseguridad.privacy.ProtectionScope.register(text);
+            if (rawAlias instanceof String name) com.llmscannerseguridad.privacy.ProtectionScope.register(name);
+        }
         String safe = redact.apply(text);
         String alias = rawAlias instanceof String name ? redact.apply(name) : null;
         boolean aliasValid = alias == null || ObservationBinding.validAlias(alias);
@@ -87,6 +92,7 @@ final class ObservationAccumulator {
         if (rule.id() != null) {
             Object id = select(item, rule.id());
             if (id instanceof String || id instanceof Boolean || id instanceof java.math.BigInteger || id instanceof java.math.BigDecimal) {
+                com.llmscannerseguridad.privacy.ProtectionScope.register(id.toString());
                 String key = (id instanceof String ? "s:" : "v:") + id;
                 if (TargetRules.bytes(key.substring(2)) > 128) {
                     invalidate(source, TOO_LARGE);
@@ -123,6 +129,7 @@ final class ObservationAccumulator {
         }
         bytes += size + (observations.isEmpty() ? 0 : 1);
         availability.putIfAbsent(source, COMPLETE);
+        originals.put(ordinal, rawAlias instanceof String name ? List.of(text, name) : List.of(text));
         observations.add(observation);
     }
 
@@ -137,6 +144,10 @@ final class ObservationAccumulator {
         ambiguousCalls.forEach(key -> ambiguousOrdinals.add(calls.get(key)));
         int total = 2;
         for (var item : observations) {
+            if (!item.exportable() || !item.complete() || availability.get(item.source()) != COMPLETE
+                    || !semanticSources.containsKey(item.source())) {
+                originals.getOrDefault(item.ordinal(), List.of()).forEach(com.llmscannerseguridad.privacy.ProtectionScope::register);
+            }
             String value = redact.apply(item.value());
             String alias = item.alias() == null ? null : redact.apply(item.alias());
             boolean intact = value.equals(item.value()) && Objects.equals(alias, item.alias());
@@ -163,6 +174,7 @@ final class ObservationAccumulator {
             if (TargetRules.bytes(safe) <= 128) safeIds.add(safe);
             else inspectionIncomplete = true;
         }
+        com.llmscannerseguridad.privacy.ProtectionScope.coverObservations(executionId);
         return new StructuredInteractionEvidence(executionId, sanitized, availability, semanticSources, inspectionIncomplete, safeIds);
     }
 
@@ -170,6 +182,7 @@ final class ObservationAccumulator {
         if (reason == TOO_LARGE || availability.get(source) != TOO_LARGE) availability.put(source, reason);
         // Sin el campo original no se puede comprobar si reaparece en la respuesta final.
         inspectionIncomplete = true;
+        com.llmscannerseguridad.privacy.ProtectionScope.incomplete();
     }
 
     private void rememberId(String id, UnaryOperator<String> redact) {

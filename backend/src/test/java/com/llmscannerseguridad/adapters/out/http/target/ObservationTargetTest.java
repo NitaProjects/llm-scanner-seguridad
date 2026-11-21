@@ -51,7 +51,7 @@ class ObservationTargetTest {
     @Test void shellAndCallbackAreOnlyDataAndTriggerZeroExchanges() throws Exception {
         Path marker = directory.resolve("tool-executed");
         var rows = List.<Map<String, Object>>of(
-                Map.of("kind", "REQUEST", "text", "echo fixture > " + marker, "alias", "shell", "id", "attack-id"),
+                Map.of("kind", "REQUEST", "text", "echo fixture > " + marker.toString().replace((char) 92, '/'), "alias", "shell", "id", "attack-id"),
                 Map.of("kind", "CALLBACK", "text", "http://127.0.0.1:1/execute"),
                 Map.of("kind", "RESULT", "text", "declared", "id", "attack-id"));
         try (var fixture = new Fixture("SSE", rows, true)) {

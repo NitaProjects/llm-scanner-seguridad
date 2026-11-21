@@ -86,7 +86,8 @@ public class ScanConfiguration {
     @Bean
     ScanWorkPort scanWorkPort(TestExecutionRepositoryPort executions, TargetAdapter adapter, ExecutionLimits limits,
             com.llmscannerseguridad.application.evaluation.EvaluateExecutionUseCase evaluations) {
-        return new ExecuteSecurityTestsUseCase(executions, adapter, limits.scanBudgetMs(), Clock.systemUTC(), System::nanoTime, evaluations);
+        return new ExecuteSecurityTestsUseCase(executions, adapter, limits.scanBudgetMs(), Clock.systemUTC(), System::nanoTime, evaluations,
+                new com.llmscannerseguridad.privacy.DurableEvidenceProtection(limits.requestBytes(), limits.textBytes(), limits.evidenceBytes()));
     }
 
     @Bean

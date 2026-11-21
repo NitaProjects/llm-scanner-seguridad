@@ -43,6 +43,7 @@ record WorkflowCookie(String value, String path, Instant expires, boolean secure
         String value = parts[0].substring(separator + 1).strip();
         if (value.length() >= 2 && value.startsWith("\"") && value.endsWith("\"")) value = value.substring(1, value.length() - 1);
         if (!value.matches("[\\x21\\x23-\\x2B\\x2D-\\x3A\\x3C-\\x5B\\x5D-\\x7E]*")) throw malformed();
+        com.llmscannerseguridad.privacy.ProtectionScope.register(value);
         if (TargetRules.bytes(value) > maxBytes) throw new InvocationFailure(ExecutionError.RESPONSE_TOO_LARGE);
         if (value.isEmpty() && (expires == null || expires.isAfter(now))) throw malformed();
         boolean secure = attributes.containsKey("secure");
@@ -60,5 +61,8 @@ record WorkflowCookie(String value, String path, Instant expires, boolean secure
 
     @Override public String toString() { return "WorkflowCookie[protegida]"; }
 
-    private static InvocationFailure malformed() { return new InvocationFailure(ExecutionError.RESPONSE_FORMAT_ERROR); }
+    private static InvocationFailure malformed() {
+        com.llmscannerseguridad.privacy.ProtectionScope.incomplete();
+        return new InvocationFailure(ExecutionError.RESPONSE_FORMAT_ERROR);
+    }
 }

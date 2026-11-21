@@ -53,6 +53,8 @@ public final class PostgresSecurityReportRepositoryAdapter implements SecurityRe
                     && candidate.scope().scanCreatedAt().equals(prior.scan().createdAt())
                     && candidate.scope().scanStartedAt().equals(prior.scan().startedAt()));
             presentation.validate(candidate); var json = ReportJson.write(candidate);
+            com.llmscannerseguridad.privacy.ProtectionScope.requireScan(candidate.scanId());
+            com.llmscannerseguridad.privacy.DurableEvidenceProtection.requireDocument(json, ReportJson.MAX_BYTES);
             var p = new HashMap<String,Object>();
             p.put("report",candidate.reportId()); p.put("scan",candidate.scanId()); p.put("version",candidate.reportVersion());
             p.put("score",candidate.summary().scoringVersion()); p.put("at",candidate.generatedAt().atOffset(ZoneOffset.UTC));

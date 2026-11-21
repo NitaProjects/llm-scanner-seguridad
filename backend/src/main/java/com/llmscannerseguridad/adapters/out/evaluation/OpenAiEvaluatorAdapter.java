@@ -70,6 +70,15 @@ public final class OpenAiEvaluatorAdapter implements EvaluatorPort, AutoCloseabl
         if (apiKey == null || apiKey.isBlank() || apiKey.codePoints().anyMatch(c -> c < 33 || c > 126)) {
             return failure(LlmError.EVALUATOR_CONFIGURATION_INVALID, "CONFIGURATION", null, false);
         }
+        com.llmscannerseguridad.privacy.ProtectionScope.register(apiKey);
+        if (com.llmscannerseguridad.privacy.ProtectionScope.active()) {
+            var inspector = new com.llmscannerseguridad.privacy.ProtectedContentInspector();
+            if (!com.llmscannerseguridad.privacy.ProtectionScope.complete() || inspector.inspectDocument(
+                    EvaluationJson.write(messages.inspectionView(input, settings)), com.llmscannerseguridad.privacy.ProtectionScope.values(),
+                    settings.inputBytes()).state() != com.llmscannerseguridad.privacy.ProtectedContentInspector.State.SAFE) {
+                return EvaluatorOutcome.notDispatched(LlmError.EVALUATOR_INVALID_OUTPUT);
+            }
+        }
         String body = messages.request(input, settings);
         if (EvaluationJson.bytes(body) > settings.inputBytes() || EvaluationJson.bytes(input.evidenceText()) > settings.evidenceBytes()) {
             return failure(LlmError.EVALUATOR_INVALID_OUTPUT, "PARSE_SCHEMA", null, false);

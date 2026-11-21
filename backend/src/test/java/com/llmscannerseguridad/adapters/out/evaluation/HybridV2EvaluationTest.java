@@ -314,14 +314,21 @@ class HybridV2EvaluationTest {
         }
     }
 
-    @Test void llm01ProseWithQuotesAndBackslashesWithoutSpanRemainsEligible() {
+    @Test void llm01N4PreservesInspectableProseAndDeniesAmbiguousEscapesOrExhaustion() {
         String response = "ACCION_SINTETICA_OBSERVADA";
-        for (String restriction : List.of("Consultar \"C:\\fixtures\\demo\" y conservar \\\"texto\\\" y \\u0022",
-                "Ruta: C:" + "\\".repeat(16) + "fixtures")) {
+        for (String restriction : List.of("Consultar \"archivo\" y conservar texto", "Ruta: C:/fixtures/demo")) {
             var context = new SyntheticContext(null, null, List.of(), List.of(), restriction,
                     response, false, List.of(), null, false, null, null);
             assertThat(semanticMessage(prepare(llm01, context, response, false, true, List.of(response))))
                     .contains(EvaluationJson.write(restriction));
+        }
+        // DSP-03 exige ahora abstención por escape desconocido y por quinta transformación.
+        for (String restriction : List.of("Consultar \"C:\\fixtures\\demo\"", "Ruta: C:" + "\\".repeat(16) + "fixtures")) {
+            var context = new SyntheticContext(null, null, List.of(), List.of(), restriction,
+                    response, false, List.of(), null, false, null, null);
+            var rejected = prepare(llm01, context, response, false, true, List.of(response));
+            assertThat(rejected.input()).isNull();
+            assertThat(rejected.insufficiency()).isEqualTo(OutcomeReason.EVIDENCE_NOT_EXPORTABLE);
         }
     }
 
@@ -331,6 +338,30 @@ class HybridV2EvaluationTest {
             var context = new SyntheticContext(null, null, List.of(), List.of(), restriction,
                     response, false, List.of(), null, false, null, null);
             assertThat(prepare(llm01, context, response, false, true, List.of(response)).requestLlm()).isTrue();
+        }
+    }
+
+    @Test void durableScopeAndSemanticExportShareN4ForProtectedRestrictionOnly() {
+        String secret = "DSP_PRIVATE_RESTRICTION_42";
+        String response = "ACCION_SINTETICA_OBSERVADA";
+        for (String restriction : List.of(secret, Character.toString(92) + "u0044SP_PRIVATE_RESTRICTION_42",
+                jsonLayers(secret, 2), jsonLayers(secret, 4), jsonLayers("benign", 5))) {
+            var context = new SyntheticContext(null, null, List.of(), List.of(), restriction,
+                    response, false, List.of(), null, false, null, null);
+            var pending = pending(llm01, scenario(Map.of(llm01.code(),
+                    new EvaluationScenarioPort.Entry(llm01.code(), 1, context, List.of(response))), true, true));
+            var execution = execution(pending, response, false);
+            try (var scope = com.llmscannerseguridad.privacy.ProtectionScope.open(pending.scanId(), 524288)) {
+                com.llmscannerseguridad.privacy.ProtectionScope.register(secret);
+                var state = new com.llmscannerseguridad.privacy.ProtectedContentInspector()
+                        .inspect(restriction, Set.of(secret), 65536).state();
+                assertThat(state).isNotEqualTo(com.llmscannerseguridad.privacy.ProtectedContentInspector.State.SAFE);
+                var prepared = projector.prepare(pending, execution, llm01);
+                assertThat(prepared.input()).isNull();
+                assertThat(prepared.result().evidence().projection()).isNull();
+                assertThat(prepared.result().evidence().inputHash()).isNull();
+                assertThat(prepared.insufficiency()).isEqualTo(OutcomeReason.EVIDENCE_NOT_EXPORTABLE);
+            }
         }
     }
 

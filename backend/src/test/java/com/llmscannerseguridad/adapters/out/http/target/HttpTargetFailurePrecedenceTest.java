@@ -82,10 +82,12 @@ class HttpTargetFailurePrecedenceTest {
 
     private InvocationResult translate(ExecutionError error, long deadline, boolean scanLimited, ScanBudget budget) {
         try (var adapter = new HttpTargetInvocationAdapter(
-                new TargetDestinationPolicy(Set.of(), false, false, Set.of(), Set.of()), null, null, null, ExecutionLimits.defaults())) {
+                new TargetDestinationPolicy(Set.of(), false, false, Set.of(), Set.of()), null,
+                new com.llmscannerseguridad.adapters.out.validation.target.TargetJsonProcessor(null),
+                null, ExecutionLimits.defaults())) {
             // Deadline vencido determinista, sin sleeps ni carreras de scheduler/red.
             return ReflectionTestUtils.invokeMethod(adapter, "failure", error, null, System.nanoTime(), deadline,
-                    scanLimited, budget, "{}", true);
+                    scanLimited, budget, "{}", true, java.util.function.UnaryOperator.<String>identity());
         }
     }
 

@@ -203,6 +203,12 @@ ScanScore 1 --- 0..1 SecurityReport por reportVersion
 - Deben aplicarse minimización, redacción, control de acceso y retención limitada.
 - Project, TargetConfiguration, Scan, SecurityTest, TestExecution, EvaluationResult/Finding, ScanScore y SecurityReport usan las migraciones vigentes. Los límites por Scan no acotan el crecimiento histórico. La retención temporal y la autorización por usuario siguen pendientes.
 
+### Frontera de privacidad durable N4
+
+Sin migración ni columnas nuevas, se inspeccionan antes del binding SQL los candidatos de request_payload/response_payload, evaluation_results y los textos de Finding, además de ScanScore y SecurityReport.payload. El scope efímero de valores protegidos permanece vigente hasta el commit/compensación del Scan; no se guarda en tablas, caches recuperables ni hashes. credential_ciphertext es la excepción cifrada autorizada, no evidencia evaluable.
+
+La inspección usa SAFE/MATCH/UNINSPECTABLE, cuatro capas y profundidad JSON 32. Redacta intervalos originales solapados de una vez; una coincidencia solo decodificada sustituye el campo completo. Los wrappers propios de almacenamiento no consumen una capa atacante. Una salida no certificable se omite con flags coherentes y metadata segura; campos secundarios obligatorios provocan aborto y rollback, nunca persistencia parcial dudosa. La proyección opcional omitida conserva projection/hash nulos. Los límites de bytes serializados y checks existentes siguen activos, y el registro se acota a 512 valores con trabajo/vistas limitados. No se promete saneamiento retrospectivo ni detección de secretos desconocidos.
+
 ### Borrado de Project
 
 El borrado físico elimina en una transacción y en este orden `security_reports`,

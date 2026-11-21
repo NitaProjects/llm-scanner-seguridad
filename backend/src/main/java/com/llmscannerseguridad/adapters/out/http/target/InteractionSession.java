@@ -72,11 +72,17 @@ final class InteractionSession implements AutoCloseable {
     private void captureValues(Object json, ClassicHttpResponse response, List<Capture> declarations) {
         if (closed) throw malformed();
         for (Capture declaration : declarations) {
-            Value value = switch (declaration.source()) {
-                case JSON -> jsonValue(declaration, json);
-                case HEADER -> header(declaration, response);
-                case COOKIE -> cookie(declaration, response);
-            };
+            Value value;
+            try {
+                value = switch (declaration.source()) {
+                    case JSON -> jsonValue(declaration, json);
+                    case HEADER -> header(declaration, response);
+                    case COOKIE -> cookie(declaration, response);
+                };
+            } catch (RuntimeException failure) {
+                if (declaration.sensitive()) com.llmscannerseguridad.privacy.ProtectionScope.incomplete();
+                throw failure;
+            }
             if (value == null) {
                 if (declaration.required()) throw new InvocationFailure(ExecutionError.RESPONSE_PATH_NOT_FOUND);
             } else if (values.putIfAbsent(declaration.name(), value) != null) throw malformed();
@@ -107,6 +113,8 @@ final class InteractionSession implements AutoCloseable {
         Value value = values.get(capture.name());
         if (value == null || !value.origin().equals(destination.origin())) throw unavailable();
         String text = value.data().toString();
+        com.llmscannerseguridad.privacy.ProtectionScope.register(text);
+        com.llmscannerseguridad.privacy.ProtectionScope.register(text.strip());
         forwardedHeaderValues.add(text);
         forwardedHeaderValues.add(text.strip());
         return text;
@@ -165,6 +173,7 @@ final class InteractionSession implements AutoCloseable {
 
     private Value value(Capture declaration, Object data, Map<String, String> attributes) {
         String text = data.toString();
+        if (declaration.sensitive()) com.llmscannerseguridad.privacy.ProtectionScope.register(text);
         if (text.isBlank() || TargetRules.controls(text)) throw malformed();
         if (TargetRules.bytes(text) > declaration.maxBytes()) throw new InvocationFailure(ExecutionError.RESPONSE_TOO_LARGE);
         return new Value(data, declaration.source(), origin.origin(), declaration.sensitive(), attributes);
@@ -204,32 +213,12 @@ final class InteractionSession implements AutoCloseable {
     private static void addSecret(Set<String> secrets, String raw) {
         if (raw == null || raw.isEmpty()) return;
         secrets.add(raw);
-        String encoded = tools.jackson.databind.json.JsonMapper.shared().writeValueAsString(raw);
-        secrets.add(encoded.substring(1, encoded.length() - 1));
+        com.llmscannerseguridad.privacy.ProtectionScope.register(raw);
     }
 
     private static String redactMatches(String text, Set<String> secrets) {
-        int[] ends = null;
-        for (String secret : secrets) {
-            for (int start = text.indexOf(secret); start >= 0; start = text.indexOf(secret, start + 1)) {
-                if (ends == null) ends = new int[text.length()];
-                ends[start] = Math.max(ends[start], start + secret.length());
-            }
-        }
-        if (ends == null) return text;
-        var result = new StringBuilder(text.length());
-        int copied = 0;
-        for (int start = 0; start < ends.length; start++) {
-            if (ends[start] == 0) continue;
-            int end = ends[start];
-            for (int next = start + 1; next <= end && next < ends.length; next++) {
-                end = Math.max(end, ends[next]);
-            }
-            result.append(text, copied, start).append("[REDACTED_CREDENTIAL]");
-            copied = end;
-            start = end - 1;
-        }
-        return result.append(text, copied, text.length()).toString();
+        try { return com.llmscannerseguridad.privacy.DurableEvidenceProtection.redact(text, secrets, 262144); }
+        catch (RuntimeException error) { throw new InvocationFailure(ExecutionError.EVIDENCE_LIMIT_EXCEEDED); }
     }
 
     @Override public void close() {

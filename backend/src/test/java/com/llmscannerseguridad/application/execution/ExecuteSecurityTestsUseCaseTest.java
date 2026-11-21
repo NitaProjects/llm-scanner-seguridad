@@ -126,7 +126,9 @@ class ExecuteSecurityTestsUseCaseTest {
         try {
             assertThatThrownBy(() -> worker().execute(scan)).isInstanceOf(ScanOperationException.class);
             verify(invocation, times(4)).invoke(any(), anyString(), any());
-            verify(repository, times(4)).finish(any(), eq(success()));
+            // DSP-03/07: una inspección interrumpida ya no puede confirmar cuerpos sin certificar.
+            verify(repository, times(4)).finish(any(), eq(new InvocationResult(200, 1L,
+                    ExecutionError.EVIDENCE_LIMIT_EXCEEDED, null, null, false, false)));
             assertThat(Thread.currentThread().isInterrupted()).isTrue();
         } finally {
             Thread.interrupted();

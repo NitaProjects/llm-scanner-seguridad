@@ -66,7 +66,8 @@ class WorkflowPostgresIntegrationTest {
                         && "text/event-stream".equals(exchange.getRequestHeaders().getFirst("Accept")) && request.contains("\"prompt\":")
                         && credentialsPresent(exchange)) {
                     int number = answers.incrementAndGet();
-                    String callId = number == 3 ? OVERSIZE_ID : "opaque-call";
+                    // El ID descartado causa FAILED bajo DSP-03; su regresión física vive ahora en DurableSecretPostgresIntegrationTest.
+                    String callId = "opaque-call";
                     String retrieval = number == 4 ? OVERLAP : "fixture-retrieved-private";
                     media = "text/event-stream";
                     response = "event: request\ndata: {\"id\":\"" + callId + "\",\"tool\":\"fixture_tool\",\"argument\":\"fixture-argument-private\"}\n\n"
@@ -121,16 +122,12 @@ class WorkflowPostgresIntegrationTest {
                 assertThat(e.responseRedacted()).isTrue();
                 assertThat(e.requestBody()).doesNotContain("fixture-private-value", "chat-", "session-", "chatId", "sessionId", COOKIE, CSRF);
             });
-            assertThat(persisted.stream().filter(e -> e.responseText().equals("[REDACTED_CREDENTIAL]")).toList())
-                    .hasSize(2).allSatisfy(e -> {
-                        assertThat(e.requestBody()).isEqualTo("{}");
-                        assertThat(e.requestRedacted()).isTrue();
-                    });
-            assertThat(persisted.stream().filter(e -> e.responseText().startsWith("respuesta terminal ")).toList())
-                    .hasSize(2).allSatisfy(e -> {
-                        assertThat(e.responseText()).isEqualTo("respuesta terminal " + "[REDACTED_CREDENTIAL] ".repeat(4) + "[REDACTED_CREDENTIAL]");
-                        assertThat(e.requestBody()).contains("\"prompt\"");
-                    });
+            // Los originales local-only se registran antes de sanear observaciones; no se reintroduce el marcador como secreto.
+            assertThat(persisted).allSatisfy(e -> {
+                assertThat(e.responseText()).isEqualTo("[REDACTED_CREDENTIAL]");
+                assertThat(e.requestBody()).isEqualTo("{}");
+                assertThat(e.requestRedacted()).isTrue();
+            });
             assertThat(reader.getBean(EvaluationRepositoryPort.class).listEvaluations(scan.id()).items()).hasSize(4)
                     .allSatisfy(e -> assertThat(e.status()).isEqualTo(EvaluationStatus.COMPLETED));
             var scores = reader.getBean(GetScanScoreUseCase.class);
@@ -152,7 +149,7 @@ class WorkflowPostgresIntegrationTest {
         }
     }
 
-    private static List<Map<String, Object>> steps() {
+    static List<Map<String, Object>> steps() {
         var credentials = List.of(Map.of("capture", "sessionHandle", "destination", "COOKIE", "name", "fixture"),
                 Map.of("capture", "csrfHandle", "destination", "HEADER", "name", "X-CSRF-Token"));
         return List.of(Map.of("id", "chat", "method", "POST", "path", "/api/chats", "body", Map.of(),

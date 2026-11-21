@@ -16,6 +16,12 @@ public final class ProcessScanUseCase {
     }
 
     public void execute(UUID scanId) {
+        try (var privacy = com.llmscannerseguridad.privacy.ProtectionScope.open(scanId, 524288)) {
+            executeScoped(scanId);
+        }
+    }
+
+    private void executeScoped(UUID scanId) {
         try {
             if (lifecycle.claim(scanId).isEmpty()) {
                 return;

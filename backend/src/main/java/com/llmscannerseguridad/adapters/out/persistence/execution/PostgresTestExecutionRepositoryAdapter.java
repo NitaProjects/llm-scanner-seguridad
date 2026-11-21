@@ -78,6 +78,7 @@ public class PostgresTestExecutionRepositoryAdapter implements TestExecutionRepo
 
     @Override
     public ExecutionPlan prepare(UUID scanId) {
+        com.llmscannerseguridad.privacy.ProtectionScope.limitTo(limits.scanEvidenceBytes());
         return confirmed(() -> {
             var scan = scans.findById(scanId).orElseThrow(ScanOperationException::internal);
             if (scan.status() != ScanStatus.RUNNING || !findByScanId(scanId).isEmpty()) {
@@ -136,7 +137,10 @@ public class PostgresTestExecutionRepositoryAdapter implements TestExecutionRepo
     }
 
     @Override
-    public void finish(TestExecution running, InvocationResult result) {
+    public void finish(TestExecution running, InvocationResult candidate) {
+        com.llmscannerseguridad.privacy.ProtectionScope.requireScan(running.scanId());
+        var result = new com.llmscannerseguridad.privacy.DurableEvidenceProtection(
+                limits.requestBytes(), limits.textBytes(), limits.evidenceBytes()).protect(candidate, null);
         boolean exhausted = confirmed(() -> {
             var entity = entityManager.find(TestExecutionJpaEntity.class, running.id(), LockModeType.PESSIMISTIC_WRITE);
             if (entity == null || entity.toDomain().status() != ExecutionStatus.RUNNING) {

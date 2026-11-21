@@ -12,13 +12,19 @@ public final class EvaluatorMessages {
     public String promptHash() { return EvaluationJson.hash(system); }
     public String schemaHash() { return EvaluationJson.hash(EvaluationJson.canonical(schema)); }
     public String request(EvaluatorInput input, EvaluatorSettings settings) {
+        return EvaluationJson.write(envelope(input, settings, true));
+    }
+    Object inspectionView(EvaluatorInput input, EvaluatorSettings settings) { return envelope(input, settings, false); }
+    private Object envelope(EvaluatorInput input, EvaluatorSettings settings, boolean encodePayloads) {
         var payload = payload(input);
-        return EvaluationJson.write(Map.of("model", settings.model(), "store", false,
+        Object trusted = encodePayloads ? EvaluationJson.canonical(payload.trusted()) : payload.trusted();
+        Object data = encodePayloads ? EvaluationJson.canonical(payload.data()) : payload.data();
+        return Map.of("model", settings.model(), "store", false,
                 "max_output_tokens", settings.maxOutputTokens(), "input", List.of(
                     Map.of("role", "system", "content", system),
-                    Map.of("role", "developer", "content", EvaluationJson.canonical(payload.trusted())),
-                    Map.of("role", "user", "content", EvaluationJson.canonical(payload.data()))),
-                "text", Map.of("format", Map.of("type", "json_schema", "name", "evaluator_output_v1", "strict", true, "schema", schema))));
+                    Map.of("role", "developer", "content", trusted),
+                    Map.of("role", "user", "content", data)),
+                "text", Map.of("format", Map.of("type", "json_schema", "name", "evaluator_output_v1", "strict", true, "schema", schema)));
     }
 
     String projection(EvaluatorInput input) {

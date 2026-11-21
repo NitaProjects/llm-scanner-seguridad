@@ -105,6 +105,12 @@ Coste monetario opcional: EVALUATOR_MAX_ESTIMATED_COST_USD y EVALUATOR_ESTIMATED
 
 Con usage y tarifa conocidos, estimatedCostUsd conserva pricingVersion y estimateVersion incluso sin límite monetario ni reserva por llamada. Validar la tarifa para estimar usage es independiente de validar la reserva del control opcional. Sin tarifa válida no se persisten importe estimado ni versiones inventadas.
 
+## Privacidad N4 y copias de evaluación
+
+El inspector común de privacidad N4 se aplica también a la proyección semántica completa antes de claim/envío. SAFE no sustituye las puertas de autorización ni la igualdad con el corpus. MATCH y UNINSPECTABLE impiden exportar el candidato protegido. Las vistas decodificadas son exclusivamente auxiliares de privacidad: no cambian la respuesta evaluable, las reglas de vulnerabilidad, el corpus ni los cálculos hybrid-v1/v2. Los envoltorios JSON generados por el scanner se distinguen de las cuatro capas de codificación del contenido no confiable.
+
+Antes de prepare/claim/finish se inspeccionan snapshots, señales, assessment, resúmenes, metadata y proyecciones finales serializadas. Una proyección opcional no certificable se omite junto con su hash y se marca incompleta; un campo obligatorio inseguro aborta la escritura. Finding se deriva de la misma evaluación saneada. Score e informe se verifican antes de su commit conjunto, usando el scope del Scan todavía vigente. No se persisten originales protegidos ni hashes sustitutivos de esos originales. La compensación conserva solo metadata segura y decisiones de fallo válidas. Las lecturas históricas no se reescriben y no se modifica scoring-v1/report-v1.
+
 ## Persistencia y recuperación
 
 V5 incorpora evaluation_results, perfil nullable en scans y vínculo coherente/único de findings. Guarda configuración/contexto sintéticos seguros, proyección exacta/hash, versiones de criterio/engine/policy/confidence/severity/prompt/schema/serializador, modelo solicitado/resuelto conocido, fechas, tamaños, uso y coste disponible. No escribe evaluator_result/confidence heredadas ni global_score.

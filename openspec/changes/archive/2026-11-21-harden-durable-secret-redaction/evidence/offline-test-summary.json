@@ -1,0 +1,615 @@
+{
+  "command": ".\\mvnw.cmd -o test",
+  "finishedAt": "2026-11-21T14:01:03+01:00",
+  "duration": "1 min 41 s",
+  "build": "SUCCESS",
+  "totals": {
+    "tests": 852,
+    "passed": 748,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 104
+  },
+  "suites": [
+    {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1,
+      "class": "com.llmscannerseguridad.LlmScannerSeguridadApplicationTests",
+      "passed": 0
+    },
+    {
+      "tests": 12,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.adapters.in.rest.project.ProjectControllerTest",
+      "passed": 12
+    },
+    {
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.adapters.in.rest.scan.EvaluationControllerTest",
+      "passed": 4
+    },
+    {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.adapters.in.rest.scan.EvaluationOpenApiContractTest",
+      "passed": 1
+    },
+    {
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.adapters.in.rest.scan.ReportControllerTest",
+      "passed": 2
+    },
+    {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.adapters.in.rest.scan.ReportingOpenApiContractTest",
+      "passed": 1
+    },
+    {
+      "tests": 9,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.adapters.in.rest.scan.ScanControllerTest",
+      "passed": 9
+    },
+    {
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.adapters.in.rest.scan.ScoreControllerTest",
+      "passed": 4
+    },
+    {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.adapters.in.rest.scan.ScoringOpenApiContractTest",
+      "passed": 1
+    },
+    {
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.adapters.in.rest.scan.TestExecutionControllerTest",
+      "passed": 3
+    },
+    {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.adapters.in.rest.target.OpenAiCompatibleContractTest",
+      "passed": 1
+    },
+    {
+      "tests": 11,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.adapters.in.rest.target.TargetControllerTest",
+      "passed": 11
+    },
+    {
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.adapters.out.crypto.target.AesGcmCredentialEncryptionAdapterTest",
+      "passed": 3
+    },
+    {
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.adapters.out.crypto.target.CredentialDecryptionTest",
+      "passed": 2
+    },
+    {
+      "tests": 9,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.adapters.out.evaluation.EvaluationScenarioTest",
+      "passed": 9
+    },
+    {
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.adapters.out.evaluation.EvaluatorContractTest",
+      "passed": 7
+    },
+    {
+      "tests": 28,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.adapters.out.evaluation.HybridV2EvaluationTest",
+      "passed": 28
+    },
+    {
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.adapters.out.evaluation.OpenAiTransportTest",
+      "passed": 8
+    },
+    {
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.adapters.out.execution.scan.ScanExecutorTest",
+      "passed": 2
+    },
+    {
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.adapters.out.execution.securitytest.LegacyRestTargetAdapterTest",
+      "passed": 3
+    },
+    {
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.adapters.out.http.target.ExecutionLimitsAndGateTest",
+      "passed": 3
+    },
+    {
+      "tests": 44,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.adapters.out.http.target.HttpTargetFailurePrecedenceTest",
+      "passed": 44
+    },
+    {
+      "tests": 20,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.adapters.out.http.target.HttpTargetInvocationAdapterTest",
+      "passed": 20
+    },
+    {
+      "tests": 25,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.adapters.out.http.target.ObservationTargetTest",
+      "passed": 25
+    },
+    {
+      "tests": 30,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.adapters.out.http.target.OpenAiCompatibleTargetAdapterTest",
+      "passed": 30
+    },
+    {
+      "tests": 19,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.adapters.out.http.target.SessionTargetTest",
+      "passed": 19
+    },
+    {
+      "tests": 18,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.adapters.out.http.target.StreamingTargetTest",
+      "passed": 18
+    },
+    {
+      "tests": 31,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.adapters.out.http.target.TargetDestinationPolicyTest",
+      "passed": 31
+    },
+    {
+      "tests": 33,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.adapters.out.http.target.WorkflowCredentialsTest",
+      "passed": 33
+    },
+    {
+      "tests": 30,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.adapters.out.http.target.WorkflowTargetTest",
+      "passed": 30
+    },
+    {
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.adapters.out.persistence.scan.ScanPersistenceTest",
+      "passed": 2
+    },
+    {
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.adapters.out.validation.target.TargetJsonProcessorTest",
+      "passed": 3
+    },
+    {
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.adapters.out.validation.target.TargetValidationTest",
+      "passed": 3
+    },
+    {
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.application.evaluation.EvaluateExecutionUseCaseTest",
+      "passed": 5
+    },
+    {
+      "tests": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.application.execution.ExecuteSecurityTestsUseCaseTest",
+      "passed": 10
+    },
+    {
+      "tests": 194,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.application.execution.LegacyInvocationResultProjectionTest",
+      "passed": 194
+    },
+    {
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.application.project.ProjectUseCasesTest",
+      "passed": 5
+    },
+    {
+      "tests": 11,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.application.reporting.GenerateReportUseCaseTest",
+      "passed": 11
+    },
+    {
+      "tests": 11,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.application.scan.ScanUseCasesTest",
+      "passed": 11
+    },
+    {
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.application.scoring.CalculateScanScoreUseCaseTest",
+      "passed": 6
+    },
+    {
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.application.target.TargetUseCasesTest",
+      "passed": 4
+    },
+    {
+      "tests": 9,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.config.ScanInfrastructureTest",
+      "passed": 9
+    },
+    {
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.config.ScoringLifecycleTest",
+      "passed": 3
+    },
+    {
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.config.SecurityTestExecutionTransactionsTest",
+      "passed": 3
+    },
+    {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.config.TargetAdapterWiringTest",
+      "passed": 1
+    },
+    {
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.config.TargetTransactionsTest",
+      "passed": 2
+    },
+    {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.config.TransactionalCreateProjectUseCaseTest",
+      "passed": 1
+    },
+    {
+      "tests": 16,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.domain.evaluation.EvaluationPoliciesTest",
+      "passed": 16
+    },
+    {
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.domain.execution.SecurityTestExecutionDomainTest",
+      "passed": 3
+    },
+    {
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.domain.project.ProjectTest",
+      "passed": 8
+    },
+    {
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.domain.reporting.SecurityReportTest",
+      "passed": 7
+    },
+    {
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.domain.scan.ScanTest",
+      "passed": 3
+    },
+    {
+      "tests": 34,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.domain.scoring.ScoringPolicyV1Test",
+      "passed": 34
+    },
+    {
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.domain.target.TargetConfigurationTest",
+      "passed": 4
+    },
+    {
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 4,
+      "class": "com.llmscannerseguridad.integration.DurableSecretPostgresIntegrationTest",
+      "passed": 0
+    },
+    {
+      "tests": 20,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 20,
+      "class": "com.llmscannerseguridad.integration.EvaluationEnginePostgresIntegrationTest",
+      "passed": 0
+    },
+    {
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 3,
+      "class": "com.llmscannerseguridad.integration.EvaluationMigrationIntegrationTest",
+      "passed": 0
+    },
+    {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1,
+      "class": "com.llmscannerseguridad.integration.HybridV2PostgresIntegrationTest",
+      "passed": 0
+    },
+    {
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 4,
+      "class": "com.llmscannerseguridad.integration.OpenAiCompatiblePostgresIntegrationTest",
+      "passed": 0
+    },
+    {
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 6,
+      "class": "com.llmscannerseguridad.integration.ProjectDeletionPostgresIntegrationTest",
+      "passed": 0
+    },
+    {
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 7,
+      "class": "com.llmscannerseguridad.integration.ProjectPostgresIntegrationTest",
+      "passed": 0
+    },
+    {
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 3,
+      "class": "com.llmscannerseguridad.integration.ReportingMigrationIntegrationTest",
+      "passed": 0
+    },
+    {
+      "tests": 11,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 11,
+      "class": "com.llmscannerseguridad.integration.ReportingPostgresIntegrationTest",
+      "passed": 0
+    },
+    {
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 2,
+      "class": "com.llmscannerseguridad.integration.ScanMigrationIntegrationTest",
+      "passed": 0
+    },
+    {
+      "tests": 13,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 13,
+      "class": "com.llmscannerseguridad.integration.ScanPostgresIntegrationTest",
+      "passed": 0
+    },
+    {
+      "tests": 9,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 9,
+      "class": "com.llmscannerseguridad.integration.ScoringEnginePostgresIntegrationTest",
+      "passed": 0
+    },
+    {
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 3,
+      "class": "com.llmscannerseguridad.integration.ScoringMigrationIntegrationTest",
+      "passed": 0
+    },
+    {
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 7,
+      "class": "com.llmscannerseguridad.integration.SecurityTestExecutionPostgresIntegrationTest",
+      "passed": 0
+    },
+    {
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 2,
+      "class": "com.llmscannerseguridad.integration.SecurityTestMigrationIntegrationTest",
+      "passed": 0
+    },
+    {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1,
+      "class": "com.llmscannerseguridad.integration.SessionPostgresIntegrationTest",
+      "passed": 0
+    },
+    {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1,
+      "class": "com.llmscannerseguridad.integration.StreamingPostgresIntegrationTest",
+      "passed": 0
+    },
+    {
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 5,
+      "class": "com.llmscannerseguridad.integration.TargetPostgresIntegrationTest",
+      "passed": 0
+    },
+    {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1,
+      "class": "com.llmscannerseguridad.integration.WorkflowPostgresIntegrationTest",
+      "passed": 0
+    },
+    {
+      "tests": 15,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.privacy.DurableEvidenceProtectionTest",
+      "passed": 15
+    },
+    {
+      "tests": 21,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.llmscannerseguridad.privacy.ProtectedContentInspectorTest",
+      "passed": 21
+    }
+  ]
+}

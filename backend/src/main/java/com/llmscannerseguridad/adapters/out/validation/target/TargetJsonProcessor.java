@@ -100,6 +100,7 @@ public final class TargetJsonProcessor {
     }
 
     public Evidence redact(String request, String response, String secret) {
+        com.llmscannerseguridad.privacy.ProtectionScope.register(secret);
         return sanitize(request, response, value -> redactText(value, secret));
     }
 
@@ -139,7 +140,10 @@ public final class TargetJsonProcessor {
     }
 
     private String redactText(String value, String secret) {
-        return secret == null ? value : value.replace(secret, REDACTED);
+        try {
+            return com.llmscannerseguridad.privacy.DurableEvidenceProtection.redact(value,
+                    secret == null ? java.util.Set.of() : java.util.Set.of(secret), 262144);
+        } catch (RuntimeException error) { throw new JsonFailure(ExecutionError.EVIDENCE_LIMIT_EXCEEDED); }
     }
 
     public int serializedTextBytes(String value) {

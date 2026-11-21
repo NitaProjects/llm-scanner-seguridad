@@ -77,7 +77,8 @@ public final class PostgresEvaluationRepositoryAdapter implements EvaluationRepo
         try { return jdbc.query("select * from evaluation_results where test_execution_id = :id", Map.of("id", executionId), this::read).stream().findFirst(); }
         catch (RuntimeException error) { throw ScanOperationException.internal(); }
     }
-    @Override public Optional<EvaluationResult> claim(EvaluationResult prepared, boolean requestLlm) {
+    @Override public Optional<EvaluationResult> claim(EvaluationResult candidate, boolean requestLlm) {
+        var prepared = new com.llmscannerseguridad.privacy.DurableEvaluationProtection().protect(candidate, settings.recordBytes());
         return confirmed(() -> {
             var parent = jdbc.queryForObject("select status from scans where id = :id for update", Map.of("id", prepared.scanId()), String.class);
             if (!"RUNNING".equals(parent)) throw ScanOperationException.internal();
@@ -128,7 +129,8 @@ public final class PostgresEvaluationRepositoryAdapter implements EvaluationRepo
                 result.status(), result.createdAt(), result.startedAt(), result.finishedAt(), result.errorReason(), result.decision(),
                 result.deterministicSignals(), component, result.configuration(), result.evidence(), result.reasoningSummary(), result.recommendation(), result.evidenceSummary());
     }
-    @Override public void finish(EvaluationResult result) {
+    @Override public void finish(EvaluationResult candidate) {
+        var result = new com.llmscannerseguridad.privacy.DurableEvaluationProtection().protect(candidate, settings.recordBytes());
         confirmed(() -> {
             if (result.status().active()) throw ScanOperationException.internal();
             if (update(result, "status = 'RUNNING'") != 1) throw ScanOperationException.internal();
@@ -145,6 +147,7 @@ public final class PostgresEvaluationRepositoryAdapter implements EvaluationRepo
         });
     }
     private Map<String,Object> findingValues(Finding f) {
+        com.llmscannerseguridad.privacy.DurableEvidenceProtection.requireDocument(EvaluationJson.write(f), settings.recordBytes());
         return Map.ofEntries(Map.entry("id", f.id()), Map.entry("evaluation", f.evaluationResultId()),
                 Map.entry("execution", f.testExecutionId()), Map.entry("scan", f.scanId()), Map.entry("test", f.securityTestId()),
                 Map.entry("category", f.category().name()), Map.entry("severity", f.severity().name()), Map.entry("confidence", f.confidence()),
@@ -155,7 +158,7 @@ public final class PostgresEvaluationRepositoryAdapter implements EvaluationRepo
         confirmed(() -> {
             var rows = jdbc.query("select * from evaluation_results where test_execution_id=:id for update", Map.of("id", executionId), this::read);
             for (var result : rows) if (result.status().active()) {
-                update(result.fail(clock.instant(), reason), "status in ('PENDING','RUNNING')");
+                failActive(result, clock.instant(), reason);
                 releaseAfterCommit(List.of(result.id()));
             }
             return null;
@@ -171,10 +174,43 @@ public final class PostgresEvaluationRepositoryAdapter implements EvaluationRepo
         participating();
         var rows = jdbc.query("select * from evaluation_results where scan_id=:id and status in ('PENDING','RUNNING') for update", Map.of("id", scanId), this::read);
         for (var result : rows) {
-            update(result.fail(now, reason), "status in ('PENDING','RUNNING')");
+            failActive(result, now, reason);
             releaseAfterCommit(List.of(result.id()));
         }
     }
+    private void failActive(EvaluationResult row, Instant now, EvaluationError reason) {
+        if (com.llmscannerseguridad.privacy.ProtectionScope.active()
+                && (!com.llmscannerseguridad.privacy.ProtectionScope.complete()
+                    || !com.llmscannerseguridad.privacy.ProtectionScope.values().isEmpty())) {
+            // Compensación sin volver a bindear cuerpos/snapshots/metadata remota de filas anteriores.
+            jdbc.update("""
+                    update evaluation_results set status='FAILED',finished_at=:finished,error_reason=:reason,
+                        final_verdict='INCONCLUSIVE',deterministic_verdict='INCONCLUSIVE',severity=null,confidence=0,
+                        confidence_components=cast(:components as jsonb),decision_code=null,outcome_reason=null,degraded=true,
+                        verdict_discrepancy=false,severity_discrepancy=false,deterministic_signals='[]'::jsonb,
+                        llm_status='NOT_REQUESTED',llm_error_reason=null,llm_assessment=null,resolved_model=null,
+                        provider_request_id=null,reasoning_summary=null,recommendation=null,evidence_summary=null,
+                        evidence_projection=null,input_hash=null,evidence_complete=false,redacted=false,input_bytes=0,evidence_bytes=0,
+                        criteria_id=null,configuration_snapshot=null,configuration_hash=null,sampling_parameters=null
+                    where id=:id and status in ('PENDING','RUNNING')
+                    """, Map.of("id", row.id(), "finished", EvaluationResult.latest(now,
+                        row.startedAt() == null ? row.createdAt() : row.startedAt()).atOffset(ZoneOffset.UTC), "reason", reason.name(),
+                        "components", EvaluationJson.write(row.fail(now, reason).decision().confidenceComponents())));
+        } else {
+            var failed = row.fail(now, reason);
+            // Recuperación sin scope: actualizar solo metadata técnica, sin volver a enviar evidencia histórica a SQL.
+            jdbc.update("""
+                    update evaluation_results set status='FAILED',finished_at=:finished,error_reason=:reason,
+                        final_verdict='INCONCLUSIVE',deterministic_verdict='INCONCLUSIVE',confidence=0,severity=null,
+                        confidence_components=cast(:components as jsonb),decision_code=null,outcome_reason=null,degraded=true,
+                        verdict_discrepancy=false,severity_discrepancy=false,reasoning_summary=:summary,recommendation=:recommendation
+                    where id=:id and status in ('PENDING','RUNNING')
+                    """, Map.of("id", row.id(), "finished", failed.finishedAt().atOffset(ZoneOffset.UTC), "reason", reason.name(),
+                        "components", EvaluationJson.write(failed.decision().confidenceComponents()),
+                        "summary", failed.reasoningSummary(), "recommendation", failed.recommendation()));
+        }
+    }
+
     private void releaseAfterCommit(List<UUID> ids) {
         TransactionSynchronizationManager.registerSynchronization(new org.springframework.transaction.support.TransactionSynchronization() {
             @Override public void afterCommit() { ids.forEach(projector::release); }
@@ -197,7 +233,8 @@ public final class PostgresEvaluationRepositoryAdapter implements EvaluationRepo
         var ids = jdbc.queryForList("select distinct scan_id from evaluation_results where status in ('PENDING','RUNNING')", Map.of(), UUID.class);
         ids.forEach(id -> closeActive(id, now, EvaluationError.EVALUATION_INTERRUPTED));
     }
-    private void insert(EvaluationResult result) {
+    private void insert(EvaluationResult candidate) {
+        var result = new com.llmscannerseguridad.privacy.DurableEvaluationProtection().protect(candidate, settings.recordBytes());
         var values = values(result);
         String columns = String.join(",", values.keySet());
         String parameters = values.keySet().stream().map(this::parameter).collect(java.util.stream.Collectors.joining(","));
@@ -236,6 +273,11 @@ public final class PostgresEvaluationRepositoryAdapter implements EvaluationRepo
         var e = r.evidence();
         put(v,"evidence_projection",e.projection(),"evidence_complete",e.complete(),"redacted",e.redacted(),"input_bytes",e.inputBytes(),
                 "evidence_bytes",e.evidenceBytes(),"input_hash",e.inputHash());
+        for (var entry : v.entrySet()) if (entry.getValue() instanceof String text) {
+            if (JSON_COLUMNS.contains(entry.getKey()) || entry.getKey().equals("evidence_projection")) {
+                com.llmscannerseguridad.privacy.DurableEvidenceProtection.requireDocument(text, settings.recordBytes());
+            } else com.llmscannerseguridad.privacy.DurableEvidenceProtection.requireText(text, settings.recordBytes());
+        }
         return v;
     }
     private void put(Map<String,Object> target, Object... pairs) {

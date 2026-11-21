@@ -206,6 +206,7 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
         ExecutionError streamError = null;
         Integer httpStatus = null;
         String safeRequest = null;
+        java.util.function.UnaryOperator<String> failureRedactor = text -> text;
         boolean requestRedacted = false;
         byte[] body = null;
         try {
@@ -295,6 +296,7 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
                         try {
                             credential = crypto.decrypt(target.credential());
                             secret = credential.value();
+                            com.llmscannerseguridad.privacy.ProtectionScope.register(secret);
                             TargetRules.secret(secret, settings.authType());
                             if (!StandardCharsets.ISO_8859_1.newEncoder().canEncode(secret)) {
                                 throw new InvocationFailure(ExecutionError.CREDENTIAL_UNAVAILABLE);
@@ -305,12 +307,17 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
                         request.setHeader(settings.authType() == AuthType.BEARER_TOKEN ? "Authorization" : settings.authHeaderName(),
                                 settings.authType() == AuthType.BEARER_TOKEN ? "Bearer " + secret : secret);
                     }
+                    String scopedCredential = secret;
+                    failureRedactor = session == null ? InteractionSession.credentialRedactor(scopedCredential)
+                            : text -> session.context().redactor(scopedCredential).apply(text);
                     boolean bootstrap = session != null && session.capture() != null;
                     var evidence = bootstrap ? null : evidence(rendered, null, secret, session);
                     if (evidence != null) evidenceLimit(evidence.request(), null);
                     // El resultado de fallo nunca guarda un body preparado antes de resolver los headers efímeros.
                     if (evidence != null && observations == null && (workflow == null || workflow.credentials().isEmpty())) {
-                        safeRequest = evidence.request();
+                        // Candidato original efímero: una captura posterior puede solaparse con la credencial.
+                        // El catch lo certifica de nuevo con el conjunto completo antes de devolverlo al worker.
+                        safeRequest = rendered;
                         requestRedacted = evidence.requestRedacted();
                     }
                     if (bounded) checkStream(deadline, budget); else check(deadline, budget);
@@ -427,29 +434,29 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
             }
         } catch (TargetJsonProcessor.JsonFailure error) {
             streamError = error.reason();
-            return failure(error.reason(), httpStatus, started, deadline, scanLimited, budget, safeRequest, requestRedacted);
+            return failure(error.reason(), httpStatus, started, deadline, scanLimited, budget, safeRequest, requestRedacted, failureRedactor);
         } catch (InvocationFailure error) {
             streamError = bounded && Thread.currentThread().isInterrupted() ? ExecutionError.EXECUTION_INTERRUPTED
                     : bounded && error.reason == ExecutionError.DNS_RESOLUTION_FAILED && System.nanoTime() >= deadline
                             ? ExecutionError.TARGET_TIMEOUT : error.reason;
-            return failure(streamError, httpStatus, started, deadline, scanLimited, budget, safeRequest, requestRedacted);
+            return failure(streamError, httpStatus, started, deadline, scanLimited, budget, safeRequest, requestRedacted, failureRedactor);
         } catch (SocketTimeoutException error) {
             streamError = ExecutionError.TARGET_TIMEOUT;
-            return failure(ExecutionError.TARGET_TIMEOUT, httpStatus, started, deadline, scanLimited, budget, safeRequest, requestRedacted);
+            return failure(ExecutionError.TARGET_TIMEOUT, httpStatus, started, deadline, scanLimited, budget, safeRequest, requestRedacted, failureRedactor);
         } catch (LimitedResponseParserFactory.HeaderLimitException error) {
             streamError = ExecutionError.RESPONSE_FORMAT_ERROR;
-            return failure(ExecutionError.RESPONSE_FORMAT_ERROR, httpStatus, started, deadline, scanLimited, budget, safeRequest, requestRedacted);
+            return failure(ExecutionError.RESPONSE_FORMAT_ERROR, httpStatus, started, deadline, scanLimited, budget, safeRequest, requestRedacted, failureRedactor);
         } catch (org.apache.hc.core5.http.MessageConstraintException | org.apache.hc.client5.http.ClientProtocolException error) {
             streamError = ExecutionError.RESPONSE_FORMAT_ERROR;
-            return failure(ExecutionError.RESPONSE_FORMAT_ERROR, httpStatus, started, deadline, scanLimited, budget, safeRequest, requestRedacted);
+            return failure(ExecutionError.RESPONSE_FORMAT_ERROR, httpStatus, started, deadline, scanLimited, budget, safeRequest, requestRedacted, failureRedactor);
         } catch (IOException error) {
             streamError = bounded && Thread.currentThread().isInterrupted() ? ExecutionError.EXECUTION_INTERRUPTED
                     : binding != null && httpStatus != null && System.nanoTime() < deadline ? ExecutionError.RESPONSE_FORMAT_ERROR
                     : ExecutionError.TARGET_CONNECTION_FAILED;
-            return failure(streamError, httpStatus, started, deadline, scanLimited, budget, safeRequest, requestRedacted);
+            return failure(streamError, httpStatus, started, deadline, scanLimited, budget, safeRequest, requestRedacted, failureRedactor);
         } catch (RuntimeException error) {
             streamError = ExecutionError.EXECUTION_INTERNAL_ERROR;
-            return failure(ExecutionError.EXECUTION_INTERNAL_ERROR, httpStatus, started, deadline, scanLimited, budget, safeRequest, requestRedacted);
+            return failure(ExecutionError.EXECUTION_INTERNAL_ERROR, httpStatus, started, deadline, scanLimited, budget, safeRequest, requestRedacted, failureRedactor);
         } finally {
             if (body != null) {
                 Arrays.fill(body, (byte) 0);
@@ -505,13 +512,25 @@ public final class HttpTargetInvocationAdapter implements TargetInvocationPort, 
     Object parseSessionResponse(String body) { return json.parseResponse(body); }
 
     private InvocationResult failure(ExecutionError error, Integer http, long started, long deadline, boolean scanLimited,
-            ScanBudget budget, String request, boolean redacted) {
+            ScanBudget budget, String request, boolean redacted, java.util.function.UnaryOperator<String> redact) {
         error = effectiveError(error, deadline, scanLimited, budget);
         if (error == ExecutionError.EVIDENCE_LIMIT_EXCEEDED) {
             request = null;
             redacted = false;
         }
-        return new InvocationResult(http, elapsed(started), error, request, null, redacted, false);
+        if (request != null) {
+            try {
+                var safe = json.sanitize(request, null, redact);
+                request = safe.request(); redacted |= safe.requestRedacted();
+            } catch (RuntimeException incomplete) {
+                request = null; redacted = false;
+                if (error != ExecutionError.SCAN_BUDGET_EXCEEDED && error != ExecutionError.EXECUTION_INTERRUPTED) {
+                    error = ExecutionError.EVIDENCE_LIMIT_EXCEEDED;
+                }
+            }
+        }
+        return new com.llmscannerseguridad.privacy.DurableEvidenceProtection(limits.requestBytes(), limits.textBytes(), limits.evidenceBytes())
+                .protect(new InvocationResult(http, elapsed(started), error, request, null, redacted, false), budget);
     }
 
     private static ExecutionError effectiveError(ExecutionError error, long deadline, boolean scanLimited, ScanBudget budget) {

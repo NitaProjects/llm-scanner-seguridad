@@ -52,6 +52,8 @@ public final class PostgresScanScoreRepositoryAdapter implements ScanScoreReposi
     }
     @Override public ScanScore insert(ScanScore candidate) {
         participating();
+        com.llmscannerseguridad.privacy.ProtectionScope.requireScan(candidate.scanId());
+        com.llmscannerseguridad.privacy.DurableEvidenceProtection.requireDocument(ScoringJson.write(candidate), 65536);
         var snapshot = lock(candidate.scanId());
         snapshot.validate();
         if (snapshot.score() != null) {

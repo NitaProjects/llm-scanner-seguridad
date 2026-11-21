@@ -1,0 +1,383 @@
+{
+  "change": "harden-durable-secret-redaction",
+  "date": "2026-11-21",
+  "status": "READY FOR REVIEW",
+  "profile": "N4",
+  "scope": "prospective, known protected values only",
+  "limits": {
+    "layers": 4,
+    "jsonDepth": 32,
+    "protectedValues": 512,
+    "nodesCandidatesIntervals": 4096,
+    "views": "5 * B",
+    "registryBytes": "min(scanEvidenceBytes, 524288)"
+  },
+  "offline": {
+    "command": ".\\mvnw.cmd -o test",
+    "tests": 852,
+    "passed": 748,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 104,
+    "build": "SUCCESS",
+    "source": "executor final run after UTF-8 preservation",
+    "finishedAt": "2026-11-21T14:01:03+01:00",
+    "duration": "1 min 41 s"
+  },
+  "directed": {
+    "tests": 80,
+    "passed": 80,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "skippedSuites": [
+    {
+      "class": "com.llmscannerseguridad.LlmScannerSeguridadApplicationTests",
+      "skipped": 1
+    },
+    {
+      "class": "com.llmscannerseguridad.integration.DurableSecretPostgresIntegrationTest",
+      "skipped": 4
+    },
+    {
+      "class": "com.llmscannerseguridad.integration.EvaluationEnginePostgresIntegrationTest",
+      "skipped": 20
+    },
+    {
+      "class": "com.llmscannerseguridad.integration.EvaluationMigrationIntegrationTest",
+      "skipped": 3
+    },
+    {
+      "class": "com.llmscannerseguridad.integration.HybridV2PostgresIntegrationTest",
+      "skipped": 1
+    },
+    {
+      "class": "com.llmscannerseguridad.integration.OpenAiCompatiblePostgresIntegrationTest",
+      "skipped": 4
+    },
+    {
+      "class": "com.llmscannerseguridad.integration.ProjectDeletionPostgresIntegrationTest",
+      "skipped": 6
+    },
+    {
+      "class": "com.llmscannerseguridad.integration.ProjectPostgresIntegrationTest",
+      "skipped": 7
+    },
+    {
+      "class": "com.llmscannerseguridad.integration.ReportingMigrationIntegrationTest",
+      "skipped": 3
+    },
+    {
+      "class": "com.llmscannerseguridad.integration.ReportingPostgresIntegrationTest",
+      "skipped": 11
+    },
+    {
+      "class": "com.llmscannerseguridad.integration.ScanMigrationIntegrationTest",
+      "skipped": 2
+    },
+    {
+      "class": "com.llmscannerseguridad.integration.ScanPostgresIntegrationTest",
+      "skipped": 13
+    },
+    {
+      "class": "com.llmscannerseguridad.integration.ScoringEnginePostgresIntegrationTest",
+      "skipped": 9
+    },
+    {
+      "class": "com.llmscannerseguridad.integration.ScoringMigrationIntegrationTest",
+      "skipped": 3
+    },
+    {
+      "class": "com.llmscannerseguridad.integration.SecurityTestExecutionPostgresIntegrationTest",
+      "skipped": 7
+    },
+    {
+      "class": "com.llmscannerseguridad.integration.SecurityTestMigrationIntegrationTest",
+      "skipped": 2
+    },
+    {
+      "class": "com.llmscannerseguridad.integration.SessionPostgresIntegrationTest",
+      "skipped": 1
+    },
+    {
+      "class": "com.llmscannerseguridad.integration.StreamingPostgresIntegrationTest",
+      "skipped": 1
+    },
+    {
+      "class": "com.llmscannerseguridad.integration.TargetPostgresIntegrationTest",
+      "skipped": 5
+    },
+    {
+      "class": "com.llmscannerseguridad.integration.WorkflowPostgresIntegrationTest",
+      "skipped": 1
+    }
+  ],
+  "postgresql": {
+    "status": "PASS",
+    "command": ".\\mvnw.cmd -o '-Dtest=DurableSecretPostgresIntegrationTest,WorkflowPostgresIntegrationTest' test",
+    "environment": "localhost:5432/llm_scanner_seguridad_test; PostgreSQL 16 required",
+    "source": "operator manual summary",
+    "previousResult": {
+      "tests": 5,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "build": "FAILURE",
+      "source": "operator 2026-11-21T14:02:46+01:00",
+      "failure": "chat expected COMPLETED, actual FAILED; fixture omitted finish_reason=stop"
+    },
+    "required": "SATISFIED: 5 tests, 0 failures, 0 errors, 0 skipped after chat terminal correction",
+    "history": [
+      {
+        "tests": 5,
+        "failures": 0,
+        "errors": 1,
+        "skipped": 0,
+        "build": "FAILURE",
+        "error": "InvalidTargetRequest in REST/chat/SSE/JSONL fixture; corrected authConfig.secretValue nesting"
+      },
+      {
+        "tests": 5,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0,
+        "build": "FAILURE",
+        "source": "operator 2026-11-21T14:02:46+01:00",
+        "failure": "chat expected COMPLETED, actual FAILED; fixture omitted finish_reason=stop"
+      }
+    ],
+    "agentRerun": {
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 5,
+      "build": "SUCCESS",
+      "finishedAt": "2026-11-21T14:07:32+01:00",
+      "acceptance": "BLOCKED; not PASS; SCAN_TEST_DB_* absent"
+    },
+    "result": {
+      "tests": 5,
+      "passed": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "build": "SUCCESS",
+      "durationSeconds": 57.453,
+      "finishedAt": "2026-11-21T14:10:01+01:00",
+      "source": "operator supplied Maven summary from dedicated PostgreSQL terminal after chat fixture correction",
+      "suites": {
+        "DurableSecretPostgresIntegrationTest": 4,
+        "WorkflowPostgresIntegrationTest": 1
+      }
+    },
+    "coverage": [
+      "REST/chat/SSE/JSONL completed pipeline, four executions/evaluations, score/report",
+      "workflow/session/cookies/CSRF/RAG/tool originals and discarded/overlapping IDs",
+      "independent JDBC oracle postcommit and after context reopen",
+      "secondary mandatory rejection, Finding transaction rollback, score/report joint rollback and prior scan isolation",
+      "historical reads without protection scope or replayed transport"
+    ]
+  },
+  "matrix": [
+    {
+      "id": "T01",
+      "case": "Literal",
+      "coverage": "ProtectedContentInspectorTest.t01ToT08FindsRuntimeN4Equivalents",
+      "offline": "PASS"
+    },
+    {
+      "id": "T02",
+      "case": "JSON escapes estándar",
+      "coverage": "ProtectedContentInspectorTest.t02AllStandardJsonEscapesAndMixedHexAreInspected",
+      "offline": "PASS"
+    },
+    {
+      "id": "T03",
+      "case": "Primer carácter Unicode",
+      "coverage": "ProtectedContentInspectorTest.t01ToT08FindsRuntimeN4Equivalents",
+      "offline": "PASS"
+    },
+    {
+      "id": "T04",
+      "case": "Unicode múltiple",
+      "coverage": "ProtectedContentInspectorTest.t01ToT08FindsRuntimeN4Equivalents",
+      "offline": "PASS"
+    },
+    {
+      "id": "T05",
+      "case": "Hex minúscula/mayúscula",
+      "coverage": "ProtectedContentInspectorTest.t02AllStandardJsonEscapesAndMixedHexAreInspected",
+      "offline": "PASS"
+    },
+    {
+      "id": "T06",
+      "case": "JSON anidado",
+      "coverage": "ProtectedContentInspectorTest.t01ToT08FindsRuntimeN4Equivalents",
+      "offline": "PASS"
+    },
+    {
+      "id": "T07",
+      "case": "Doble encoding",
+      "coverage": "ProtectedContentInspectorTest.t01ToT08FindsRuntimeN4Equivalents",
+      "offline": "PASS"
+    },
+    {
+      "id": "T08",
+      "case": "Cuatro capas",
+      "coverage": "ProtectedContentInspectorTest.t01ToT08FindsRuntimeN4Equivalents",
+      "offline": "PASS"
+    },
+    {
+      "id": "T09",
+      "case": "Quinta capa/falta de punto fijo",
+      "coverage": "ProtectedContentInspectorTest.t09DepthFiveAndFreeTextExhaustionAreNotSafeEvenWithoutFindingSecret",
+      "offline": "PASS"
+    },
+    {
+      "id": "T10",
+      "case": "Malformed fail-closed",
+      "coverage": "ProtectedContentInspectorTest.t10MalformedEscapesAndOtherBranchesPrecedeEarlyMatch",
+      "offline": "PASS"
+    },
+    {
+      "id": "T11",
+      "case": "Overlap",
+      "coverage": "ProtectedContentInspectorTest.t11T12OriginalIntervalsOverlapAndOrderAreEquivalent",
+      "offline": "PASS"
+    },
+    {
+      "id": "T12",
+      "case": "Prefix/suffix overlap",
+      "coverage": "ProtectedContentInspectorTest.t11T12OriginalIntervalsOverlapAndOrderAreEquivalent",
+      "offline": "PASS"
+    },
+    {
+      "id": "T13",
+      "case": "Retrieval local-only",
+      "coverage": "DurableEvidenceProtectionTest.t13ToT18ProtectsEveryClassifiedOriginalAndCopiesInBothFields",
+      "offline": "PASS"
+    },
+    {
+      "id": "T14",
+      "case": "Tool argument",
+      "coverage": "DurableEvidenceProtectionTest.t13ToT18ProtectsEveryClassifiedOriginalAndCopiesInBothFields",
+      "offline": "PASS"
+    },
+    {
+      "id": "T15",
+      "case": "Tool result",
+      "coverage": "DurableEvidenceProtectionTest.t13ToT18ProtectsEveryClassifiedOriginalAndCopiesInBothFields",
+      "offline": "PASS"
+    },
+    {
+      "id": "T16",
+      "case": "Session variable",
+      "coverage": "DurableEvidenceProtectionTest.t13ToT18ProtectsEveryClassifiedOriginalAndCopiesInBothFields",
+      "offline": "PASS"
+    },
+    {
+      "id": "T17",
+      "case": "CSRF",
+      "coverage": "DurableEvidenceProtectionTest.t13ToT18ProtectsEveryClassifiedOriginalAndCopiesInBothFields",
+      "offline": "PASS"
+    },
+    {
+      "id": "T18",
+      "case": "Cookie/rotación",
+      "coverage": "DurableEvidenceProtectionTest.t13ToT18ProtectsEveryClassifiedOriginalAndCopiesInBothFields",
+      "offline": "PASS"
+    },
+    {
+      "id": "T19",
+      "case": "JSON response",
+      "coverage": "DurableEvidenceProtectionTest.t19ToT24PreservesBenignBodiesAndSanitizesLateCapturesOnError; HttpTargetInvocationAdapterTest",
+      "offline": "PASS"
+    },
+    {
+      "id": "T20",
+      "case": "SSE reconstructed",
+      "coverage": "StreamingTargetTest (incluye StreamCollector)",
+      "offline": "PASS"
+    },
+    {
+      "id": "T21",
+      "case": "JSONL reconstructed",
+      "coverage": "StreamingTargetTest (incluye StreamCollector)",
+      "offline": "PASS"
+    },
+    {
+      "id": "T22",
+      "case": "Request",
+      "coverage": "DurableEvidenceProtectionTest.t13ToT18ProtectsEveryClassifiedOriginalAndCopiesInBothFields",
+      "offline": "PASS"
+    },
+    {
+      "id": "T23",
+      "case": "Response",
+      "coverage": "DurableEvidenceProtectionTest.uninspectableScopeAndDepthSuppressBodiesAndKeepOnlySafeMetadata",
+      "offline": "PASS"
+    },
+    {
+      "id": "T24",
+      "case": "Error/safeRequest/precedencia",
+      "coverage": "DurableEvidenceProtectionTest.t19ToT24PreservesBenignBodiesAndSanitizesLateCapturesOnError; HttpTargetFailurePrecedenceTest",
+      "offline": "PASS"
+    },
+    {
+      "id": "T25",
+      "case": "Secondary persistence",
+      "coverage": "DurableEvidenceProtectionTest.t25SameSanitizedEvaluationFeedsFindingWhileRequiredSnapshotCannotBeRepaired",
+      "offline": "PASS"
+    },
+    {
+      "id": "T26",
+      "case": "Semantic consistency",
+      "coverage": "HybridV2EvaluationTest.durableScopeAndSemanticExportShareN4ForProtectedRestrictionOnly",
+      "offline": "PASS"
+    },
+    {
+      "id": "T27",
+      "case": "Scoring/report",
+      "coverage": "ScoringPolicyV1Test; CalculateScanScoreUseCaseTest; GenerateReportUseCaseTest; SecurityReportTest",
+      "offline": "PASS"
+    },
+    {
+      "id": "T28",
+      "case": "Historical",
+      "coverage": "Regression suites; WorkflowPostgresIntegrationTest",
+      "offline": "PASS"
+    }
+  ],
+  "openspecStrict": "PASS",
+  "tasks": {
+    "completed": 23,
+    "total": 23
+  },
+  "noRealProviderCalls": true,
+  "noSchemaMigration": true,
+  "chatDiagnosis": {
+    "classification": "FIXTURE_BUG",
+    "rootCause": "OpenAI-compatible fixture lacks mandatory choices[0].finish_reason=stop",
+    "codecReason": "RESPONSE_FORMAT_ERROR",
+    "privacyInspection": "original response rejected before N4; valid terminal preserves exact payload then N4 returns MATCH for the synthetic protected value",
+    "originalPersistedMetadata": "not recovered: prior fixture schemas cleaned on exit; no invented execution ID or database inspection",
+    "fix": "add finish_reason=stop only to chat fixture; preserve encoded content and COMPLETED expectation; add safe metadata on failure assertion",
+    "productionChangesThisCorrection": false,
+    "tests": {
+      "classes": [
+        "DurableChatFixtureTest",
+        "OpenAiCompatibleTargetAdapterTest"
+      ],
+      "tests": 32,
+      "passed": 32,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "build": "SUCCESS",
+      "finishedAt": "2026-11-21T14:07:13+01:00"
+    },
+    "physicalAcceptance": "PASS: operator rerun 2026-11-21T14:10:01+01:00"
+  },
+  "validationNote": "Offline full-suite snapshot remains 748 passed / 104 skipped. Subsequent chat-directed tests and PostgreSQL operator result are separate runs, not an invented aggregate full suite."
+}
