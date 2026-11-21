@@ -1,0 +1,3 @@
+															449 group (grupo) '{"reduce":true,"scroll":"auto","animations":["none","none","none"],"width":871,"overflow":false}' Stack table collapsed
+																	451 text (texto) '{"reduce":true,"scroll":"auto","animations":["none","none","none"],"width":871,"overflow":false}'
+Browser: isolated Chrome profile, --force-prefers-reduced-motion=reduce; running synthetic Scan; no evaluator/backend.

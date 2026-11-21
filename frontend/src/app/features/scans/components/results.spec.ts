@@ -24,10 +24,10 @@ describe('Scan results presentation', () => {
     const items = [finding(1, { severity: 'MEDIUM', confidence: 1 }), finding(0, { severity: 'HIGH', confidence: .1 }), finding(3, { severity: 'CRITICAL' }), finding(2, { severity: 'HIGH', category: 'LLM01', id: id(99) })];
     const original = [...items]; expect(sortFindings(items).map(item => item.id)).toEqual([id(33), id(30), id(99), id(31)]); expect(items).toEqual(original); expect(confidenceLabel(.85)).toBe('Confianza heurística: 85 %');
   });
-  it('native details keep original narratives and repeated recommendations, XSS remains inert', () => {
+  it('the selected intelligence panel keeps narratives and recommendations, XSS remains inert', () => {
     const fixture = TestBed.createComponent(FindingList); const attack = '<img src=x onerror="window.attack=true"><script>attack()</script>';
     fixture.componentRef.setInput('findings', [finding(0, { title: attack, description: attack, evidenceSummary: attack }), finding(1)]); fixture.detectChanges(); const node: HTMLElement = fixture.nativeElement;
-    expect(node.querySelectorAll('details')).toHaveLength(2); expect(node.querySelectorAll('img,script')).toHaveLength(0); expect(node.textContent).toContain(attack); expect(node.textContent?.split('Review the output boundary.')).toHaveLength(3); expect(node.textContent).toContain('no es una probabilidad calibrada');
+    expect(node.querySelectorAll('.finding-row')).toHaveLength(2); expect(node.querySelectorAll('img,script')).toHaveLength(0); expect(node.textContent).toContain(attack); expect(node.querySelector('app-finding-intelligence-panel')?.textContent).toContain('Review the output boundary.'); expect(node.textContent).toContain('no es una probabilidad calibrada'); const buttons = node.querySelectorAll<HTMLButtonElement>('.inspect'); buttons[1].click(); fixture.detectChanges(); expect(node.querySelector('app-finding-intelligence-panel')?.textContent).toContain('Review the output boundary.');
   });
   it('separates inconclusive, negative, degraded vulnerable and failed evaluation semantics', () => {
     const fixture = TestBed.createComponent(EvaluationList); const mixed = scenario('degraded'); fixture.componentRef.setInput('evaluations', [...mixed.evaluations.slice(0, 3), evaluation(3, { status: 'FAILED', finalVerdict: 'INCONCLUSIVE', confidence: 0, errorReason: 'EVALUATION_ABORTED' })]); fixture.detectChanges(); const text = fixture.nativeElement.textContent;

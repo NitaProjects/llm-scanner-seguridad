@@ -1,0 +1,1909 @@
+{
+  "revision": "R2-final-2026-11-20",
+  "source": "Production build 2026-11-20T01:45:04.257Z; final target width and shell wording",
+  "regional": [
+    {
+      "view": "projects",
+      "measurements": [
+        {
+          "activeNavigation": [
+            "Proyectos"
+          ],
+          "activity": 0,
+          "bands": null,
+          "brand": {
+            "bottom": 88,
+            "height": 88,
+            "width": 239.33334350585935,
+            "x": 0,
+            "y": 0
+          },
+          "columns": null,
+          "form": null,
+          "header": {
+            "bottom": 64,
+            "height": 64,
+            "width": 1200,
+            "x": 240,
+            "y": 0
+          },
+          "height": 900,
+          "inspector": null,
+          "overflow": false,
+          "overview": null,
+          "rows": [
+            {
+              "bottom": 466.3645935058594,
+              "height": 96
+            },
+            {
+              "bottom": 562.3645935058594,
+              "height": 96
+            },
+            {
+              "bottom": 658.3646240234375,
+              "height": 96
+            }
+          ],
+          "score": null,
+          "sidebar": {
+            "bottom": 900,
+            "height": 900,
+            "width": 240,
+            "x": 0,
+            "y": 0
+          },
+          "summary": {
+            "bottom": 297.6979217529297,
+            "height": 102.5,
+            "width": 1136,
+            "x": 272,
+            "y": 195.1979217529297
+          },
+          "version": "Frontend v0.0.0Solo sistemas propios o autorizados.",
+          "warning": null,
+          "width": 1440
+        },
+        {
+          "activeNavigation": [
+            "Proyectos"
+          ],
+          "activity": 0,
+          "bands": null,
+          "brand": {
+            "bottom": 88,
+            "height": 88,
+            "width": 239.33334350585935,
+            "x": 0,
+            "y": 0
+          },
+          "columns": null,
+          "form": null,
+          "header": {
+            "bottom": 64,
+            "height": 64,
+            "width": 1040,
+            "x": 240,
+            "y": 0
+          },
+          "height": 900,
+          "inspector": null,
+          "overflow": false,
+          "overview": null,
+          "rows": [
+            {
+              "bottom": 461.5625,
+              "height": 96
+            },
+            {
+              "bottom": 557.5625,
+              "height": 96
+            },
+            {
+              "bottom": 653.5625,
+              "height": 96
+            }
+          ],
+          "score": null,
+          "sidebar": {
+            "bottom": 900,
+            "height": 900,
+            "width": 240,
+            "x": 0,
+            "y": 0
+          },
+          "summary": {
+            "bottom": 292.8958435058594,
+            "height": 102.5,
+            "width": 976,
+            "x": 272,
+            "y": 190.39584350585935
+          },
+          "version": "Frontend v0.0.0Solo sistemas propios o autorizados.",
+          "warning": null,
+          "width": 1280
+        },
+        {
+          "activeNavigation": [
+            "Proyectos"
+          ],
+          "activity": 0,
+          "bands": null,
+          "brand": {
+            "bottom": 100.75,
+            "height": 100.75,
+            "width": 223.33334350585935,
+            "x": 0,
+            "y": 0
+          },
+          "columns": null,
+          "form": null,
+          "header": {
+            "bottom": 64,
+            "height": 64,
+            "width": 800,
+            "x": 224,
+            "y": 0
+          },
+          "height": 900,
+          "inspector": null,
+          "overflow": false,
+          "overview": null,
+          "rows": [
+            {
+              "bottom": 461.5625,
+              "height": 96
+            },
+            {
+              "bottom": 557.5625,
+              "height": 96
+            },
+            {
+              "bottom": 653.5625,
+              "height": 96
+            }
+          ],
+          "score": null,
+          "sidebar": {
+            "bottom": 900,
+            "height": 900,
+            "width": 224,
+            "x": 0,
+            "y": 0
+          },
+          "summary": {
+            "bottom": 292.8958435058594,
+            "height": 102.5,
+            "width": 752,
+            "x": 248,
+            "y": 190.39584350585935
+          },
+          "version": "Frontend v0.0.0Solo sistemas propios o autorizados.",
+          "warning": null,
+          "width": 1024
+        }
+      ]
+    },
+    {
+      "view": "completed",
+      "measurements": [
+        {
+          "activeNavigation": [
+            "Análisis del proyecto"
+          ],
+          "activity": 0,
+          "bands": {
+            "bottom": 1832.199279785156,
+            "height": 1011.9166870117188,
+            "width": 603.1666870117188,
+            "x": 272,
+            "y": 820.2825927734375
+          },
+          "brand": {
+            "bottom": 88,
+            "height": 88,
+            "width": 239.33334350585935,
+            "x": 0,
+            "y": 0
+          },
+          "columns": "603.167px 493.5px",
+          "form": null,
+          "header": {
+            "bottom": 64,
+            "height": 64,
+            "width": 1184.666748046875,
+            "x": 240,
+            "y": 0
+          },
+          "height": 900,
+          "inspector": {
+            "bottom": 1821.8450927734375,
+            "height": 1001.5625,
+            "width": 493.5,
+            "x": 899.1666870117188,
+            "y": 820.2825927734375
+          },
+          "overflow": false,
+          "overview": {
+            "bottom": 710.9492492675781,
+            "height": 432.8958435058594,
+            "width": 1120.666748046875,
+            "x": 272,
+            "y": 278.05340576171875
+          },
+          "rows": [],
+          "score": null,
+          "sidebar": {
+            "bottom": 900,
+            "height": 900,
+            "width": 240,
+            "x": 0,
+            "y": 0
+          },
+          "summary": null,
+          "version": "Frontend v0.0.0Solo sistemas propios o autorizados.",
+          "warning": {
+            "bottom": 630.2825927734375,
+            "height": 48,
+            "width": 1071.3333740234375,
+            "x": 296.66668701171875,
+            "y": 582.2825927734375
+          },
+          "width": 1440
+        },
+        {
+          "activeNavigation": [
+            "Análisis del proyecto"
+          ],
+          "activity": 0,
+          "bands": {
+            "bottom": 1805.4501953125,
+            "height": 1011.916748046875,
+            "width": 515.1666870117188,
+            "x": 272,
+            "y": 793.533447265625
+          },
+          "brand": {
+            "bottom": 88,
+            "height": 88,
+            "width": 239.33334350585935,
+            "x": 0,
+            "y": 0
+          },
+          "columns": "515.167px 421.5px",
+          "form": null,
+          "header": {
+            "bottom": 42.66666603088379,
+            "height": 64,
+            "width": 1024.666748046875,
+            "x": 240,
+            "y": -21.33333396911621
+          },
+          "height": 900,
+          "inspector": {
+            "bottom": 1795.0960693359375,
+            "height": 1001.5626220703124,
+            "width": 421.5,
+            "x": 811.1666870117188,
+            "y": 793.533447265625
+          },
+          "overflow": false,
+          "overview": {
+            "bottom": 684.2002410888672,
+            "height": 432.89593505859375,
+            "width": 960.6666870117188,
+            "x": 272,
+            "y": 251.30430603027344
+          },
+          "rows": [],
+          "score": null,
+          "sidebar": {
+            "bottom": 900,
+            "height": 900,
+            "width": 240,
+            "x": 0,
+            "y": 0
+          },
+          "summary": null,
+          "version": "Frontend v0.0.0Solo sistemas propios o autorizados.",
+          "warning": {
+            "bottom": 603.5335083007812,
+            "height": 48,
+            "width": 911.3333740234376,
+            "x": 296.66668701171875,
+            "y": 555.5335083007812
+          },
+          "width": 1280
+        },
+        {
+          "activeNavigation": [
+            "Análisis del proyecto"
+          ],
+          "activity": 0,
+          "bands": {
+            "bottom": 1564.229248046875,
+            "height": 733.2083740234375,
+            "width": 736.6666870117188,
+            "x": 248,
+            "y": 831.0208740234375
+          },
+          "brand": {
+            "bottom": 100.75,
+            "height": 100.75,
+            "width": 223.33334350585935,
+            "x": 0,
+            "y": 0
+          },
+          "columns": "736.667px",
+          "form": null,
+          "header": {
+            "bottom": 48.66666603088379,
+            "height": 64,
+            "width": 784.6666870117188,
+            "x": 224,
+            "y": -15.333333969116213
+          },
+          "height": 900,
+          "inspector": {
+            "bottom": 3030.58349609375,
+            "height": 980.5625,
+            "width": 736.6666870117188,
+            "x": 248,
+            "y": 2050.02099609375
+          },
+          "overflow": false,
+          "overview": {
+            "bottom": 721.6875305175781,
+            "height": 432.8958435058594,
+            "width": 736.6666870117188,
+            "x": 248,
+            "y": 288.79168701171875
+          },
+          "rows": [],
+          "score": null,
+          "sidebar": {
+            "bottom": 900,
+            "height": 900,
+            "width": 224,
+            "x": 0,
+            "y": 0
+          },
+          "summary": null,
+          "version": "Frontend v0.0.0Solo sistemas propios o autorizados.",
+          "warning": {
+            "bottom": 641.0208740234375,
+            "height": 48,
+            "width": 687.3333740234375,
+            "x": 272.66668701171875,
+            "y": 593.0208740234375
+          },
+          "width": 1024
+        }
+      ]
+    },
+    {
+      "view": "running",
+      "measurements": [
+        {
+          "activeNavigation": [
+            "Análisis del proyecto"
+          ],
+          "activity": 3,
+          "bands": null,
+          "brand": {
+            "bottom": 88,
+            "height": 88,
+            "width": 239.33334350585935,
+            "x": 0,
+            "y": 0
+          },
+          "columns": null,
+          "form": null,
+          "header": {
+            "bottom": 64,
+            "height": 64,
+            "width": 1184.666748046875,
+            "x": 240,
+            "y": 0
+          },
+          "height": 900,
+          "inspector": null,
+          "overflow": false,
+          "overview": null,
+          "rows": [],
+          "score": null,
+          "sidebar": {
+            "bottom": 900,
+            "height": 900,
+            "width": 240,
+            "x": 0,
+            "y": 0
+          },
+          "summary": null,
+          "version": "Frontend v0.0.0Solo sistemas propios o autorizados.",
+          "warning": null,
+          "width": 1440
+        },
+        {
+          "activeNavigation": [
+            "Análisis del proyecto"
+          ],
+          "activity": 3,
+          "bands": null,
+          "brand": {
+            "bottom": 88,
+            "height": 88,
+            "width": 239.33334350585935,
+            "x": 0,
+            "y": 0
+          },
+          "columns": null,
+          "form": null,
+          "header": {
+            "bottom": 22,
+            "height": 64,
+            "width": 1024.666748046875,
+            "x": 240,
+            "y": -42
+          },
+          "height": 900,
+          "inspector": null,
+          "overflow": false,
+          "overview": null,
+          "rows": [],
+          "score": null,
+          "sidebar": {
+            "bottom": 900,
+            "height": 900,
+            "width": 240,
+            "x": 0,
+            "y": 0
+          },
+          "summary": null,
+          "version": "Frontend v0.0.0Solo sistemas propios o autorizados.",
+          "warning": null,
+          "width": 1280
+        },
+        {
+          "activeNavigation": [
+            "Análisis del proyecto"
+          ],
+          "activity": 3,
+          "bands": null,
+          "brand": {
+            "bottom": 100.75,
+            "height": 100.75,
+            "width": 223.33334350585935,
+            "x": 0,
+            "y": 0
+          },
+          "columns": null,
+          "form": null,
+          "header": {
+            "bottom": 33.33333206176758,
+            "height": 64,
+            "width": 784.6666870117188,
+            "x": 224,
+            "y": -30.666667938232425
+          },
+          "height": 900,
+          "inspector": null,
+          "overflow": false,
+          "overview": null,
+          "rows": [],
+          "score": null,
+          "sidebar": {
+            "bottom": 900,
+            "height": 900,
+            "width": 224,
+            "x": 0,
+            "y": 0
+          },
+          "summary": null,
+          "version": "Frontend v0.0.0Solo sistemas propios o autorizados.",
+          "warning": null,
+          "width": 1024
+        }
+      ]
+    },
+    {
+      "view": "target",
+      "measurements": [
+        {
+          "activeNavigation": [
+            "Configuración del target"
+          ],
+          "activity": 0,
+          "bands": null,
+          "brand": {
+            "bottom": 88,
+            "height": 88,
+            "width": 239.33334350585935,
+            "x": 0,
+            "y": 0
+          },
+          "columns": null,
+          "form": {
+            "bottom": 1876.0135498046875,
+            "height": 1535.0625,
+            "width": 1120.666748046875,
+            "x": 272,
+            "y": 340.9510498046875
+          },
+          "header": {
+            "bottom": 62.66666662693024,
+            "height": 64,
+            "width": 1184.666748046875,
+            "x": 240,
+            "y": -1.3333333730697632
+          },
+          "height": 900,
+          "inspector": null,
+          "overflow": false,
+          "overview": null,
+          "rows": [],
+          "score": null,
+          "sidebar": {
+            "bottom": 900,
+            "height": 900,
+            "width": 240,
+            "x": 0,
+            "y": 0
+          },
+          "summary": null,
+          "version": "Frontend v0.0.0Solo sistemas propios o autorizados.",
+          "warning": {
+            "bottom": 324.9510498046875,
+            "height": 48,
+            "width": 1120.666748046875,
+            "x": 272,
+            "y": 276.9510498046875
+          },
+          "width": 1440
+        },
+        {
+          "activeNavigation": [
+            "Configuración del target"
+          ],
+          "activity": 0,
+          "bands": null,
+          "brand": {
+            "bottom": 88,
+            "height": 88,
+            "width": 239.33334350585935,
+            "x": 0,
+            "y": 0
+          },
+          "columns": null,
+          "form": {
+            "bottom": 1874.166015625,
+            "height": 1556.0625,
+            "width": 960.6666870117188,
+            "x": 272,
+            "y": 318.103515625
+          },
+          "header": {
+            "bottom": 45.33333206176758,
+            "height": 64,
+            "width": 1024.666748046875,
+            "x": 240,
+            "y": -18.666667938232425
+          },
+          "height": 900,
+          "inspector": null,
+          "overflow": false,
+          "overview": null,
+          "rows": [],
+          "score": null,
+          "sidebar": {
+            "bottom": 900,
+            "height": 900,
+            "width": 240,
+            "x": 0,
+            "y": 0
+          },
+          "summary": null,
+          "version": "Frontend v0.0.0Solo sistemas propios o autorizados.",
+          "warning": {
+            "bottom": 302.10350036621094,
+            "height": 48,
+            "width": 960.6666870117188,
+            "x": 272,
+            "y": 254.10350036621097
+          },
+          "width": 1280
+        },
+        {
+          "activeNavigation": [
+            "Configuración del target"
+          ],
+          "activity": 0,
+          "bands": null,
+          "brand": {
+            "bottom": 100.75,
+            "height": 100.75,
+            "width": 223.33334350585935,
+            "x": 0,
+            "y": 0
+          },
+          "columns": null,
+          "form": {
+            "bottom": 1923.4583435058591,
+            "height": 1577.0625,
+            "width": 736.6666870117188,
+            "x": 248,
+            "y": 346.3958435058594
+          },
+          "header": {
+            "bottom": 50,
+            "height": 64,
+            "width": 784.6666870117188,
+            "x": 224,
+            "y": -14
+          },
+          "height": 900,
+          "inspector": null,
+          "overflow": false,
+          "overview": null,
+          "rows": [],
+          "score": null,
+          "sidebar": {
+            "bottom": 900,
+            "height": 900,
+            "width": 224,
+            "x": 0,
+            "y": 0
+          },
+          "summary": null,
+          "version": "Frontend v0.0.0Solo sistemas propios o autorizados.",
+          "warning": {
+            "bottom": 330.3958435058594,
+            "height": 72,
+            "width": 736.6666870117188,
+            "x": 248,
+            "y": 258.3958435058594
+          },
+          "width": 1024
+        }
+      ]
+    },
+    {
+      "view": "findings-long",
+      "measurements": [
+        {
+          "activity": 0,
+          "bodyTop": -2064,
+          "headings": [
+            "Análisis completado",
+            "Risk Overview",
+            "OWASP Risk Bands",
+            "Prompt Injection",
+            "Sensitive Information Disclosure",
+            "Hidden Context Exposure",
+            "Improper Output Handling",
+            "Hallazgos",
+            "Hallazgo sintético de revisión de límites y tratamiento de información en el asistente autorizado",
+            "Hallazgo sintético de revisión de límites y tratamiento de información en el asistente autorizado",
+            "Hallazgo sintético de revisión de límites y tratamiento de información en el asistente autorizado",
+            "Hallazgo sintético de revisión de límites y tratamiento de información en el asistente autorizado"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 240,
+          "status": null,
+          "summary": null,
+          "width": 1440
+        },
+        {
+          "activity": 0,
+          "bodyTop": -2080.666748046875,
+          "headings": [
+            "Análisis completado",
+            "Risk Overview",
+            "OWASP Risk Bands",
+            "Prompt Injection",
+            "Sensitive Information Disclosure",
+            "Hidden Context Exposure",
+            "Improper Output Handling",
+            "Hallazgos",
+            "Hallazgo sintético de revisión de límites y tratamiento de información en el asistente autorizado",
+            "Hallazgo sintético de revisión de límites y tratamiento de información en el asistente autorizado",
+            "Hallazgo sintético de revisión de límites y tratamiento de información en el asistente autorizado",
+            "Hallazgo sintético de revisión de límites y tratamiento de información en el asistente autorizado"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 240,
+          "status": null,
+          "summary": null,
+          "width": 1280
+        },
+        {
+          "activity": 0,
+          "bodyTop": -2080.666748046875,
+          "headings": [
+            "Análisis completado",
+            "Risk Overview",
+            "OWASP Risk Bands",
+            "Prompt Injection",
+            "Sensitive Information Disclosure",
+            "Hidden Context Exposure",
+            "Improper Output Handling",
+            "Hallazgos",
+            "Hallazgo sintético de revisión de límites y tratamiento de información en el asistente autorizado",
+            "Hallazgo sintético de revisión de límites y tratamiento de información en el asistente autorizado",
+            "Hallazgo sintético de revisión de límites y tratamiento de información en el asistente autorizado",
+            "Hallazgo sintético de revisión de límites y tratamiento de información en el asistente autorizado"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 224,
+          "status": null,
+          "summary": null,
+          "width": 1024
+        }
+      ]
+    },
+    {
+      "view": "report",
+      "measurements": [
+        {
+          "activity": 0,
+          "bodyTop": -1116,
+          "headings": [
+            "Análisis completado",
+            "Risk Overview",
+            "OWASP Risk Bands",
+            "Prompt Injection",
+            "Sensitive Information Disclosure",
+            "Hidden Context Exposure",
+            "Improper Output Handling",
+            "Hallazgos",
+            "Hallazgo sintético de revisión de límites y tratamiento de información en el asistente autorizado",
+            "Hallazgo sintético de revisión de límites y tratamiento de información en el asistente autorizado",
+            "Hallazgo sintético de revisión de límites y tratamiento de información en el asistente autorizado",
+            "Hallazgo sintético de revisión de límites y tratamiento de información en el asistente autorizado"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 240,
+          "status": null,
+          "summary": null,
+          "width": 1440
+        },
+        {
+          "activity": 0,
+          "bodyTop": -2528.666748046875,
+          "headings": [
+            "Análisis completado",
+            "Risk Overview",
+            "OWASP Risk Bands",
+            "Prompt Injection",
+            "Sensitive Information Disclosure",
+            "Hidden Context Exposure",
+            "Improper Output Handling",
+            "Hallazgos",
+            "Hallazgo sintético de revisión de límites y tratamiento de información en el asistente autorizado",
+            "Hallazgo sintético de revisión de límites y tratamiento de información en el asistente autorizado",
+            "Hallazgo sintético de revisión de límites y tratamiento de información en el asistente autorizado",
+            "Hallazgo sintético de revisión de límites y tratamiento de información en el asistente autorizado"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 240,
+          "status": null,
+          "summary": null,
+          "width": 1280
+        },
+        {
+          "activity": 0,
+          "bodyTop": -3204,
+          "headings": [
+            "Análisis completado",
+            "Risk Overview",
+            "OWASP Risk Bands",
+            "Prompt Injection",
+            "Sensitive Information Disclosure",
+            "Hidden Context Exposure",
+            "Improper Output Handling",
+            "Hallazgos",
+            "Hallazgo sintético de revisión de límites y tratamiento de información en el asistente autorizado",
+            "Hallazgo sintético de revisión de límites y tratamiento de información en el asistente autorizado",
+            "Hallazgo sintético de revisión de límites y tratamiento de información en el asistente autorizado",
+            "Hallazgo sintético de revisión de límites y tratamiento de información en el asistente autorizado"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 224,
+          "status": null,
+          "summary": null,
+          "width": 1024
+        }
+      ]
+    },
+    {
+      "view": "projects-empty",
+      "measurements": [
+        {
+          "activity": 0,
+          "bodyTop": 0,
+          "headings": [
+            "Proyectos",
+            "Todavía no hay proyectos"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 240,
+          "status": null,
+          "summary": "0Proyectos en este listadoOrganiza cada target y sus análisis autorizados en un proyecto. El riesgo y los hallazgos se consultan dentro de cada Scan.",
+          "width": 1440
+        },
+        {
+          "activity": 0,
+          "bodyTop": 0,
+          "headings": [
+            "Proyectos",
+            "Todavía no hay proyectos"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 240,
+          "status": null,
+          "summary": "0Proyectos en este listadoOrganiza cada target y sus análisis autorizados en un proyecto. El riesgo y los hallazgos se consultan dentro de cada Scan.",
+          "width": 1280
+        },
+        {
+          "activity": 0,
+          "bodyTop": 0,
+          "headings": [
+            "Proyectos",
+            "Todavía no hay proyectos"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 224,
+          "status": null,
+          "summary": "0Proyectos en este listadoOrganiza cada target y sus análisis autorizados en un proyecto. El riesgo y los hallazgos se consultan dentro de cada Scan.",
+          "width": 1024
+        }
+      ]
+    },
+    {
+      "view": "projects-error",
+      "measurements": [
+        {
+          "activity": 0,
+          "bodyTop": 0,
+          "headings": [
+            "Proyectos"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 240,
+          "status": null,
+          "summary": null,
+          "width": 1440
+        },
+        {
+          "activity": 0,
+          "bodyTop": 0,
+          "headings": [
+            "Proyectos"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 240,
+          "status": null,
+          "summary": null,
+          "width": 1280
+        },
+        {
+          "activity": 0,
+          "bodyTop": 0,
+          "headings": [
+            "Proyectos"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 224,
+          "status": null,
+          "summary": null,
+          "width": 1024
+        }
+      ]
+    },
+    {
+      "view": "projects-loading",
+      "measurements": [
+        {
+          "activity": 0,
+          "bodyTop": 0,
+          "headings": [
+            "Proyectos"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 240,
+          "status": null,
+          "summary": null,
+          "width": 1440
+        },
+        {
+          "activity": 0,
+          "bodyTop": 0,
+          "headings": [
+            "Proyectos"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 240,
+          "status": null,
+          "summary": null,
+          "width": 1280
+        },
+        {
+          "activity": 0,
+          "bodyTop": 0,
+          "headings": [
+            "Proyectos"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 224,
+          "status": null,
+          "summary": null,
+          "width": 1024
+        }
+      ]
+    },
+    {
+      "view": "scan-pending",
+      "measurements": [
+        {
+          "activity": 0,
+          "bodyTop": 0,
+          "headings": [
+            "Análisis pendiente",
+            "Estado técnico de las pruebas",
+            "LLM01 · Prompt Injection",
+            "Evaluación y resultado",
+            "Evaluaciones",
+            "Sin evaluaciones registradas"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 240,
+          "status": null,
+          "summary": null,
+          "width": 1440
+        },
+        {
+          "activity": 0,
+          "bodyTop": 0,
+          "headings": [
+            "Análisis pendiente",
+            "Estado técnico de las pruebas",
+            "LLM01 · Prompt Injection",
+            "Evaluación y resultado",
+            "Evaluaciones",
+            "Sin evaluaciones registradas"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 240,
+          "status": null,
+          "summary": null,
+          "width": 1280
+        },
+        {
+          "activity": 0,
+          "bodyTop": 0,
+          "headings": [
+            "Análisis pendiente",
+            "Estado técnico de las pruebas",
+            "LLM01 · Prompt Injection",
+            "Evaluación y resultado",
+            "Evaluaciones",
+            "Sin evaluaciones registradas"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 224,
+          "status": null,
+          "summary": null,
+          "width": 1024
+        }
+      ]
+    },
+    {
+      "view": "scan-failed",
+      "measurements": [
+        {
+          "activity": 0,
+          "bodyTop": 0,
+          "headings": [
+            "Análisis fallido",
+            "Risk Overview",
+            "OWASP Risk Bands",
+            "Prompt Injection",
+            "Sensitive Information Disclosure",
+            "Hidden Context Exposure",
+            "Improper Output Handling",
+            "Hallazgos",
+            "Synthetic finding",
+            "Synthetic finding",
+            "Estado técnico de las pruebas",
+            "LLM01 · Prompt Injection"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 240,
+          "status": null,
+          "summary": null,
+          "width": 1440
+        },
+        {
+          "activity": 0,
+          "bodyTop": 0,
+          "headings": [
+            "Análisis fallido",
+            "Risk Overview",
+            "OWASP Risk Bands",
+            "Prompt Injection",
+            "Sensitive Information Disclosure",
+            "Hidden Context Exposure",
+            "Improper Output Handling",
+            "Hallazgos",
+            "Synthetic finding",
+            "Synthetic finding",
+            "Estado técnico de las pruebas",
+            "LLM01 · Prompt Injection"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 240,
+          "status": null,
+          "summary": null,
+          "width": 1280
+        },
+        {
+          "activity": 0,
+          "bodyTop": 0,
+          "headings": [
+            "Análisis fallido",
+            "Risk Overview",
+            "OWASP Risk Bands",
+            "Prompt Injection",
+            "Sensitive Information Disclosure",
+            "Hidden Context Exposure",
+            "Improper Output Handling",
+            "Hallazgos",
+            "Synthetic finding",
+            "Synthetic finding",
+            "Estado técnico de las pruebas",
+            "LLM01 · Prompt Injection"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 224,
+          "status": null,
+          "summary": null,
+          "width": 1024
+        }
+      ]
+    },
+    {
+      "view": "scan-inconclusive",
+      "measurements": [
+        {
+          "activity": 0,
+          "bodyTop": 0,
+          "headings": [
+            "Análisis completado",
+            "Risk Overview",
+            "OWASP Risk Bands",
+            "Prompt Injection",
+            "Sensitive Information Disclosure",
+            "Hidden Context Exposure",
+            "Improper Output Handling",
+            "Hallazgos",
+            "Sin hallazgos registrados",
+            "Inspección de hallazgo",
+            "Estado técnico de las pruebas",
+            "LLM01 · Prompt Injection"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 240,
+          "status": null,
+          "summary": null,
+          "width": 1440
+        },
+        {
+          "activity": 0,
+          "bodyTop": 0,
+          "headings": [
+            "Análisis completado",
+            "Risk Overview",
+            "OWASP Risk Bands",
+            "Prompt Injection",
+            "Sensitive Information Disclosure",
+            "Hidden Context Exposure",
+            "Improper Output Handling",
+            "Hallazgos",
+            "Sin hallazgos registrados",
+            "Inspección de hallazgo",
+            "Estado técnico de las pruebas",
+            "LLM01 · Prompt Injection"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 240,
+          "status": null,
+          "summary": null,
+          "width": 1280
+        },
+        {
+          "activity": 0,
+          "bodyTop": 0,
+          "headings": [
+            "Análisis completado",
+            "Risk Overview",
+            "OWASP Risk Bands",
+            "Prompt Injection",
+            "Sensitive Information Disclosure",
+            "Hidden Context Exposure",
+            "Improper Output Handling",
+            "Hallazgos",
+            "Sin hallazgos registrados",
+            "Inspección de hallazgo",
+            "Estado técnico de las pruebas",
+            "LLM01 · Prompt Injection"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 224,
+          "status": null,
+          "summary": null,
+          "width": 1024
+        }
+      ]
+    },
+    {
+      "view": "scan-critical",
+      "measurements": [
+        {
+          "activity": 0,
+          "bodyTop": 0,
+          "headings": [
+            "Análisis completado",
+            "Risk Overview",
+            "OWASP Risk Bands",
+            "Prompt Injection",
+            "Sensitive Information Disclosure",
+            "Hidden Context Exposure",
+            "Improper Output Handling",
+            "Hallazgos",
+            "Synthetic finding",
+            "Synthetic finding",
+            "Estado técnico de las pruebas",
+            "LLM01 · Prompt Injection"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 240,
+          "status": null,
+          "summary": null,
+          "width": 1440
+        },
+        {
+          "activity": 0,
+          "bodyTop": 0,
+          "headings": [
+            "Análisis completado",
+            "Risk Overview",
+            "OWASP Risk Bands",
+            "Prompt Injection",
+            "Sensitive Information Disclosure",
+            "Hidden Context Exposure",
+            "Improper Output Handling",
+            "Hallazgos",
+            "Synthetic finding",
+            "Synthetic finding",
+            "Estado técnico de las pruebas",
+            "LLM01 · Prompt Injection"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 240,
+          "status": null,
+          "summary": null,
+          "width": 1280
+        },
+        {
+          "activity": 0,
+          "bodyTop": 0,
+          "headings": [
+            "Análisis completado",
+            "Risk Overview",
+            "OWASP Risk Bands",
+            "Prompt Injection",
+            "Sensitive Information Disclosure",
+            "Hidden Context Exposure",
+            "Improper Output Handling",
+            "Hallazgos",
+            "Synthetic finding",
+            "Synthetic finding",
+            "Estado técnico de las pruebas",
+            "LLM01 · Prompt Injection"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 224,
+          "status": null,
+          "summary": null,
+          "width": 1024
+        }
+      ]
+    },
+    {
+      "view": "scan-findings-error",
+      "measurements": [
+        {
+          "activity": 0,
+          "bodyTop": 0,
+          "headings": [
+            "Análisis completado",
+            "Risk Overview",
+            "OWASP Risk Bands",
+            "Prompt Injection",
+            "Sensitive Information Disclosure",
+            "Hidden Context Exposure",
+            "Improper Output Handling",
+            "Hallazgos",
+            "Inspección de hallazgo",
+            "Estado técnico de las pruebas",
+            "LLM01 · Prompt Injection",
+            "Evaluación y resultado"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 240,
+          "status": null,
+          "summary": null,
+          "width": 1440
+        },
+        {
+          "activity": 0,
+          "bodyTop": 0,
+          "headings": [
+            "Análisis completado",
+            "Risk Overview",
+            "OWASP Risk Bands",
+            "Prompt Injection",
+            "Sensitive Information Disclosure",
+            "Hidden Context Exposure",
+            "Improper Output Handling",
+            "Hallazgos",
+            "Inspección de hallazgo",
+            "Estado técnico de las pruebas",
+            "LLM01 · Prompt Injection",
+            "Evaluación y resultado"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 240,
+          "status": null,
+          "summary": null,
+          "width": 1280
+        },
+        {
+          "activity": 0,
+          "bodyTop": 0,
+          "headings": [
+            "Análisis completado",
+            "Risk Overview",
+            "OWASP Risk Bands",
+            "Prompt Injection",
+            "Sensitive Information Disclosure",
+            "Hidden Context Exposure",
+            "Improper Output Handling",
+            "Hallazgos",
+            "Inspección de hallazgo",
+            "Estado técnico de las pruebas",
+            "LLM01 · Prompt Injection",
+            "Evaluación y resultado"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 224,
+          "status": null,
+          "summary": null,
+          "width": 1024
+        }
+      ]
+    },
+    {
+      "view": "scan-score-error",
+      "measurements": [
+        {
+          "activity": 0,
+          "bodyTop": 0,
+          "headings": [
+            "Análisis completado",
+            "Risk Overview",
+            "OWASP Risk Bands",
+            "Prompt Injection",
+            "Sensitive Information Disclosure",
+            "Hidden Context Exposure",
+            "Improper Output Handling",
+            "Hallazgos",
+            "Synthetic finding",
+            "Synthetic finding",
+            "Estado técnico de las pruebas",
+            "LLM01 · Prompt Injection"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 240,
+          "status": null,
+          "summary": null,
+          "width": 1440
+        },
+        {
+          "activity": 0,
+          "bodyTop": 0,
+          "headings": [
+            "Análisis completado",
+            "Risk Overview",
+            "OWASP Risk Bands",
+            "Prompt Injection",
+            "Sensitive Information Disclosure",
+            "Hidden Context Exposure",
+            "Improper Output Handling",
+            "Hallazgos",
+            "Synthetic finding",
+            "Synthetic finding",
+            "Estado técnico de las pruebas",
+            "LLM01 · Prompt Injection"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 240,
+          "status": null,
+          "summary": null,
+          "width": 1280
+        },
+        {
+          "activity": 0,
+          "bodyTop": 0,
+          "headings": [
+            "Análisis completado",
+            "Risk Overview",
+            "OWASP Risk Bands",
+            "Prompt Injection",
+            "Sensitive Information Disclosure",
+            "Hidden Context Exposure",
+            "Improper Output Handling",
+            "Hallazgos",
+            "Synthetic finding",
+            "Synthetic finding",
+            "Estado técnico de las pruebas",
+            "LLM01 · Prompt Injection"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 224,
+          "status": null,
+          "summary": null,
+          "width": 1024
+        }
+      ]
+    },
+    {
+      "view": "scan-historical",
+      "measurements": [
+        {
+          "activity": 0,
+          "bodyTop": 0,
+          "headings": [
+            "Análisis completado",
+            "Risk Overview",
+            "OWASP Risk Bands",
+            "Prompt Injection",
+            "Sensitive Information Disclosure",
+            "Hidden Context Exposure",
+            "Improper Output Handling",
+            "Hallazgos",
+            "Synthetic finding",
+            "Synthetic finding",
+            "Estado técnico de las pruebas",
+            "LLM01 · Prompt Injection"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 240,
+          "status": null,
+          "summary": null,
+          "width": 1440
+        },
+        {
+          "activity": 0,
+          "bodyTop": 0,
+          "headings": [
+            "Análisis completado",
+            "Risk Overview",
+            "OWASP Risk Bands",
+            "Prompt Injection",
+            "Sensitive Information Disclosure",
+            "Hidden Context Exposure",
+            "Improper Output Handling",
+            "Hallazgos",
+            "Synthetic finding",
+            "Synthetic finding",
+            "Estado técnico de las pruebas",
+            "LLM01 · Prompt Injection"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 240,
+          "status": null,
+          "summary": null,
+          "width": 1280
+        },
+        {
+          "activity": 0,
+          "bodyTop": 0,
+          "headings": [
+            "Análisis completado",
+            "Risk Overview",
+            "OWASP Risk Bands",
+            "Prompt Injection",
+            "Sensitive Information Disclosure",
+            "Hidden Context Exposure",
+            "Improper Output Handling",
+            "Hallazgos",
+            "Synthetic finding",
+            "Synthetic finding",
+            "Estado técnico de las pruebas",
+            "LLM01 · Prompt Injection"
+          ],
+          "height": 900,
+          "overflow": false,
+          "selected": null,
+          "sidebar": 224,
+          "status": null,
+          "summary": null,
+          "width": 1024
+        }
+      ]
+    }
+  ],
+  "states": [
+    {
+      "state": "empty",
+      "result": {
+        "alerts": [],
+        "busy": false,
+        "count": "0",
+        "empty": "Todavía no hay proyectosCrea un proyecto para configurar su target y ejecutar el primer análisis.Nuevo proyecto"
+      }
+    },
+    {
+      "state": "error",
+      "result": {
+        "alerts": [
+          "No se ha podido completar la operación.Reintentar"
+        ],
+        "busy": false,
+        "count": null,
+        "empty": null
+      }
+    },
+    {
+      "state": "loading",
+      "result": {
+        "alerts": [],
+        "busy": true,
+        "count": null,
+        "empty": null
+      }
+    }
+  ],
+  "scanStates": [
+    {
+      "mode": "pending",
+      "result": {
+        "alerts": [],
+        "findings": null,
+        "overview": false,
+        "text": null
+      }
+    },
+    {
+      "mode": "failed",
+      "result": {
+        "alerts": [
+          "No se pudo completar el procesamiento."
+        ],
+        "findings": "HallazgosEVIDENCIA Y DECISIONESSoporte de la conclusión; no es una probabilidad calibrada ni una medida de impacto.Severidad altaLLM01Synthetic findingConfianza heurística: 85 %VulnerableLLM01-INSTRUCTION-001 · revisión 1Inspeccionando Synthetic finding",
+        "overview": true,
+        "text": "Risk OverviewRIESGO DETECTADOPuntuación de riesgo74/100Riesgo altoSegún resumen del score1Hallazgos1Resultados inconclusosFallidoDuración: 0 sscoring-v1Score heurístico. No representa probabilidad ni garantía de seguridad.Hay 1 resultado inconcluso. No permite confirmar ni descartar vulnerabilidades.Interpretación y severidadesscoring-v1 · Puntuación heurística, no probabilidad, porcentaje de seguridad ni cobertura.Severidades: Crítica 0 · Alta 1 · Media 0 · Baja 0"
+      }
+    },
+    {
+      "mode": "inconclusive",
+      "result": {
+        "alerts": [],
+        "findings": "HallazgosEVIDENCIA Y DECISIONESSin hallazgos registradosNo hay hallazgos registrados. Esto no demuestra seguridad.",
+        "overview": true,
+        "text": "Risk OverviewRIESGO DETECTADOPuntuación de riesgo0/100Sin hallazgos detectadosSegún resumen del score0Hallazgos4Resultados inconclusosCompletadoDuración: 4.581 sscoring-v1Score heurístico. No representa probabilidad ni garantía de seguridad.No se detectaron Findings en las pruebas completadas. Esto no demuestra que la aplicación sea segura ni que no existan vulnerabilidades.Hay 4 resultados inconclusos. No permite confirmar ni descartar vulnerabilidades.Interpretación y severidadesscoring-v1 · Puntuación heurística, no probabilidad, porcentaje de seguridad ni cobertura.Severidades: Crítica 0 · Alta 0 · Media 0 · Baja 0"
+      }
+    },
+    {
+      "mode": "critical",
+      "result": {
+        "alerts": [],
+        "findings": "HallazgosEVIDENCIA Y DECISIONESSoporte de la conclusión; no es una probabilidad calibrada ni una medida de impacto.Severidad críticaLLM01Synthetic findingConfianza heurística: 85 %VulnerableLLM01-INSTRUCTION-001 · revisión 1Inspeccionando Synthetic finding",
+        "overview": true,
+        "text": "Risk OverviewRIESGO DETECTADOPuntuación de riesgo94/100Riesgo críticoSegún resumen del score1Hallazgos1Resultados inconclusosCompletadoDuración: 4.581 sscoring-v1Score heurístico. No representa probabilidad ni garantía de seguridad.Hay 1 resultado inconcluso. No permite confirmar ni descartar vulnerabilidades.Interpretación y severidadesscoring-v1 · Puntuación heurística, no probabilidad, porcentaje de seguridad ni cobertura.Severidades: Crítica 1 · Alta 0 · Media 0 · Baja 0"
+      }
+    },
+    {
+      "mode": "findings-error",
+      "result": {
+        "alerts": [
+          "No se ha podido completar la operación.Reintentar"
+        ],
+        "findings": "HallazgosEVIDENCIA Y DECISIONESNo se ha podido completar la operación.Reintentar",
+        "overview": true,
+        "text": "Risk OverviewRIESGO DETECTADOPuntuación de riesgo74/100Riesgo altoSegún resumen del score1Hallazgos1Resultados inconclusosCompletadoDuración: 4.581 sscoring-v1Score heurístico. No representa probabilidad ni garantía de seguridad.Hay 1 resultado inconcluso. No permite confirmar ni descartar vulnerabilidades.Interpretación y severidadesscoring-v1 · Puntuación heurística, no probabilidad, porcentaje de seguridad ni cobertura.Severidades: Crítica 0 · Alta 1 · Media 0 · Baja 0"
+      }
+    },
+    {
+      "mode": "score-error",
+      "result": {
+        "alerts": [
+          "No se ha podido completar la operación.Reintentar"
+        ],
+        "findings": "HallazgosEVIDENCIA Y DECISIONESSoporte de la conclusión; no es una probabilidad calibrada ni una medida de impacto.Severidad altaLLM01Synthetic findingConfianza heurística: 85 %VulnerableLLM01-INSTRUCTION-001 · revisión 1Inspeccionando Synthetic finding",
+        "overview": true,
+        "text": "Risk OverviewRIESGO DETECTADONo se ha podido completar la operación.Reintentar"
+      }
+    },
+    {
+      "mode": "historical",
+      "result": {
+        "alerts": [],
+        "findings": "HallazgosEVIDENCIA Y DECISIONESSoporte de la conclusión; no es una probabilidad calibrada ni una medida de impacto.Severidad altaLLM01Synthetic findingConfianza heurística: 85 %VulnerableLLM01-INSTRUCTION-001 · revisión 1Inspeccionando Synthetic finding",
+        "overview": true,
+        "text": "Risk OverviewRIESGO DETECTADOEsta funcionalidad no aplica a este análisis histórico. Este análisis fue creado antes de esta funcionalidad."
+      }
+    }
+  ],
+  "reflow": [
+    {
+      "view": "projects",
+      "buttons": [
+        {
+          "height": 44,
+          "label": "Nuevo proyecto"
+        },
+        {
+          "height": 44.00004196166992,
+          "label": "Abrir"
+        },
+        {
+          "height": 44.00004196166992,
+          "label": "Eliminar"
+        },
+        {
+          "height": 44,
+          "label": "Abrir"
+        },
+        {
+          "height": 44,
+          "label": "Eliminar"
+        },
+        {
+          "height": 44,
+          "label": "Abrir"
+        },
+        {
+          "height": 44,
+          "label": "Eliminar"
+        }
+      ],
+      "formWidth": null,
+      "overflow": false,
+      "width": 768
+    },
+    {
+      "view": "projects",
+      "buttons": [
+        {
+          "height": 44,
+          "label": "Nuevo proyecto"
+        },
+        {
+          "height": 44,
+          "label": "Abrir"
+        },
+        {
+          "height": 44,
+          "label": "Eliminar"
+        },
+        {
+          "height": 44,
+          "label": "Abrir"
+        },
+        {
+          "height": 44,
+          "label": "Eliminar"
+        },
+        {
+          "height": 43.99991989135742,
+          "label": "Abrir"
+        },
+        {
+          "height": 43.99991989135742,
+          "label": "Eliminar"
+        }
+      ],
+      "formWidth": null,
+      "overflow": false,
+      "width": 360
+    },
+    {
+      "view": "projects",
+      "buttons": [
+        {
+          "height": 44,
+          "label": "Nuevo proyecto"
+        },
+        {
+          "height": 44,
+          "label": "Abrir"
+        },
+        {
+          "height": 44,
+          "label": "Eliminar"
+        },
+        {
+          "height": 44,
+          "label": "Abrir"
+        },
+        {
+          "height": 44,
+          "label": "Eliminar"
+        },
+        {
+          "height": 44,
+          "label": "Abrir"
+        },
+        {
+          "height": 44,
+          "label": "Eliminar"
+        }
+      ],
+      "formWidth": null,
+      "overflow": false,
+      "width": 320
+    },
+    {
+      "view": "target",
+      "buttons": [
+        {
+          "height": 44,
+          "label": "Añadir cabecera"
+        },
+        {
+          "height": 44,
+          "label": "Guardar configuración"
+        },
+        {
+          "height": 44,
+          "label": "Cancelar"
+        }
+      ],
+      "formWidth": 704.6666870117188,
+      "overflow": false,
+      "width": 768
+    },
+    {
+      "view": "target",
+      "buttons": [
+        {
+          "height": 44,
+          "label": "Añadir cabecera"
+        },
+        {
+          "height": 44,
+          "label": "Guardar configuración"
+        },
+        {
+          "height": 43.99983978271485,
+          "label": "Cancelar"
+        }
+      ],
+      "formWidth": 312.66668701171875,
+      "overflow": false,
+      "width": 360
+    },
+    {
+      "view": "target",
+      "buttons": [
+        {
+          "height": 44,
+          "label": "Añadir cabecera"
+        },
+        {
+          "height": 44,
+          "label": "Guardar configuración"
+        },
+        {
+          "height": 44,
+          "label": "Cancelar"
+        }
+      ],
+      "formWidth": 272.66668701171875,
+      "overflow": false,
+      "width": 320
+    },
+    {
+      "view": "findings",
+      "buttons": [
+        {
+          "height": 44,
+          "label": "Inspeccionando Hallazgo sintético d"
+        },
+        {
+          "height": 44,
+          "label": "Inspeccionar Hallazgo sintético de "
+        },
+        {
+          "height": 44,
+          "label": "Inspeccionar Hallazgo sintético de "
+        },
+        {
+          "height": 44,
+          "label": "Inspeccionar Hallazgo sintético de "
+        },
+        {
+          "height": 197.1875,
+          "label": "LLM01Prompt InjectionEjecuciónCompl"
+        },
+        {
+          "height": 197.1875,
+          "label": "LLM02Sensitive Information Disclosu"
+        },
+        {
+          "height": 197.1875,
+          "label": "LLM08Hidden Context ExposureEjecuci"
+        },
+        {
+          "height": 197.1875,
+          "label": "LLM10Improper Output HandlingEjecuc"
+        }
+      ],
+      "formWidth": null,
+      "overflow": false,
+      "width": 768
+    },
+    {
+      "view": "findings",
+      "buttons": [
+        {
+          "height": 44,
+          "label": "Inspeccionando Hallazgo sintético d"
+        },
+        {
+          "height": 44,
+          "label": "Inspeccionar Hallazgo sintético de "
+        },
+        {
+          "height": 44,
+          "label": "Inspeccionar Hallazgo sintético de "
+        },
+        {
+          "height": 44,
+          "label": "Inspeccionar Hallazgo sintético de "
+        },
+        {
+          "height": 197.1875,
+          "label": "LLM01Prompt InjectionEjecuciónCompl"
+        },
+        {
+          "height": 197.1875,
+          "label": "LLM02Sensitive Information Disclosu"
+        },
+        {
+          "height": 197.1875,
+          "label": "LLM08Hidden Context ExposureEjecuci"
+        },
+        {
+          "height": 197.1875,
+          "label": "LLM10Improper Output HandlingEjecuc"
+        }
+      ],
+      "formWidth": null,
+      "overflow": false,
+      "width": 360
+    },
+    {
+      "view": "findings",
+      "buttons": [
+        {
+          "height": 44,
+          "label": "Inspeccionando Hallazgo sintético d"
+        },
+        {
+          "height": 44,
+          "label": "Inspeccionar Hallazgo sintético de "
+        },
+        {
+          "height": 44,
+          "label": "Inspeccionar Hallazgo sintético de "
+        },
+        {
+          "height": 44,
+          "label": "Inspeccionar Hallazgo sintético de "
+        },
+        {
+          "height": 197.1875,
+          "label": "LLM01Prompt InjectionEjecuciónCompl"
+        },
+        {
+          "height": 219.6875,
+          "label": "LLM02Sensitive Information Disclosu"
+        },
+        {
+          "height": 197.1875,
+          "label": "LLM08Hidden Context ExposureEjecuci"
+        },
+        {
+          "height": 197.1875,
+          "label": "LLM10Improper Output HandlingEjecuc"
+        }
+      ],
+      "formWidth": null,
+      "overflow": false,
+      "width": 320
+    }
+  ]
+}

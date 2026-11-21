@@ -2,10 +2,12 @@ import { Component, input } from '@angular/core';
 
 const paths = {
   plus: 'M12 5v14M5 12h14',
+  open: 'M14 3h7v7M21 3 11 13M10 5H4v15h15v-6',
+  trash: 'M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7',
   folder: 'M3 7V5h6l2 2h10v13H3V7Z',
   settings: 'M4 6h16M4 12h16M4 18h16M8 3v6M16 9v6M10 15v6',
   play: 'm8 4 12 8-12 8V4Z',
-  shield: 'm12 3 8 3v6c0 4-4 7-8 9-4-2-8-5-8-9V6l8-3Z',
+  shield: 'm12 3 8 3v6c0 4-4 7-8 9-4-2-8-5-8-9V6l8-3ZM8 9l4-2 4 2v4l-4 3-4-3V9Z',
   warning: 'm12 3 10 18H2L12 3ZM12 9v5M12 17v.5',
   question: 'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM9.5 9a2.5 2.5 0 1 1 4 2c-1 .7-1.5 1-1.5 2.5M12 17v.5',
   check: 'm5 12 4 4L19 6',

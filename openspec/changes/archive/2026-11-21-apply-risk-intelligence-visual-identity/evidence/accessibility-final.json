@@ -1,0 +1,143 @@
+{
+  "revision": "R2-final",
+  "checks": [
+    {
+      "check": "Keyboard brand focus",
+      "result": {
+        "color": "rgb(180, 238, 231)",
+        "focus": "LLM Scanner SeguridadAnálisis de seguridad LLM",
+        "outline": "solid"
+      }
+    },
+    {
+      "check": "Modal initial focus",
+      "result": {
+        "color": "rgb(180, 238, 231)",
+        "focus": "Cancelar",
+        "outline": "solid",
+        "tag": "BUTTON"
+      }
+    },
+    {
+      "check": "Modal Tab reaches destructive action",
+      "result": {
+        "color": "rgb(180, 238, 231)",
+        "focus": "Eliminar proyecto",
+        "outline": "solid"
+      }
+    },
+    {
+      "check": "Escape restores delete opener",
+      "result": {
+        "dialogOpen": false,
+        "focus": "Eliminar proyecto Asistente de documentación"
+      }
+    },
+    {
+      "check": "Target invalid field association",
+      "result": {
+        "describedby": "target-url-help target-url-error",
+        "disabled": false,
+        "error": "Introduce una URL absoluta HTTP/HTTPS de hasta 2048 caracteres, sin espacios ni controles.",
+        "invalid": "true"
+      }
+    },
+    {
+      "check": "Unsaved guard initial focus",
+      "result": {
+        "dialog": true,
+        "focus": "Seguir editando"
+      }
+    },
+    {
+      "check": "Polling paused/stale stops activity",
+      "result": {
+        "activeRails": 0,
+        "alerts": [
+          "No se ha podido completar la operación.Reintentar"
+        ],
+        "animations": [
+          "none",
+          "none",
+          "none",
+          "none"
+        ],
+        "text": "Proyectos / Volver al proyectoAnálisis en ejecución00000000-0000-0000-0000-000000000002Análisis en cursoCreado 10 oct 2026, 12:00:00 UTC  · Inicio 10 oct 2026, 12:00:00 UTC En cursoSeguimiento pausado o desactualizado. El estado mostrado requiere una nueva lectura.No se ha podido completar la operación.ReintentarEl estado mostrado está desactualizado. Seguimiento automático detenido.AppSec Lab · Profundidad técnicaEstado técnico de las pruebas2 de 4 pruebas finalizadas técnicamente. No indica pruebas satisfactorias ni cobertura.1 de 2 evaluaciones finalizadas técnicamente (lectura independiente).LLM01Prompt InjectionEjecuciónCompletadoEvaluaciónCompletadoResultadoVulnerableSeleccionado LLM02Sensitive Information DisclosureEjecuciónCompletadoEvaluaciónAnálisis en cursoResultadoNo disponibleInspeccionar test LLM08Hidden Context ExposureEjecuciónAnálisis en cursoEvaluaciónNo disponibleResul"
+      }
+    },
+    {
+      "check": "Finding evaluation reference reveal and focus",
+      "result": {
+        "allParentsOpen": true,
+        "duplicateAnchors": [],
+        "focus": "evaluation-00000000-0000-0000-0000-000000000020"
+      }
+    },
+    {
+      "check": "No-preference actual browser",
+      "result": {
+        "activeRails": 3,
+        "overviewPresent": false,
+        "preference": "no-preference",
+        "rails": [
+          {
+            "animation": "activity",
+            "duration": "1.8s"
+          },
+          {
+            "animation": "activity",
+            "duration": "1.8s"
+          },
+          {
+            "animation": "activity",
+            "duration": "1.8s"
+          }
+        ],
+        "scrollBehavior": "smooth"
+      }
+    }
+  ],
+  "motionNormal": {
+    "activeRails": 3,
+    "overviewPresent": false,
+    "preference": "no-preference",
+    "rails": [
+      {
+        "animation": "activity",
+        "duration": "1.8s"
+      },
+      {
+        "animation": "activity",
+        "duration": "1.8s"
+      },
+      {
+        "animation": "activity",
+        "duration": "1.8s"
+      }
+    ],
+    "scrollBehavior": "smooth"
+  },
+  "motionReduced": {
+    "source": "Chrome aislado, diagnóstico readonly de DevTools observado mediante AX",
+    "reduce": true,
+    "scroll": "auto",
+    "animations": [
+      "none",
+      "none",
+      "none"
+    ],
+    "widthWithDevtools": 871,
+    "horizontalOverflow": false,
+    "rawEvidence": "native-reduced-motion.txt"
+  },
+  "zoom": {
+    "source": "Chrome UIA: botón Zoom: 200 % y screenshot nativo observados",
+    "actualBrowserZoom": 200,
+    "observed": "La navegación pasa a flujo normal y conserva controles; no es emulación por ancho ni deviceScaleFactor.",
+    "limitation": "Captura nativa mostrada por la herramienta pero no guardada; la inspección adicional por búsqueda se interrumpió por seguridad de Computer Use."
+  },
+  "pending": [
+    "Revisión visual en escala de grises de R2",
+    "Finalizar el recorrido manual de contenido/foco con zoom 200% y la aprobación regional completa AL-16"
+  ]
+}

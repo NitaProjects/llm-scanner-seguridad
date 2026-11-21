@@ -1,20 +1,7 @@
-.project-list{display:grid;gap:var(--space-3)}
-.project-list>li{border:1px solid var(--border);padding:var(--space-4)}
-.project-list>li:last-child{border-bottom:1px solid var(--border)}
-.project-list h2{font-size:1.125rem}
-.project-list .meta{margin:0}
-.project-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-5)}
-.project-list>li{padding:var(--space-5);display:flex;flex-direction:column;gap:var(--space-3);margin-bottom:0}
-.project-list h2{margin:0;font-size:1.25rem}
-.project-list h2 a{color:var(--text);text-decoration:none}
-.project-list h2 a:hover{color:var(--accent)}
-.project-list .text{flex:1;margin:0}
-.project-list .meta{padding-top:var(--space-3);border-top:1px solid var(--border)}
-.project-list .project-actions{display:flex;flex-wrap:wrap;gap:var(--space-2);justify-content:space-between;align-items:center}
-.project-list .delete-action{color:var(--muted);border-color:transparent;background:transparent;font-size:var(--text-small)}
-.project-list .delete-action:hover:not(:disabled){color:var(--danger);border-color:var(--danger);background:var(--danger-soft)}
-.project-list>li{transition:border-color var(--duration-fast),background-color var(--duration-fast)}
-.project-list>li:hover{border-color:var(--control-border);background:var(--surface-raised)}
-@media(max-width:767px){.project-list{grid-template-columns:1fr}}
-.collection-count{font-size:var(--text-small);color:var(--muted);margin-bottom:var(--space-4)}
-.success-notice{border-left:3px solid var(--success);padding:var(--space-3) var(--space-4);border-radius:var(--radius-control);background:var(--success-soft);color:var(--success)}
+.project-summary{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:20px 24px;min-height:96px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:24px}.project-summary p{max-width:60ch;margin:0;color:var(--muted);font-size:14px}.project-summary app-stat-card{flex:0 0 248px}
+.project-register{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:clip}.register-heading,.project-list>.project-record{display:grid;grid-template-columns:32px minmax(0,1fr) 136px 216px;gap:16px;align-items:center;padding-inline:20px}.register-heading{min-height:48px;background:var(--surface-raised);border-bottom:1px solid var(--border);font-size:12px;font-weight:650;letter-spacing:.05em;text-transform:uppercase}.register-heading h2{font-size:12px;margin:0}
+.project-list>.project-record{min-height:96px;padding-block:16px;border-bottom:1px solid var(--border)}.project-list>.project-record:last-child{border-bottom:0}.project-copy{min-width:0}.project-copy h3{font-size:18px;font-weight:600;margin:0 0 4px}.project-copy p{margin:0;font-size:14px;line-height:1.5}.project-folder{width:24px;height:24px;color:var(--accent)}time{font-size:13px;color:var(--muted);overflow-wrap:anywhere}time small{font-size:12px;margin-top:4px}.project-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.project-actions .button,.project-actions button{min-height:44px;min-width:104px;padding:10px 12px;font-size:14px}.project-record:hover,.project-record:focus-within{background:var(--surface-raised)}.delete-confirm{min-width:168px}
+.success-notice{border-left:3px solid var(--success);padding:12px 16px;background:var(--success-soft);color:var(--success)}
+@media(prefers-reduced-motion:no-preference){.project-record{transition:background-color var(--duration-fast)}}
+@media(min-width:1024px) and (max-width:1199px){.register-heading,.project-list>.project-record{grid-template-columns:28px minmax(0,1fr) 112px 216px;gap:12px;padding-inline:16px}.project-copy h3{font-size:18px}}
+@media(max-width:767px){.project-summary{flex-direction:column;align-items:flex-start;padding:20px}.project-summary app-stat-card{flex:auto}.register-heading{display:none}.project-list>.project-record{grid-template-columns:28px minmax(0,1fr);padding:16px;gap:12px}.project-record time{grid-column:2}.project-actions{grid-column:2}.project-actions .button,.project-actions button{min-width:100px}}

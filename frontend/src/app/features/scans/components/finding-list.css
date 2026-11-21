@@ -1,15 +1,7 @@
-.finding{border-left:3px solid var(--risk-low);margin-bottom:var(--space-3);padding:0 var(--space-4)}
-.finding[data-severity=MEDIUM]{border-left-color:var(--risk-medium)}
-.finding[data-severity=HIGH]{border-left-color:var(--risk-high)}
-.finding[data-severity=CRITICAL]{border-left-color:var(--risk-critical)}
-summary{padding-block:var(--space-4)}
-.finding-summary{display:inline-flex;align-items:center;flex-wrap:wrap;gap:var(--space-2) var(--space-3);width:calc(100% - 1.5rem);vertical-align:top}
-.finding-summary strong{flex:1 1 20ch;min-width:0}
-.finding-summary .meta{flex-basis:100%;padding-top:var(--space-1)}
-.finding-detail{padding-block:var(--space-4);border-top:1px solid var(--border)}
-.finding-detail p{max-width:var(--reading-max)}
-.recommendation{padding:var(--space-3);background:var(--surface-subtle);border-radius:var(--radius-control)}
+.finding-workspace{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:var(--space-5);align-items:start}.finding-index{border-top:1px solid var(--control-border)}
+.finding-index>.finding-row{padding:var(--space-4);border-bottom:1px solid var(--border);border-left:3px solid transparent}.finding-index>.finding-row:last-child{border-bottom:1px solid var(--border)}.finding-row.selected{border-left-color:var(--accent);background:var(--surface-subtle)}.finding-row.selected::before{content:'Seleccionado';display:block;color:var(--accent);font-size:.75rem;margin-bottom:var(--space-2)}
+.finding-meta{display:flex;gap:var(--space-3);align-items:center;margin-bottom:var(--space-3)}.finding-row h3{font-size:1rem;line-height:1.5}.finding-row p{margin-bottom:var(--space-2)}.verdict{font-size:.875rem}.inspect{margin-top:var(--space-2);font-size:.875rem}.finding-inspector{min-width:0}.selection-note{padding:var(--space-5);border:1px dashed var(--control-border);color:var(--muted)}.sr-only{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+@media(prefers-reduced-motion:no-preference){.finding-row{transition:background-color var(--duration-fast),border-color var(--duration-fast)}}
+@media(max-width:900px){.finding-workspace{grid-template-columns:1fr}}
 
-.finding-test{color:var(--muted);font-family:var(--font-mono);font-size:.75rem;flex-basis:100%}summary:hover{color:var(--accent)}
-
-@media(prefers-reduced-motion:no-preference){.finding{animation:enter var(--duration-normal) ease-out}}
+.finding-workspace.list-only{grid-template-columns:1fr;gap:0}.list-only .finding-index{border-top:0}.list-only .finding-row{padding:20px}.list-only .finding-row:last-child{border-bottom:0}:host>.meta{padding-inline:20px}

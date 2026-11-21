@@ -37,7 +37,7 @@ describe('App', () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('header')?.textContent).toContain('LLM Scanner');
+    expect(compiled.querySelector('.brand')?.textContent).toContain('LLM Scanner');
     expect(compiled.querySelector('nav a')?.getAttribute('href')).toBe('/projects');
     expect(compiled.querySelector('main router-outlet')).not.toBeNull();
   });
@@ -47,8 +47,8 @@ describe('App', () => {
     await TestBed.inject(Router).navigateByUrl(url);
     fixture.detectChanges(); await fixture.whenStable();
     const link: HTMLAnchorElement = fixture.nativeElement.querySelector('nav a');
-    expect(link.getAttribute('aria-current')).toBe(url.includes('unknown') ? null : 'location');
-    expect(link.classList.contains('active')).toBe(!url.includes('unknown'));
+    expect(link.getAttribute('aria-current')).toBe(url === '/projects' ? 'page' : null);
+    expect(link.classList.contains('active')).toBe(url === '/projects');
     expect(link.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
     expect(link.textContent?.trim()).toBe('Proyectos');
   });

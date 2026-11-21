@@ -2,10 +2,11 @@ import { Component, computed, input } from '@angular/core';
 import { EvaluationMetadataDto } from '../models/scan';
 import { StatusBadge } from '../../../shared/ui/status-badge';
 import { confidenceLabel, outcomeLabels, publicReason } from '../../../shared/presentation/labels';
+import { sameId } from '../../../core/api/decode';
 import { EmptyState } from '../../../shared/ui/empty-state';
 @Component({ selector: 'app-evaluation-list', imports: [StatusBadge, EmptyState], styleUrl: '../../../shared/ui/page.css', template: `
   @if (rows().length === 0) { <app-empty-state [level]="3" title="Sin evaluaciones registradas" message="No hay evaluaciones registradas." /> }
-  <ul class="plain-list evaluation-list">@for (item of rows(); track item.id) { <li [id]="'evaluation-' + item.id"><h3>{{ item.category }} · {{ item.securityTestCode }} (revisión {{ item.securityTestRevision }})</h3>
+  <ul class="plain-list evaluation-list">@for (item of rows(); track $index; let index = $index) { <li [attr.id]="anchor(index)" tabindex="-1"><h3>{{ item.category }} · {{ item.securityTestCode }} (revisión {{ item.securityTestRevision }})</h3>
     @if (item.status === 'COMPLETED' && item.finalVerdict) { <app-status-badge [badge]="{kind:'verdict',value:item.finalVerdict}" />
       @if (item.confidence !== null) { <p class="meta">{{ confidence(item.confidence) }}</p> }
       @if (item.severity) { <app-status-badge [badge]="{kind:'severity',value:item.severity}" /> }
@@ -14,6 +15,8 @@ import { EmptyState } from '../../../shared/ui/empty-state';
     @if (item.degraded || item.llmStatus === 'FAILED') { <p class="warning">Evaluación con componente LLM degradado. El resultado final se mantiene.</p>@if (item.llmErrorReason) { <p>{{ publicReason(item.llmErrorReason) }}</p> } }
   </li> }</ul>` })
 export class EvaluationList {
+  readonly anchors = input(true);
+  anchor(index: number) { const item = this.rows()[index]; return this.anchors() && this.rows().findIndex(row => sameId(row.id, item.id)) === index ? 'evaluation-' + item.id : null; }
   readonly evaluations = input.required<readonly EvaluationMetadataDto[]>(); readonly confidence = confidenceLabel; readonly reasons = outcomeLabels; readonly publicReason = publicReason;
   // Proyección explícita: ningún dato interno del evaluador llega al template.
   readonly rows = computed(() => this.evaluations().map(item => ({ id: item.id, securityTestCode: item.securityTestCode, securityTestRevision: item.securityTestRevision, category: item.category, status: item.status, finalVerdict: item.finalVerdict, confidence: item.confidence, severity: item.severity, outcomeReason: item.outcomeReason, degraded: item.degraded, llmStatus: item.llmStatus, llmErrorReason: item.llmErrorReason, errorReason: item.errorReason })));

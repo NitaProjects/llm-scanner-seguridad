@@ -1,0 +1,42 @@
+{
+  "change": "apply-risk-intelligence-visual-identity",
+  "revision": "R2-final",
+  "dateLocal": "2026-11-20",
+  "timezone": "Europe/Madrid",
+  "angular": {
+    "passed": 232,
+    "failed": 0,
+    "skipped": 0,
+    "filesPassed": 16
+  },
+  "productionBuild": "PASS",
+  "openspecStrict": "PASS",
+  "computedTextContrast": {
+    "samples": 1508,
+    "failed": 0
+  },
+  "tokenContrast": {
+    "pairs": 45,
+    "failed": 0
+  },
+  "tasks": {
+    "completed": 26,
+    "total": 28,
+    "pending": [
+      "6.3",
+      "9.2"
+    ]
+  },
+  "manualAcceptance": "PARTIAL",
+  "blocker": "Computer Use stopped because current Chrome URL could not be verified confidently; no subsequent UI actions.",
+  "remaining": [
+    "Final grayscale review",
+    "Final AL-16 regional acceptance, including full content/focus walkthrough at actual 200% zoom"
+  ],
+  "aestheticOperatorAcceptance": "ACKNOWLEDGED",
+  "archiveReady": false,
+  "status": "BLOCKED_MANUAL_ACCEPTANCE",
+  "qaServer": "STOPPED",
+  "realBackendOrProviderCalls": 0,
+  "scope": "This continuation changes documentation/evidence/tasks only."
+}

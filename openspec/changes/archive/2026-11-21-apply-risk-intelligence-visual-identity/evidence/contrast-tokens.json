@@ -1,0 +1,413 @@
+{
+  "revision": "R2-final",
+  "method": "WCAG relative luminance; 45 declared color pairs, including repeated semantic roles; disabled controls excluded. Complements actual-browser samples.",
+  "checked": 45,
+  "failed": 0,
+  "cases": [
+    {
+      "foregroundToken": "text-primary",
+      "backgroundToken": "background",
+      "foreground": "#f0efe8",
+      "background": "#14191c",
+      "ratio": 15.3656,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "foregroundToken": "text-primary",
+      "backgroundToken": "surface",
+      "foreground": "#f0efe8",
+      "background": "#1d2529",
+      "ratio": 13.5051,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "foregroundToken": "text-primary",
+      "backgroundToken": "surface-raised",
+      "foreground": "#f0efe8",
+      "background": "#273237",
+      "ratio": 11.4021,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "foregroundToken": "text-secondary",
+      "backgroundToken": "background",
+      "foreground": "#bac4c2",
+      "background": "#14191c",
+      "ratio": 9.9217,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "foregroundToken": "text-secondary",
+      "backgroundToken": "surface",
+      "foreground": "#bac4c2",
+      "background": "#1d2529",
+      "ratio": 8.7204,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "foregroundToken": "text-secondary",
+      "backgroundToken": "surface-raised",
+      "foreground": "#bac4c2",
+      "background": "#273237",
+      "ratio": 7.3624,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "foregroundToken": "info",
+      "backgroundToken": "background",
+      "foreground": "#add3df",
+      "background": "#14191c",
+      "ratio": 11.1003,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "foregroundToken": "info",
+      "backgroundToken": "surface",
+      "foreground": "#add3df",
+      "background": "#1d2529",
+      "ratio": 9.7563,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "foregroundToken": "info",
+      "backgroundToken": "surface-raised",
+      "foreground": "#add3df",
+      "background": "#273237",
+      "ratio": 8.237,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "foregroundToken": "primary",
+      "backgroundToken": "background",
+      "foreground": "#79cbc4",
+      "background": "#14191c",
+      "ratio": 9.4069,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "foregroundToken": "primary",
+      "backgroundToken": "surface",
+      "foreground": "#79cbc4",
+      "background": "#1d2529",
+      "ratio": 8.2679,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "foregroundToken": "primary",
+      "backgroundToken": "surface-raised",
+      "foreground": "#79cbc4",
+      "background": "#273237",
+      "ratio": 6.9804,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "foregroundToken": "success",
+      "backgroundToken": "background",
+      "foreground": "#99cea7",
+      "background": "#14191c",
+      "ratio": 9.9033,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "foregroundToken": "success",
+      "backgroundToken": "surface",
+      "foreground": "#99cea7",
+      "background": "#1d2529",
+      "ratio": 8.7042,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "foregroundToken": "success",
+      "backgroundToken": "surface-raised",
+      "foreground": "#99cea7",
+      "background": "#273237",
+      "ratio": 7.3488,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "foregroundToken": "warning",
+      "backgroundToken": "background",
+      "foreground": "#eac17a",
+      "background": "#14191c",
+      "ratio": 10.4655,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "foregroundToken": "warning",
+      "backgroundToken": "surface",
+      "foreground": "#eac17a",
+      "background": "#1d2529",
+      "ratio": 9.1983,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "foregroundToken": "warning",
+      "backgroundToken": "surface-raised",
+      "foreground": "#eac17a",
+      "background": "#273237",
+      "ratio": 7.766,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "foregroundToken": "danger",
+      "backgroundToken": "background",
+      "foreground": "#f28f96",
+      "background": "#14191c",
+      "ratio": 7.7135,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "foregroundToken": "danger",
+      "backgroundToken": "surface",
+      "foreground": "#f28f96",
+      "background": "#1d2529",
+      "ratio": 6.7795,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "foregroundToken": "danger",
+      "backgroundToken": "surface-raised",
+      "foreground": "#f28f96",
+      "background": "#273237",
+      "ratio": 5.7238,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "foregroundToken": "risk-none",
+      "backgroundToken": "risk-none-soft",
+      "foreground": "#c5cecb",
+      "background": "#2c3539",
+      "ratio": 7.798,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "foregroundToken": "risk-low",
+      "backgroundToken": "risk-low-soft",
+      "foreground": "#add3df",
+      "background": "#24363d",
+      "ratio": 7.88,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "foregroundToken": "warning",
+      "backgroundToken": "warning-soft",
+      "foreground": "#eac17a",
+      "background": "#3a3022",
+      "ratio": 7.6317,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "foregroundToken": "risk-high",
+      "backgroundToken": "risk-high-soft",
+      "foreground": "#f5a0a0",
+      "background": "#3d252c",
+      "ratio": 6.9483,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "foregroundToken": "danger",
+      "backgroundToken": "danger-soft",
+      "foreground": "#f28f96",
+      "background": "#3d252c",
+      "ratio": 6.0989,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "foregroundToken": "success",
+      "backgroundToken": "success-soft",
+      "foreground": "#99cea7",
+      "background": "#24382d",
+      "ratio": 6.9946,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "foregroundToken": "warning",
+      "backgroundToken": "warning-soft",
+      "foreground": "#eac17a",
+      "background": "#3a3022",
+      "ratio": 7.6317,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "foregroundToken": "danger",
+      "backgroundToken": "danger-soft",
+      "foreground": "#f28f96",
+      "background": "#3d252c",
+      "ratio": 6.0989,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "foregroundToken": "info",
+      "backgroundToken": "info-soft",
+      "foreground": "#add3df",
+      "background": "#24363d",
+      "ratio": 7.88,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "foregroundToken": "on-primary",
+      "backgroundToken": "primary",
+      "foreground": "#112522",
+      "background": "#79cbc4",
+      "ratio": 8.5032,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "foregroundToken": "on-primary",
+      "backgroundToken": "primary-hover",
+      "foreground": "#112522",
+      "background": "#a1e0d9",
+      "ratio": 10.8113,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "foregroundToken": "on-danger",
+      "backgroundToken": "danger",
+      "foreground": "#29151b",
+      "background": "#f28f96",
+      "ratio": 7.5119,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "foregroundToken": "focus",
+      "backgroundToken": "background",
+      "foreground": "#b4eee7",
+      "background": "#14191c",
+      "ratio": 13.7693,
+      "minimum": 3,
+      "pass": true
+    },
+    {
+      "foregroundToken": "focus",
+      "backgroundToken": "surface",
+      "foreground": "#b4eee7",
+      "background": "#1d2529",
+      "ratio": 12.1021,
+      "minimum": 3,
+      "pass": true
+    },
+    {
+      "foregroundToken": "focus",
+      "backgroundToken": "surface-raised",
+      "foreground": "#b4eee7",
+      "background": "#273237",
+      "ratio": 10.2176,
+      "minimum": 3,
+      "pass": true
+    },
+    {
+      "foregroundToken": "control-border",
+      "backgroundToken": "background",
+      "foreground": "#81979a",
+      "background": "#14191c",
+      "ratio": 5.7582,
+      "minimum": 3,
+      "pass": true
+    },
+    {
+      "foregroundToken": "control-border",
+      "backgroundToken": "surface",
+      "foreground": "#81979a",
+      "background": "#1d2529",
+      "ratio": 5.061,
+      "minimum": 3,
+      "pass": true
+    },
+    {
+      "foregroundToken": "control-border",
+      "backgroundToken": "surface-raised",
+      "foreground": "#81979a",
+      "background": "#273237",
+      "ratio": 4.2729,
+      "minimum": 3,
+      "pass": true
+    },
+    {
+      "foregroundToken": "focus",
+      "backgroundToken": "primary-soft",
+      "foreground": "#b4eee7",
+      "background": "#203d3d",
+      "ratio": 9.0878,
+      "minimum": 3,
+      "pass": true
+    },
+    {
+      "foregroundToken": "focus",
+      "backgroundToken": "success-soft",
+      "foreground": "#b4eee7",
+      "background": "#24382d",
+      "ratio": 9.7251,
+      "minimum": 3,
+      "pass": true
+    },
+    {
+      "foregroundToken": "focus",
+      "backgroundToken": "warning-soft",
+      "foreground": "#b4eee7",
+      "background": "#3a3022",
+      "ratio": 10.0409,
+      "minimum": 3,
+      "pass": true
+    },
+    {
+      "foregroundToken": "focus",
+      "backgroundToken": "danger-soft",
+      "foreground": "#b4eee7",
+      "background": "#3d252c",
+      "ratio": 10.8872,
+      "minimum": 3,
+      "pass": true
+    },
+    {
+      "foregroundToken": "focus",
+      "backgroundToken": "info-soft",
+      "foreground": "#b4eee7",
+      "background": "#24363d",
+      "ratio": 9.7747,
+      "minimum": 3,
+      "pass": true
+    },
+    {
+      "foregroundToken": "focus",
+      "backgroundToken": "surface-subtle",
+      "foreground": "#b4eee7",
+      "background": "#182024",
+      "ratio": 12.8446,
+      "minimum": 3,
+      "pass": true
+    }
+  ]
+}

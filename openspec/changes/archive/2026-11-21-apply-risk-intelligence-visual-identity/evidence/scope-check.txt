@@ -1,0 +1,37 @@
+Scope: frontend presentation/tests, frontend README, Frontend architecture section and current OpenSpec evidence.
+git diff --check: PASS (exit 0)
+Unexpected tracked paths: 0
+No backend/API/DTO/decoder/state/dependency/deployment changes.
+docs/02-arquitectura/arquitectura-general.md
+frontend/README.md
+frontend/src/app/app.css
+frontend/src/app/app.html
+frontend/src/app/app.spec.ts
+frontend/src/app/app.ts
+frontend/src/app/features/projects/pages/projects-page.css
+frontend/src/app/features/projects/pages/projects-page.spec.ts
+frontend/src/app/features/projects/pages/projects-page.ts
+frontend/src/app/features/scans/components/category-summary.css
+frontend/src/app/features/scans/components/category-summary.ts
+frontend/src/app/features/scans/components/evaluation-list.ts
+frontend/src/app/features/scans/components/finding-list.css
+frontend/src/app/features/scans/components/finding-list.ts
+frontend/src/app/features/scans/components/results.spec.ts
+frontend/src/app/features/scans/components/risk-summary.css
+frontend/src/app/features/scans/components/risk-summary.ts
+frontend/src/app/features/scans/components/scan-progress.ts
+frontend/src/app/features/scans/pages/scan-page.css
+frontend/src/app/features/scans/pages/scan-page.html
+frontend/src/app/features/scans/pages/scan-page.ts
+frontend/src/app/features/scans/pages/scan-presentation.spec.ts
+frontend/src/app/features/target/components/target-form.css
+frontend/src/app/flows.spec.ts
+frontend/src/app/fragment-navigation.spec.ts
+frontend/src/app/shared/ui/empty-state.ts
+frontend/src/app/shared/ui/icon.spec.ts
+frontend/src/app/shared/ui/icon.ts
+frontend/src/app/shared/ui/page-header.ts
+frontend/src/app/shared/ui/page.css
+frontend/src/app/shared/ui/stat-card.ts
+frontend/src/app/shared/ui/status-badge.css
+frontend/src/styles.css

@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { NavigationEnd, Router } from '@angular/router';
+import { NavigationEnd, NavigationSkipped, Router } from '@angular/router';
 import { filter, firstValueFrom } from 'rxjs';
 import { App } from './app';
 import { appConfig } from './app.config';
@@ -106,5 +106,19 @@ describe('Fragment navigation with a root base and an internal Scan route', () =
     await fixture.whenStable();
     expect(router.url).toBe(`${scanRoute}#content`);
     expect(document.activeElement).toBe(content);
+  });
+  it('reveals an evaluation again when its current-fragment link is reactivated after collapsing the detail', async () => {
+    const fragment = 'evaluation-' + data.evaluations[0].id;
+    const node = fixture.nativeElement as HTMLElement;
+    node.querySelectorAll<HTMLDetailsElement>('app-report-sections details').forEach(item => item.open = true);
+    await follow(`app-report-sections a[href$="#${fragment}"]`, fragment);
+    const technical = node.querySelector<HTMLDetailsElement>('.technical-depth')!;
+    technical.open = false;
+    const skipped = firstValueFrom(router.events.pipe(filter(event => event instanceof NavigationSkipped)));
+    node.querySelector<HTMLAnchorElement>(`app-report-sections a[href$="#${fragment}"]`)!.click();
+    await skipped; fixture.detectChanges(); await fixture.whenStable();
+    expect(technical.open).toBe(true);
+    expect(document.activeElement?.id).toBe(fragment);
+    http.expectNone('/api/projects');
   });
 });

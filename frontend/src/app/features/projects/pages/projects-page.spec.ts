@@ -5,7 +5,7 @@ import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { API_BASE_URL } from '../../../core/api/api-config';
 import { ProjectsPage } from './projects-page';
-import { project } from '../../../../testing/fixtures';
+import { id, project } from '../../../../testing/fixtures';
 
 describe('ProjectsPage ambiguous creation reconciliation', () => {
   let http: HttpTestingController;
@@ -27,6 +27,30 @@ describe('ProjectsPage ambiguous creation reconciliation', () => {
   });
 
   afterEach(() => { TestBed.resetTestingModule(); http.verify(); });
+
+  it.each([0, 3])('shows the real loaded count %i with framed actions and no duplicate project access', count => {
+    const items = Array.from({ length: count }, (_, index) => ({ ...project, id: id(100 + index), name: 'Proyecto sintético ' + index }));
+    http.expectOne(get).flush(items); harness.detectChanges(); const node = harness.routeNativeElement!;
+    expect(node.querySelector('.project-summary strong')?.textContent).toBe(String(count));
+    expect(node.querySelector('.project-summary')?.textContent).toContain('Proyectos en este listado');
+    expect(node.querySelectorAll('.project-record')).toHaveLength(count);
+    expect(node.querySelector('.project-copy a')).toBeNull();
+    expect(node.querySelectorAll('.project-actions a')).toHaveLength(count);
+    for (const [index, row] of Array.from(node.querySelectorAll('.project-record')).entries()) {
+      expect(row.querySelector('a.button.secondary')?.getAttribute('aria-label')).toContain(items[index].name);
+      expect(row.querySelector('button.destructive-outline')?.getAttribute('aria-label')).toContain(items[index].name);
+      expect(row.querySelectorAll('svg')).toHaveLength(3);
+      expect(row.querySelector('time')?.getAttribute('datetime')).toBe(project.createdAt);
+    }
+    expect(node.querySelector('.project-register') !== null).toBe(count > 0);
+  });
+  it('never replaces loading or a failed list with a zero-count summary', () => {
+    const node = harness.routeNativeElement!;
+    expect(node.querySelector('.project-summary')).toBeNull();
+    http.expectOne(get).flush('untrusted', { status: 500, statusText: 'Failure' }); harness.detectChanges();
+    expect(node.querySelector('.project-summary')).toBeNull(); expect(node.querySelector('[role=alert]')).not.toBeNull();
+    expect(node.textContent).not.toContain('untrusted');
+  });
 
   it('does not unlock after a GET started before the ambiguous POST, only after a later reconciliation', () => {
     const initialRead = http.expectOne(get);

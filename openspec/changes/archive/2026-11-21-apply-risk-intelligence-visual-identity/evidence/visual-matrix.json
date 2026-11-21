@@ -1,0 +1,538 @@
+{
+  "layouts": [
+    {
+      "view": "COMPLETED / mixed",
+      "checks": [
+        {
+          "clientWidth": 1425,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 1425,
+          "width": 1440
+        },
+        {
+          "clientWidth": 1265,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 1265,
+          "width": 1280
+        },
+        {
+          "clientWidth": 1009,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 1009,
+          "width": 1024
+        },
+        {
+          "clientWidth": 753,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 753,
+          "width": 768
+        },
+        {
+          "clientWidth": 345,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 345,
+          "width": 360
+        },
+        {
+          "clientWidth": 305,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 305,
+          "width": 320
+        }
+      ]
+    },
+    {
+      "view": "Target REST",
+      "checks": [
+        {
+          "clientWidth": 1425,
+          "heading": "Configuración del target",
+          "overflow": false,
+          "scrollWidth": 1425,
+          "width": 1440
+        },
+        {
+          "clientWidth": 1265,
+          "heading": "Configuración del target",
+          "overflow": false,
+          "scrollWidth": 1265,
+          "width": 1280
+        },
+        {
+          "clientWidth": 1009,
+          "heading": "Configuración del target",
+          "overflow": false,
+          "scrollWidth": 1009,
+          "width": 1024
+        },
+        {
+          "clientWidth": 753,
+          "heading": "Configuración del target",
+          "overflow": false,
+          "scrollWidth": 753,
+          "width": 768
+        },
+        {
+          "clientWidth": 345,
+          "heading": "Configuración del target",
+          "overflow": false,
+          "scrollWidth": 345,
+          "width": 360
+        },
+        {
+          "clientWidth": 305,
+          "heading": "Configuración del target",
+          "overflow": false,
+          "scrollWidth": 305,
+          "width": 320
+        }
+      ]
+    },
+    {
+      "view": "RUNNING / current build",
+      "checks": [
+        {
+          "clientWidth": 1425,
+          "heading": "Análisis en ejecución",
+          "overflow": false,
+          "scrollWidth": 1425,
+          "width": 1440
+        },
+        {
+          "clientWidth": 1265,
+          "heading": "Análisis en ejecución",
+          "overflow": false,
+          "scrollWidth": 1265,
+          "width": 1280
+        },
+        {
+          "clientWidth": 1009,
+          "heading": "Análisis en ejecución",
+          "overflow": false,
+          "scrollWidth": 1009,
+          "width": 1024
+        },
+        {
+          "clientWidth": 753,
+          "heading": "Análisis en ejecución",
+          "overflow": false,
+          "scrollWidth": 753,
+          "width": 768
+        },
+        {
+          "clientWidth": 345,
+          "heading": "Análisis en ejecución",
+          "overflow": false,
+          "scrollWidth": 345,
+          "width": 360
+        },
+        {
+          "clientWidth": 305,
+          "heading": "Análisis en ejecución",
+          "overflow": false,
+          "scrollWidth": 305,
+          "width": 320
+        }
+      ]
+    },
+    {
+      "view": "inconclusive",
+      "checks": [
+        {
+          "clientWidth": 1425,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 1425,
+          "width": 1440
+        },
+        {
+          "clientWidth": 1265,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 1265,
+          "width": 1280
+        },
+        {
+          "clientWidth": 1009,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 1009,
+          "width": 1024
+        },
+        {
+          "clientWidth": 753,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 753,
+          "width": 768
+        },
+        {
+          "clientWidth": 345,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 345,
+          "width": 360
+        },
+        {
+          "clientWidth": 305,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 305,
+          "width": 320
+        }
+      ]
+    },
+    {
+      "view": "findings",
+      "checks": [
+        {
+          "clientWidth": 1425,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 1425,
+          "width": 1440
+        },
+        {
+          "clientWidth": 1265,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 1265,
+          "width": 1280
+        },
+        {
+          "clientWidth": 1009,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 1009,
+          "width": 1024
+        },
+        {
+          "clientWidth": 753,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 753,
+          "width": 768
+        },
+        {
+          "clientWidth": 345,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 345,
+          "width": 360
+        },
+        {
+          "clientWidth": 305,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 305,
+          "width": 320
+        }
+      ]
+    },
+    {
+      "view": "findings-error",
+      "checks": [
+        {
+          "clientWidth": 1425,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 1425,
+          "width": 1440
+        },
+        {
+          "clientWidth": 1265,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 1265,
+          "width": 1280
+        },
+        {
+          "clientWidth": 1009,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 1009,
+          "width": 1024
+        },
+        {
+          "clientWidth": 753,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 753,
+          "width": 768
+        },
+        {
+          "clientWidth": 345,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 345,
+          "width": 360
+        },
+        {
+          "clientWidth": 305,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 305,
+          "width": 320
+        }
+      ]
+    },
+    {
+      "view": "score-error",
+      "checks": [
+        {
+          "clientWidth": 1425,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 1425,
+          "width": 1440
+        },
+        {
+          "clientWidth": 1265,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 1265,
+          "width": 1280
+        },
+        {
+          "clientWidth": 1009,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 1009,
+          "width": 1024
+        },
+        {
+          "clientWidth": 753,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 753,
+          "width": 768
+        },
+        {
+          "clientWidth": 345,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 345,
+          "width": 360
+        },
+        {
+          "clientWidth": 305,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 305,
+          "width": 320
+        }
+      ]
+    },
+    {
+      "view": "historical",
+      "checks": [
+        {
+          "clientWidth": 1425,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 1425,
+          "width": 1440
+        },
+        {
+          "clientWidth": 1265,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 1265,
+          "width": 1280
+        },
+        {
+          "clientWidth": 1009,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 1009,
+          "width": 1024
+        },
+        {
+          "clientWidth": 753,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 753,
+          "width": 768
+        },
+        {
+          "clientWidth": 345,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 345,
+          "width": 360
+        },
+        {
+          "clientWidth": 305,
+          "heading": "Análisis completado",
+          "overflow": false,
+          "scrollWidth": 305,
+          "width": 320
+        }
+      ]
+    },
+    {
+      "view": "failed",
+      "checks": [
+        {
+          "clientWidth": 1425,
+          "heading": "Análisis fallido",
+          "overflow": false,
+          "scrollWidth": 1425,
+          "width": 1440
+        },
+        {
+          "clientWidth": 1265,
+          "heading": "Análisis fallido",
+          "overflow": false,
+          "scrollWidth": 1265,
+          "width": 1280
+        },
+        {
+          "clientWidth": 1009,
+          "heading": "Análisis fallido",
+          "overflow": false,
+          "scrollWidth": 1009,
+          "width": 1024
+        },
+        {
+          "clientWidth": 753,
+          "heading": "Análisis fallido",
+          "overflow": false,
+          "scrollWidth": 753,
+          "width": 768
+        },
+        {
+          "clientWidth": 345,
+          "heading": "Análisis fallido",
+          "overflow": false,
+          "scrollWidth": 345,
+          "width": 360
+        },
+        {
+          "clientWidth": 305,
+          "heading": "Análisis fallido",
+          "overflow": false,
+          "scrollWidth": 305,
+          "width": 320
+        }
+      ]
+    },
+    {
+      "view": "pending",
+      "checks": [
+        {
+          "clientWidth": 1425,
+          "heading": "Análisis pendiente",
+          "overflow": false,
+          "scrollWidth": 1425,
+          "width": 1440
+        },
+        {
+          "clientWidth": 1265,
+          "heading": "Análisis pendiente",
+          "overflow": false,
+          "scrollWidth": 1265,
+          "width": 1280
+        },
+        {
+          "clientWidth": 1009,
+          "heading": "Análisis pendiente",
+          "overflow": false,
+          "scrollWidth": 1009,
+          "width": 1024
+        },
+        {
+          "clientWidth": 753,
+          "heading": "Análisis pendiente",
+          "overflow": false,
+          "scrollWidth": 753,
+          "width": 768
+        },
+        {
+          "clientWidth": 345,
+          "heading": "Análisis pendiente",
+          "overflow": false,
+          "scrollWidth": 345,
+          "width": 360
+        },
+        {
+          "clientWidth": 305,
+          "heading": "Análisis pendiente",
+          "overflow": false,
+          "scrollWidth": 305,
+          "width": 320
+        }
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "bands": 4,
+      "errorCount": 0,
+      "findings": 0,
+      "heading": "Análisis completado",
+      "score": "0/100",
+      "warning": "No se detectaron Findings en las pruebas completadas. Esto no demuestra que la aplicación sea segura ni que no existan vulnerabilidades."
+    },
+    {
+      "bands": 4,
+      "errorCount": 0,
+      "findings": 4,
+      "heading": "Análisis completado",
+      "score": "100/100",
+      "warning": null
+    },
+    {
+      "bands": 4,
+      "errorCount": 1,
+      "findings": 0,
+      "heading": "Análisis completado",
+      "score": "74/100",
+      "warning": null
+    },
+    {
+      "bands": 4,
+      "errorCount": 1,
+      "findings": 1,
+      "heading": "Análisis completado",
+      "score": null,
+      "warning": null
+    },
+    {
+      "bands": 4,
+      "errorCount": 0,
+      "findings": 1,
+      "heading": "Análisis completado",
+      "score": null,
+      "warning": null
+    },
+    {
+      "bands": 4,
+      "errorCount": 1,
+      "findings": 1,
+      "heading": "Análisis fallido",
+      "score": "74/100",
+      "warning": null
+    },
+    {
+      "bands": 0,
+      "errorCount": 0,
+      "findings": 0,
+      "heading": "Análisis pendiente",
+      "score": null,
+      "warning": null
+    }
+  ],
+  "_scope": {
+    "revision": "INTERMEDIATE_PRE_R2",
+    "acceptance": "NOT_FINAL",
+    "reason": "Mezcla capturas anteriores al acabado correctivo; no acredita AL-16 final.",
+    "supersededBy": "acceptance-final.json"
+  }
+}

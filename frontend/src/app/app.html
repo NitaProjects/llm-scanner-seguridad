@@ -1,9 +1,22 @@
 <a class="skip-link" [routerLink]="[]" fragment="content" (click)="skipToContent(content)">Saltar al contenido</a>
-<header class="shell-header">
-  <div class="shell-inner">
-    <a class="brand" routerLink="/projects"><app-icon name="shield" class="brand-icon" />LLM Scanner Seguridad</a>
-    <nav aria-label="Navegación principal"><a routerLink="/projects" routerLinkActive="" #projectsNavigation="routerLinkActive" [class.active]="projectsNavigation.isActive && contentOutlet.isActivated && contentOutlet.activatedRoute.snapshot.routeConfig?.path !== '**'" [attr.aria-current]="projectsNavigation.isActive && contentOutlet.isActivated && contentOutlet.activatedRoute.snapshot.routeConfig?.path !== '**' ? 'location' : null"><app-icon name="folder" />Proyectos</a></nav>
-  </div>
-</header>
-<main #content id="content" class="shell-content" tabindex="-1"><router-outlet #contentOutlet="outlet" /></main>
-<footer class="shell-footer">Análisis controlado de aplicaciones LLM · Solo sistemas propios o autorizados</footer>
+<aside class="shell-sidebar" aria-label="Área de trabajo">
+  <a class="brand" routerLink="/projects"><app-icon name="shield" class="identity-icon" /><span><strong>LLM Scanner Seguridad</strong><span class="brand-descriptor">Análisis de seguridad LLM</span></span></a>
+  <nav aria-label="Navegación principal">
+    <p class="nav-group">ESPACIO DE TRABAJO</p>
+    <a routerLink="/projects" [class.active]="projectsActive()" [attr.aria-current]="projectsActive() ? 'page' : null"><app-icon name="folder" />Proyectos</a>
+    @if (context(); as context) {
+      <div class="context-navigation"><p class="nav-group">PROYECTO ACTUAL</p>
+        <p class="context-name" [class.technical-ref]="!context.name">{{ context.name ?? context.projectId }}</p>
+        <a [routerLink]="['/projects',context.projectId]" [class.active]="!context.target && !reportActive()" [attr.aria-current]="!context.target && !reportActive() ? 'location' : null"><app-icon name="shield" />Análisis del proyecto</a>
+        <a [routerLink]="['/projects',context.projectId,'target']" [class.active]="context.target" [attr.aria-current]="context.target ? 'page' : null"><app-icon name="settings" />Configuración del target</a>
+        @if (context.report && context.scanId) { <a [routerLink]="['/projects',context.projectId,'scans',context.scanId]" fragment="report" [class.active]="reportActive()" [attr.aria-current]="reportActive() ? 'location' : null"><app-icon name="document" />Informe del análisis</a> }
+      </div>
+    } @else { <p class="context-note">Los análisis, informes y configuración se consultan dentro de cada proyecto.</p> }
+  </nav>
+  <div class="sidebar-footer"><p class="technical-ref"><app-icon name="document" />Frontend v{{ frontendVersion }}</p><p>Solo sistemas propios o autorizados.</p></div>
+</aside>
+<div class="shell-workspace">
+  <header class="context-bar"><span>{{ projectsActive() ? 'Colección de proyectos' : (context()?.target ? 'Configuración del target' : (context()?.scanId ? 'Análisis de seguridad' : (context() ? 'Espacio de proyecto' : 'Espacio de trabajo'))) }}</span><span class="context-scope">Análisis controlado de aplicaciones LLM</span></header>
+  <main #content id="content" class="shell-content" tabindex="-1"><router-outlet /></main>
+  <footer class="shell-footer">Análisis controlado de aplicaciones LLM · Solo sistemas propios o autorizados</footer>
+</div>

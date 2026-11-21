@@ -1,4 +1,4 @@
-.badge{display:inline-flex;align-items:center;gap:var(--space-1);border:1px solid currentColor;border-radius:var(--radius-badge);padding:var(--space-1) var(--space-2);font-size:var(--text-badge);line-height:1.3;font-weight:600;color:var(--risk-none);background:var(--risk-none-soft);cursor:default}
+.badge{display:inline-flex;align-items:center;gap:var(--space-1);border:1px solid currentColor;border-radius:4px;padding:var(--space-1) var(--space-2);font-size:var(--text-badge);line-height:1.3;font-weight:600;color:var(--risk-none);background:var(--risk-none-soft);cursor:default}
 .badge[data-tone=LOW]{color:var(--risk-low);background:var(--risk-low-soft)}
 .badge[data-tone=MEDIUM]{color:var(--risk-medium);background:var(--risk-medium-soft)}
 .badge[data-tone=INCONCLUSIVE]{color:var(--warning);background:var(--warning-soft)}

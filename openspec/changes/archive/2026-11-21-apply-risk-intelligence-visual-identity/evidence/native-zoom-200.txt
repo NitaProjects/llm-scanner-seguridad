@@ -1,0 +1,5 @@
+Observación directa de Computer Use, 20/11/2026 Europe/Madrid.
+Chrome aislado sobre la fixture local: botón «Zoom: 200 %».
+Se observó reflow de sidebar a navegación en flujo.
+La captura nativa se mostró en la herramienta y no se guardó.
+La siguiente acción quedó bloqueada por imposibilidad de verificar la URL; no se continuó operando el navegador.

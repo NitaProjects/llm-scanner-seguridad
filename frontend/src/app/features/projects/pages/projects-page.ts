@@ -1,3 +1,4 @@
+import { StatCard } from '../../../shared/ui/stat-card';
 import { PageHeader } from '../../../shared/ui/page-header';
 import { LoadingState } from '../../../shared/ui/loading-state';
 import { EmptyState } from '../../../shared/ui/empty-state';
@@ -14,7 +15,7 @@ import { LoadState, loading, loaded, failed } from '../../../shared/models/load-
 import { FeedbackPanel } from '../../../shared/ui/feedback-panel';
 import { Icon } from '../../../shared/ui/icon';
 @Component({
-  selector: 'app-projects-page', imports: [RouterLink, DatePipe, ProjectCreateForm, FeedbackPanel, Icon, PageHeader, LoadingState, EmptyState], styleUrls: ['../../../shared/ui/page.css', './projects-page.css'],
+  selector: 'app-projects-page', imports: [RouterLink, DatePipe, ProjectCreateForm, FeedbackPanel, Icon, PageHeader, LoadingState, EmptyState, StatCard], styleUrls: ['../../../shared/ui/page.css', './projects-page.css'],
   styles: ['dialog { max-width: min(32rem, calc(100% - 2rem)); max-height: calc(100dvh - 2rem); overflow: auto; box-shadow: var(--shadow-overlay); padding: var(--space-5); background: var(--surface-raised); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-panel); } .delete-confirm:not(:disabled) { background: var(--danger); border-color: var(--danger); color: var(--on-danger); } dialog::backdrop { background: rgb(3 8 20 / 78%); } dialog button { margin: var(--space-1); } @media(prefers-reduced-motion:no-preference) { dialog[open] { animation: enter 180ms ease-out; } }'],
   template: `<app-page-header title="Proyectos" description="Organiza tus análisis de aplicaciones LLM autorizadas."><button id="new-project" (click)="showForm.set(true)" [disabled]="showForm()"><app-icon name="plus" />Nuevo proyecto</button></app-page-header>
     @if (showForm()) { <app-project-create-form [busy]="creating()" [error]="createError()" (create)="create($event)" (cancel)="cancel()" /> }
@@ -25,9 +26,18 @@ import { Icon } from '../../../shared/ui/icon';
     @if (projects().status === 'loading') { <app-loading-state label="Cargando proyectos…" /> }
     @if (projects().error; as error) { <app-feedback-panel kind="error" [message]="error.message" [retryable]="true" (retry)="load()" /> }
     @if (projects().status === 'loaded') {
+
+      <section class="project-summary" aria-label="Resumen de proyectos"><app-stat-card class="collection-stat" icon="folder" label="Proyectos en este listado" [value]="projects().data?.length ?? 0" /><p>Organiza cada target y sus análisis autorizados en un proyecto. El riesgo y los hallazgos se consultan dentro de cada Scan.</p></section>
       @if (projects().data?.length === 0 && !showForm()) { <app-empty-state icon="folder" title="Todavía no hay proyectos" message="Crea un proyecto para configurar su target y ejecutar el primer análisis."><button (click)="showForm.set(true)" [disabled]="showForm()"><app-icon name="plus" />Nuevo proyecto</button></app-empty-state> }
-      <p class="collection-count">{{ projects().data?.length }} proyectos en este listado</p><ul class="plain-list project-list">@for (project of projects().data; track project.id) { <li class="card"><h2><a class="row-link" [routerLink]="['/projects', project.id]">{{ project.name }}</a></h2>@if (project.description) { <p class="text muted">{{ project.description }}</p> }<p class="meta">Creado {{ project.createdAt | date:'medium':'UTC' }} UTC</p>
-      <div class="project-actions"><a class="row-link" [routerLink]="['/projects', project.id]">Abrir proyecto →</a><button type="button" class="secondary delete-action" #opener (click)="confirmDeletion(project, opener)" [disabled]="deleting() || pendingReconciliation() !== null">Eliminar proyecto</button></div></li> }</ul>
+      @if ((projects().data?.length ?? 0) > 0) {
+      <section class="project-register" aria-labelledby="register-title"><header class="register-heading"><span aria-hidden="true"></span><h2 id="register-title">Nombre / descripción</h2><span>Creado</span><span>Acciones</span></header>
+      <ul class="plain-list project-list">@for (project of projects().data; track project.id) {
+        <li class="project-record"><app-icon class="project-folder" name="folder" /><div class="project-copy"><h3>{{ project.name }}</h3>@if (project.description) { <p class="text muted">{{ project.description }}</p> }</div>
+          <time [attr.datetime]="project.createdAt" [attr.title]="(project.createdAt | date:'medium':'UTC') + ' UTC'">{{ project.createdAt | date:'d MMM y':'UTC' }}<small>UTC</small></time>
+          <div class="project-actions"><a class="button secondary" [routerLink]="['/projects', project.id]" [attr.aria-label]="'Abrir proyecto ' + project.name"><app-icon name="open" />Abrir</a><button type="button" class="destructive-outline delete-action" #opener (click)="confirmDeletion(project, opener)" [disabled]="deleting() || pendingReconciliation() !== null" [attr.aria-label]="'Eliminar proyecto ' + project.name"><app-icon name="trash" />Eliminar</button></div>
+        </li>
+      }</ul></section> }
+
     }
     <dialog #deleteDialog aria-labelledby="delete-title" aria-describedby="delete-description" (cancel)="cancelDeletion($event)" [attr.aria-busy]="deleting()">
       <h2 id="delete-title">Eliminar proyecto</h2>

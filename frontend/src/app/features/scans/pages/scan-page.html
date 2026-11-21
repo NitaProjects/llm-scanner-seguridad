@@ -1,7 +1,7 @@
 <nav aria-label="Ruta"><a routerLink="/projects">Proyectos</a> / <a [routerLink]="['/projects',projectId()]">Volver al proyecto</a></nav>
-<app-page-header [title]="title()" eyebrow="Análisis de seguridad"><span class="scan-id">{{ state.scan().data?.id }}</span></app-page-header>
+<app-page-header [title]="title()"><span class="scan-id">{{ state.scan().data?.id }}</span></app-page-header>
 @if (state.scan().data; as scan) {
-  <div class="scan-overview" [attr.data-status]="scan.status"><p class="scan-status" role="status" aria-live="polite"><app-status-badge [badge]="{kind:'status',value:scan.status}" /></p><p class="meta">Creado {{ scan.createdAt | date:'medium':'UTC' }} UTC · Duración de ejecución: {{ duration() }}</p></div>
+  <div class="scan-overview" [attr.data-status]="scan.status"><p class="scan-status" role="status" aria-live="polite"><app-status-badge [badge]="{kind:'status',value:scan.status}" /></p><p class="meta">Creado {{ scan.createdAt | date:'medium':'UTC' }} UTC @if (scan.startedAt) { · Inicio {{ scan.startedAt | date:'medium':'UTC' }} UTC } @if (terminal()) { · Duración de ejecución: {{ duration() ?? 'No disponible' }} }</p></div>
   @if (scan.status === 'PENDING' || scan.status === 'RUNNING') {
     <div class="tracking-panel" [class.is-tracking]="tracking()" [attr.data-tracking]="tracking() ? 'active' : 'stopped'">
       <span class="activity-line" aria-hidden="true"></span>
@@ -17,29 +17,32 @@
   <p>{{ state.scan().data ? 'El estado mostrado está desactualizado.' : 'Todavía no se ha podido confirmar el estado del análisis.' }} {{ state.paused() ? 'Seguimiento automático detenido.' : 'Se volverá a consultar de forma limitada.' }}</p>
 }
 @if (terminal()) {
-  <section id="risk" class="card" aria-labelledby="risk-title"><h2 id="risk-title">Riesgo detectado</h2>
+  <section id="risk" class="risk-overview" aria-labelledby="risk-title"><div class="section-heading"><h2 id="risk-title"><app-icon name="shield" />Risk Overview</h2><span class="section-caption">RIESGO DETECTADO</span></div>
     @if (state.score().status === 'loading') { <app-loading-state label="Cargando puntuación…" /> }
     @if (state.score().error; as error) { <app-feedback-panel kind="error" [message]="error.message" [retryable]="true" (retry)="state.retryBlock('score')" /> }
-    @if (score(); as summary) { <app-risk-summary [score]="summary" /> }
+    @if (score(); as summary) { <app-risk-summary [score]="summary" [scan]="state.scan().data" [duration]="duration()" /> }
     @else if (state.score().data; as response) { <p class="availability" [attr.data-tone]="response.availability">{{ availabilityText(response.availability) }}</p>@if (response.availability === 'PENDING') { <button (click)="state.retryBlock('score')">Releer puntuación</button> } }
   </section>
   @if (conflict()) { <app-feedback-panel kind="error" message="El resumen del informe y la puntuación no coinciden. Se conservan sus fuentes; requiere revisión."><div class="actions"><button (click)="state.retryBlock('score')">Releer puntuación</button><button (click)="state.retryBlock('report')">Releer informe</button></div></app-feedback-panel> }
   <nav class="anchors" aria-label="Secciones del resultado"><a [routerLink]="[]" fragment="categories">Categorías</a><a [routerLink]="[]" fragment="findings">Hallazgos</a><a [routerLink]="[]" fragment="evaluations">Evaluaciones</a><a [routerLink]="[]" fragment="report">Informe</a></nav>
-  @if (score(); as summary) { <section id="categories"><h2>Categorías analizadas</h2><app-category-summary [categories]="summary.categories" /></section> }
-  <section id="findings"><h2>Hallazgos</h2>@if (state.findings().status === 'loading') { <app-loading-state label="Cargando hallazgos…" /> }@if (state.findings().error; as error) { <app-feedback-panel kind="error" [message]="error.message" [retryable]="true" (retry)="state.retryBlock('findings')" /> }@if (state.findings().data; as findings) { <app-finding-list [findings]="findings" /> }</section>
+<div class="analysis-workspace"><div class="analysis-index"><section id="categories" class="analysis-panel"><div class="section-heading"><h2><app-icon name="shield" />OWASP Risk Bands</h2><span class="section-caption">CUATRO CATEGORÍAS · FUENTES INDEPENDIENTES</span></div><app-category-summary [categories]="score()?.categories ?? []" [rails]="rails()" /></section>
+  <section id="findings" class="analysis-panel"><div class="section-heading"><h2><app-icon name="document" />Hallazgos</h2><span class="section-caption">EVIDENCIA Y DECISIONES</span></div>@if (state.findings().status === 'loading') { <app-loading-state label="Cargando hallazgos…" /> }@if (state.findings().error; as error) { <app-feedback-panel kind="error" [message]="error.message" [retryable]="true" (retry)="state.retryBlock('findings')" /> }@if (state.findings().data; as findings) { <app-finding-list [externalInspector]="true" [findings]="findings" [rails]="rails()" [selectedId]="selectedFindingId()" (selectFinding)="inspectFinding($event)" /> }</section></div><aside class="analysis-inspector" aria-label="Inspección de hallazgo seleccionado">
+    @if (findingPanel(); as finding) { <app-finding-intelligence-panel [finding]="finding" [correlated]="findingPanelCorrelated()" /> }
+    @else { <div class="inspector-empty"><h2><app-icon name="document" />Inspección de hallazgo</h2><p>{{ state.findings().status === 'loading' ? 'Cargando hallazgos…' : (state.findings().error ? 'El listado de hallazgos no está disponible. Revisa el error de lectura.' : 'Selecciona un hallazgo para inspeccionar su evidencia y recomendación. Sin hallazgo no se fabrica una conclusión.') }}</p></div> }
+  </aside></div>
 }
-<section id="executions"><h2>Estado técnico de las pruebas</h2>
+<details class="technical-depth" [open]="!terminal() || keepTechnicalOpen()" (focusin)="keepTechnicalOpen.set(true)"><summary class="technical-heading">AppSec Lab · Profundidad técnica</summary><section id="executions"><h2>Estado técnico de las pruebas</h2>
   @if (state.executions().status === 'loading') { <app-loading-state label="Consultando pruebas…" /> }
   @if (state.executions().error; as error) { <app-feedback-panel kind="error" [message]="error.message" [retryable]="terminal()" (retry)="state.retryBlock('executions')" /> }
-  @if (state.executions().data; as executions) { <app-scan-progress [executions]="executions" [evaluations]="state.evaluations().data?.items ?? []" /> }
+  <app-scan-progress [executions]="state.executions().data ?? []" [evaluations]="state.evaluations().data?.items ?? []" [rails]="rails()" [selectedCategory]="selectedCategory()" [executionLive]="executionLive()" [evaluationLive]="evaluationLive()" (selectTest)="inspectTest($event)" />
   @if (!terminal()) { <p>Los resultados consolidados se mostrarán al terminar el análisis.</p> }
   @if (state.lastUpdated(); as updated) { <p class="meta">Última lectura del estado, hora del navegador: {{ updated | date:'mediumTime' }}</p> }
 </section>
 <section id="evaluations"><h2>Evaluaciones</h2>
   @if (state.evaluations().status === 'loading') { <app-loading-state label="Consultando evaluaciones…" /> }
   @if (state.evaluations().error; as error) { <app-feedback-panel kind="error" [message]="error.message" [retryable]="terminal()" (retry)="state.retryBlock('evaluations')" /> }
-  @if (state.evaluations().data; as evaluations) { <app-evaluation-list [evaluations]="evaluations.items" /> }
-</section>
+  @if (state.evaluations().data; as evaluations) { <details><summary>Todos los registros de evaluación recibidos</summary><app-evaluation-list [evaluations]="evaluations.items" /></details> }
+</section></details>
 @if (terminal()) {
   <section id="report"><h2>Informe</h2>
     @if (state.report().status === 'loading') { <app-loading-state label="Cargando informe…" /> }

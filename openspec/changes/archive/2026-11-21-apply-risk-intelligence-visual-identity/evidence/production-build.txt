@@ -1,0 +1,32 @@
+
+> frontend@0.0.0 build
+> ng build
+
+> Building...
+√ Building...
+Initial chunk files | Names          |  Raw size | Estimated transfer size
+chunk-6X5XM3WT.js   | -              | 274.75 kB |                75.33 kB
+main-QFYVPSUR.js    | main           |  11.71 kB |                 3.80 kB
+styles-YKHM7M2N.css | styles         |   5.43 kB |                 1.58 kB
+chunk-Z4PFVAMV.js   | -              |   4.69 kB |                 1.84 kB
+
+                    | Initial total  | 296.58 kB |                82.55 kB
+
+Lazy chunk files    | Names          |  Raw size | Estimated transfer size
+chunk-2MAYVD7P.js   | scan-page      | 109.96 kB |                15.65 kB
+chunk-NVXR7SKI.js   | -              |  43.99 kB |                 9.69 kB
+chunk-HNJNY4WB.js   | target-page    |  38.01 kB |                 8.15 kB
+chunk-7EV6VVN6.js   | projects-page  |  27.41 kB |                 5.39 kB
+chunk-AERRM5LA.js   | project-page   |  20.42 kB |                 3.86 kB
+chunk-XHNJG4ZM.js   | -              |  13.59 kB |                 4.23 kB
+chunk-TUTONXE6.js   | not-found-page |   6.22 kB |                 1.33 kB
+chunk-JMJNI4YC.js   | -              |   4.74 kB |                 1.60 kB
+chunk-HYYFJC7V.js   | -              |   1.86 kB |               754 bytes
+chunk-MBDGEDUF.js   | -              |   1.61 kB |               650 bytes
+chunk-FF5ZOMPU.js   | -              |   1.32 kB |               615 bytes
+chunk-SW5RXPHT.js   | -              | 817 bytes |               817 bytes
+
+Application bundle generation complete. [2.866 seconds] - 2026-11-20T01:45:04.257Z
+
+Output location: [WORKSPACE]\frontend\dist\frontend
+

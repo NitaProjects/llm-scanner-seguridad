@@ -1,0 +1,80 @@
+
+> frontend@0.0.0 test
+> ng test --watch=false
+
+> Building...
+√ Building...
+Initial chunk files                                      | Names                                                 |  Raw size
+chunk-OCDRAXRT.js                                        | -                                                     | 175.83 kB | 
+chunk-SSCAYA6R.js                                        | -                                                     |  70.28 kB | 
+chunk-FE6J4BJW.js                                        | -                                                     |  65.95 kB | 
+chunk-NBDTHTP4.js                                        | -                                                     |  65.43 kB | 
+chunk-6ZRV5RL6.js                                        | -                                                     |  51.21 kB | 
+chunk-67MSWH5T.js                                        | -                                                     |  31.73 kB | 
+chunk-S55AIBVA.js                                        | -                                                     |  24.66 kB | 
+chunk-Q76ZMINN.js                                        | -                                                     |  22.87 kB | 
+spec-app-flows.js                                        | spec-app-flows                                        |  22.20 kB | 
+spec-app-features-target-components-target-form.js       | spec-app-features-target-components-target-form       |  14.51 kB | 
+chunk-YZPGG76H.js                                        | -                                                     |  14.12 kB | 
+chunk-OTPBTDPA.js                                        | -                                                     |  13.62 kB | 
+chunk-UZWQKGRJ.js                                        | -                                                     |  12.32 kB | 
+spec-app-features-projects-pages-projects-page.js        | spec-app-features-projects-pages-projects-page        |  10.89 kB | 
+chunk-HOUPV6GG.js                                        | -                                                     |  10.33 kB | 
+spec-app-core-api-api.js                                 | spec-app-core-api-api                                 |  10.19 kB | 
+spec-app-features-scans-pages-scan-presentation.js       | spec-app-features-scans-pages-scan-presentation       |   9.46 kB | 
+spec-app-features-scans-state-scan-detail-state.js       | spec-app-features-scans-state-scan-detail-state       |   8.85 kB | 
+spec-app-features-scans-components-results.js            | spec-app-features-scans-components-results            |   8.21 kB | 
+spec-app-features-scans-components-risk-identity.js      | spec-app-features-scans-components-risk-identity      |   7.95 kB | 
+spec-app-app-context.js                                  | spec-app-app-context                                  |   7.65 kB | 
+chunk-QB6WAXAE.js                                        | -                                                     |   6.88 kB | 
+chunk-NB52PRT7.js                                        | -                                                     |   6.72 kB | 
+styles.css                                               | styles                                                |   6.62 kB | 
+spec-app-features-target-forms-validators.js             | spec-app-features-target-forms-validators             |   6.50 kB | 
+spec-app-fragment-navigation.js                          | spec-app-fragment-navigation                          |   6.34 kB | 
+chunk-WGN247BV.js                                        | -                                                     |   6.32 kB | 
+spec-app-shared-ui-presentation.js                       | spec-app-shared-ui-presentation                       |   5.54 kB | 
+chunk-UNTIR7QX.js                                        | -                                                     |   4.89 kB | 
+chunk-KHV6V55L.js                                        | -                                                     |   4.77 kB | 
+chunk-RSTWSNOR.js                                        | -                                                     |   4.75 kB | 
+spec-app-features-scans-presentation-scan-projections.js | spec-app-features-scans-presentation-scan-projections |   4.54 kB | 
+chunk-RGYOWW63.js                                        | -                                                     |   4.52 kB | 
+chunk-LFNZ3CEI.js                                        | -                                                     |   4.27 kB | 
+spec-app-app.js                                          | spec-app-app                                          |   3.75 kB | 
+chunk-ILOZHZHU.js                                        | -                                                     |   3.49 kB | 
+chunk-ITBMNIW5.js                                        | -                                                     |   2.69 kB | 
+chunk-KRBL7R5O.js                                        | -                                                     |   2.50 kB | 
+spec-app-shared-ui-icon.js                               | spec-app-shared-ui-icon                               |   2.48 kB | 
+chunk-6YXDOCJM.js                                        | -                                                     |   2.18 kB | 
+chunk-VMKXNPWP.js                                        | -                                                     |   2.12 kB | 
+chunk-4SIPFZQT.js                                        | -                                                     |   1.69 kB | 
+spec-app-features-target-models-target.decoder.js        | spec-app-features-target-models-target.decoder        |   1.65 kB | 
+chunk-MABSIIQB.js                                        | -                                                     |   1.41 kB | 
+init-testbed.js                                          | init-testbed                                          |   1.21 kB | 
+chunk-ZXGMH3PD.js                                        | -                                                     |   1.17 kB | 
+chunk-WOIAA2HY.js                                        | -                                                     | 983 bytes | 
+vitest-mock-patch.js                                     | vitest-mock-patch                                     | 974 bytes | 
+chunk-BYQ4LGPJ.js                                        | -                                                     | 941 bytes | 
+chunk-5QSJG7PI.js                                        | -                                                     | 397 bytes | 
+chunk-E5PPVUUD.js                                        | -                                                     | 306 bytes | 
+chunk-JLZNNRNH.js                                        | -                                                     | 208 bytes | 
+
+                                                         | Initial total                                         | 761.10 kB
+
+Lazy chunk files                                         | Names                                                 |  Raw size
+chunk-ENB3L73T.js                                        | scan-page                                             | 656 bytes | 
+chunk-RQLR24YB.js                                        | project-page                                          | 632 bytes | 
+chunk-LPPBQ6LA.js                                        | target-page                                           | 540 bytes | 
+chunk-EAOBH7O6.js                                        | projects-page                                         | 514 bytes | 
+chunk-32JZ2EW7.js                                        | not-found-page                                        | 184 bytes | 
+
+Application bundle generation complete. [2.627 seconds] - 2026-11-20T01:44:55.068Z
+
+
+ RUN  v4.1.11 [WORKSPACE]/frontend
+
+
+ Test Files  16 passed (16)
+      Tests  232 passed (232)
+   Start at  02:44:55
+   Duration  4.84s (transform 994ms, setup 13.16s, import 3.17s, tests 9.04s, environment 30.40s)
+

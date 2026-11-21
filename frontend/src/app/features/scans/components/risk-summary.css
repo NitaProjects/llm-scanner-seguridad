@@ -1,8 +1,14 @@
-.risk-grid{display:grid;grid-template-columns:minmax(0,1.4fr) repeat(2,minmax(0,1fr));gap:var(--space-5);align-items:center;margin-bottom:var(--space-5)}
-.risk-grid p{margin-bottom:var(--space-2)}
-.score{font-size:var(--text-score);line-height:1.05;font-weight:750;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.risk-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:var(--space-6);align-items:center;margin-bottom:var(--space-5)}
+.risk-number{border-right:1px solid var(--border);padding-right:var(--space-5)}.risk-number p{margin-bottom:var(--space-2)}
+.score{font-size:clamp(3rem,4.5vw,3.5rem);line-height:1.05;font-weight:650;letter-spacing:-.045em;font-variant-numeric:tabular-nums}
 .score span{font-size:1rem;letter-spacing:0;color:var(--muted);margin-left:var(--space-1)}
+.risk-counts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-3)}
+.source{font-size:.75rem;color:var(--muted);margin:0 0 var(--space-2);letter-spacing:.06em;text-transform:uppercase}
+.risk-metadata{display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;margin:var(--space-4) 0 0;color:var(--muted);font-size:var(--text-small)}
+.score-meaning{font-weight:600;padding-top:var(--space-4);border-top:1px solid var(--border)}
 .zero-note{border-left:3px solid var(--risk-none);padding:var(--space-3) var(--space-4);background:var(--risk-none-soft)}
-@media(max-width:767px){.risk-grid{grid-template-columns:1fr;gap:var(--space-4)}}
+@media(max-width:700px){.risk-grid{grid-template-columns:1fr;gap:var(--space-4)}.risk-number{border:0}.risk-counts{grid-template-columns:1fr}}
 
-.score{font-size:clamp(3.5rem,6vw,5rem);color:var(--text)}.risk-grid>div:first-child{padding:var(--space-3) 0}
+.risk-context{background:var(--surface-raised);padding:16px;border-radius:6px}.risk-metadata>span{display:inline-flex;align-items:center;gap:6px}
+
+.risk-grid{gap:24px;margin-bottom:16px}.risk-context{padding:12px}.risk-metadata{margin-top:8px}.score-meaning{padding-top:12px;margin-bottom:12px}.warning,.zero-note{margin-bottom:12px}.score-notes{font-size:13px;color:var(--muted)}.score-notes summary{padding-block:8px;min-height:44px}.score-notes p:last-child{margin:0}

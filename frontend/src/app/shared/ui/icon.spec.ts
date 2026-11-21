@@ -3,7 +3,7 @@ import { Icon, IconName } from './icon';
 import { StatusBadge } from './status-badge';
 
 describe('Visual icon contract', () => {
-  it.each<IconName>(['plus', 'folder', 'settings', 'play', 'shield', 'warning', 'question', 'check', 'document', 'circle'])('renders static decorative %s without an accessible name or focus', name => {
+  it.each<IconName>(['plus', 'folder', 'settings', 'play', 'shield', 'warning', 'question', 'check', 'document', 'circle', 'open', 'trash'])('renders static decorative %s without an accessible name or focus', name => {
     const fixture = TestBed.createComponent(Icon);
     fixture.componentRef.setInput('name', name);
     fixture.detectChanges();
